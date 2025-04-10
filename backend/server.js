@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
-app.use(helmet()); // helmet is a middleware that helps secure the app by setting various HTTP headers
-app.use(morgan("dev")); // morgan is a middleware that logs the HTTP requests
+app.use(helmet()); 
+app.use(morgan("dev")); 
 
 app.use("/api/products", productRoutes);
 
