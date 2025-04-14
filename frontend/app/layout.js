@@ -2,6 +2,7 @@ import './globals.css';
 import { Providers } from '../store/provider';
 import { Toaster } from 'react-hot-toast';
 import Navbar from '../components/Navbar';
+import SecondaryNavbar from '../components/SecondaryNavbar';
 
 export const metadata = {
   title: 'R-Mart',
@@ -14,7 +15,10 @@ export default function RootLayout({ children }) {
       <body>
         <Providers>
           <Navbar />
-          {children}
+          <SecondaryNavbar />
+          <main className="container mx-auto px-4 py-6">
+            {children}
+          </main>
           <Toaster />
         </Providers>
       </body>

@@ -18,6 +18,19 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+export const fetchProductsByCategory = createAsyncThunk(
+  'products/fetchProductsByCategory',
+  async (category, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`/api/products/category/${category}`);
+      return response.data.data;
+    } catch (err) {
+      if (err.status === 429) return rejectWithValue("Rate limit exceeded");
+      return rejectWithValue("Something went wrong");
+    }
+  }
+);
+
 export const addProduct = createAsyncThunk(
   'products/addProduct',
   async (formData, { rejectWithValue }) => {
@@ -82,6 +95,7 @@ const initialState = {
     price: "",
     image: "",
     description: "",
+    category: "",
   },
 };
 
@@ -93,7 +107,7 @@ const productSlice = createSlice({
       state.formData = action.payload;
     },
     resetForm: (state) => {
-      state.formData = { name: "", price: "", image: "", description: "" };
+      state.formData = { name: "", price: "", image: "", description: "", category: "" };
     },
   },
   extraReducers: (builder) => {
@@ -108,6 +122,20 @@ const productSlice = createSlice({
         state.products = action.payload;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.products = [];
+      })
+      // Fetch Products by Category
+      .addCase(fetchProductsByCategory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProductsByCategory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.products = action.payload;
+      })
+      .addCase(fetchProductsByCategory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.products = [];

@@ -16,16 +16,16 @@ export const getProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-    const {name, price, description, image} = req.body
+    const {name, price, description, image, category} = req.body
 
-    if (!name || !price || !description || !image) {
+    if (!name || !price || !description || !image || !category) {
         return res.status(400).json({success:false, message: "All fields are required"});
     }
 
     try {
         const newProduct = await sql`
-            INSERT INTO products (name, price, description, image)  
-            VALUES (${name}, ${price}, ${description}, ${image})
+            INSERT INTO products (name, price, description, image, category)  
+            VALUES (${name}, ${price}, ${description}, ${image}, ${category})
             RETURNING *
         `;
 
@@ -54,12 +54,12 @@ export const getProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { name, price, description, image } = req.body;
+    const { name, price, description, image, category } = req.body;
   
     try {
       const updateProduct = await sql`
         UPDATE products
-        SET name=${name}, price=${price}, description=${description}, image=${image}
+        SET name=${name}, price=${price}, description=${description}, image=${image}, category=${category}
         WHERE id=${id}
         RETURNING *
       `;
@@ -98,6 +98,23 @@ export const deleteProduct = async (req, res) => {
     } catch (error) {
         console.log("Error in deleteProduct function", error);
         res.status(500).json({success: false, message: "Failed to delete product"});
+    }
+};
+
+export const getProductsByCategory = async (req, res) => {
+    const { category } = req.params;
+    
+    try {
+        const products = await sql`
+            SELECT * FROM products 
+            WHERE category=${category}
+            ORDER BY created_at DESC
+        `;
+        
+        res.status(200).json({success: true, data: products});
+    } catch (error) {
+        console.log("Error in getProductsByCategory", error);
+        res.status(500).json({success: false, message: "Failed to fetch products by category"});
     }
 };
 

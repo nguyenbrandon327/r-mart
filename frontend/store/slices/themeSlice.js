@@ -10,13 +10,10 @@ const themeSlice = createSlice({
   name: 'theme',
   initialState,
   reducers: {
-    // Keep an empty reducer for compatibility with existing code
     setTheme: (state) => {
-      // Always keep it light mode
       state.theme = 'light';
     },
     initTheme: (state) => {
-      // Always initialize to light mode
       state.theme = 'light';
     }
   },

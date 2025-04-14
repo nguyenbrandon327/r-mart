@@ -31,7 +31,6 @@ function Navbar() {
 
           {/* RIGHT SECTION */}
           <div className="flex items-center gap-4">
-            {isHomePage && (
               <div className="indicator">
                 <div className="p-2 rounded-full hover:bg-base-200 transition-colors">
                   <ShoppingBagIcon className="size-5" />
@@ -40,7 +39,6 @@ function Navbar() {
                   </span>
                 </div>
               </div>
-            )}
           </div>
         </div>
       </div>

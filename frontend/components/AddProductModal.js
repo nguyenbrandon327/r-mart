@@ -1,6 +1,6 @@
 'use client';
 
-import { DollarSignIcon, ImageIcon, Package2Icon, PlusCircleIcon, SaveIcon } from "lucide-react";
+import { DollarSignIcon, ImageIcon, Package2Icon, PlusCircleIcon, SaveIcon, TagIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { addProduct, updateProduct, setFormData, resetForm } from '../store/slices/productSlice';
 
@@ -81,6 +81,38 @@ function AddProductModal({ isEditing = false }) {
                   value={formData.price}
                   onChange={handleChange}
                 />
+              </div>
+            </div>
+
+            {/* PRODUCT CATEGORY */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-base font-medium">Category</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <TagIcon className="size-5" />
+                </div>
+                <select
+                  name="category"
+                  className="select select-bordered w-full pl-10 py-3 focus:select-primary transition-colors duration-200"
+                  value={formData.category || ""}
+                  onChange={handleChange}
+                >
+                  <option value="" disabled>Select a category</option>
+                  <option value="clothes">Clothes</option>
+                  <option value="tech">Tech</option>
+                  <option value="textbooks">Textbooks</option>
+                  <option value="furniture">Furniture</option>
+                  <option value="kitchen">Kitchen</option>
+                  <option value="food">Food</option>
+                  <option value="vehicles">Vehicles</option>
+                  <option value="housing">Housing</option>
+                  <option value="rides">Rides</option>
+                  <option value="merch">Merch</option>
+                  <option value="other">Other</option>
+                  <option value="in-searching-for">I'm searching for</option>
+                </select>
               </div>
             </div>
 
