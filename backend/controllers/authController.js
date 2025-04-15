@@ -131,7 +131,50 @@ export const verifyEmail = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-    res.send("login route");
+    const {email, password} = req.body;
+    try {
+        const user = await sql`
+            SELECT * FROM users WHERE email=${email}
+        `;
+
+        if (!user || user.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+        const isPasswordValid = await bcrypt.compare(password, user[0].password);
+        if(!isPasswordValid) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        generateTokenAndSetCookie(res, user[0].id);
+
+        await sql`
+            UPDATE users 
+            SET lastLogin=NOW() 
+            WHERE id=${user[0].id}
+        `;
+
+        res.status(200).json({
+            success: true,
+            message: "Logged in successfully",
+            user: {
+                ...user[0],
+                password: undefined
+            }
+        });
+    } catch (error) {
+        console.log("Error logging in function:", error);
+        res.status(400).json({
+            success: false,
+            message: "Error logging in",
+            error: error.message
+        });
+    }
 };
 
 export const logout = async (req, res) => {
