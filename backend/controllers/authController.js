@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
-import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from "../mailtrap/emails.js";
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
     console.log("Signup request received:", req.body);
@@ -228,3 +228,76 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
+export const resetPassword = async (req, res) => {
+    try {
+        const {token} = req.params;
+        const {password} = req.body;
+        
+        console.log('Reset password attempt:', { token, hasPassword: !!password });
+        
+        // Check token details
+        const tokenDetails = await sql`
+            SELECT id, email, resetPasswordToken, resetPasswordExpiresAt, NOW() as current_time 
+            FROM users 
+            WHERE resetPasswordToken=${token}
+        `;
+        
+        if (tokenDetails.length > 0) {
+            console.log('Token found for user:', tokenDetails[0].email);
+            console.log('Token expiration:', tokenDetails[0].resetpasswordexpiresat);
+            console.log('Current time:', tokenDetails[0].current_time);
+            console.log('Is expired:', tokenDetails[0].resetpasswordexpiresat < tokenDetails[0].current_time);
+        } else {
+            console.log('No token found in database matching:', token);
+        }
+        
+        const user = await sql`
+            SELECT * FROM users WHERE resetPasswordToken=${token}
+        `;
+        
+        console.log('User found:', user.length > 0 ? 'Yes' : 'No');
+        
+        if (!user || user.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid reset token"
+            });
+        }
+        
+        // Check if token is expired separately
+        const isExpired = user[0].resetpasswordexpiresat < tokenDetails[0].current_time;
+        console.log('Is token expired check:', isExpired);
+        
+        if (isExpired) {
+            return res.status(400).json({
+                success: false,
+                message: "Reset token has expired"
+            });
+        }
+        
+        // update password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await sql`
+            UPDATE users 
+            SET password=${hashedPassword}, 
+                resetPasswordToken=NULL, 
+                resetPasswordExpiresAt=NULL 
+            WHERE id=${user[0].id}
+        `;
+
+        await sendResetSuccessEmail(user[0].email, user[0].name);
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset successfully"
+        });
+    } catch (error) {
+        console.log("Error resetting password:", error);
+        res.status(400).json({
+            success: false,
+            message: "Error resetting password",
+            error: error.message
+        });
+    }
+};
