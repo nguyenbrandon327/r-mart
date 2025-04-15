@@ -1,7 +1,7 @@
 import { sql } from "../config/db.js";
 import bcrypt from "bcryptjs";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
-import { sendVerificationEmail } from "../mailtrap/emails.js";
+import { sendVerificationEmail, sendWelcomeEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
     console.log("Signup request received:", req.body);
@@ -79,6 +79,53 @@ export const signup = async (req, res) => {
             success: false, 
             message: "Error signing up", 
             error: error.message,
+        });
+    }
+};
+
+export const verifyEmail = async (req, res) => {
+    // 1 2 3 4 5 6
+    const {code} = req.body;
+    try {
+        const users = await sql`
+            SELECT * FROM users WHERE verificationToken=${code} AND verificationTokenExpiresAt > NOW()
+        `;
+
+        if (!users || users.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or expired verification code"
+            });
+        }
+        
+        const user = users[0]; // Get the first user from the array
+        
+        await sql`
+            UPDATE users 
+            SET isVerified=true, 
+                verificationToken=NULL, 
+                verificationTokenExpiresAt=NULL 
+            WHERE id=${user.id}
+        `;
+
+        await sendWelcomeEmail(user.email, user.name);
+        
+        res.status(200).json({
+            success: true,
+            message: "Email verified successfully",
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                isVerified: true
+            }
+        });
+            
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: "Error verifying email",
+            error: error.message
         });
     }
 };
