@@ -1,6 +1,7 @@
 import { sql } from "../config/db.js";
 import bcrypt from "bcryptjs";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
+import { sendVerificationEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
     console.log("Signup request received:", req.body);
@@ -8,7 +9,6 @@ export const signup = async (req, res) => {
 
     try {
         if (!email || !password || !name) {
-            console.log("Missing required fields");
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
@@ -19,7 +19,6 @@ export const signup = async (req, res) => {
         console.log("User exists check result:", userAlreadyExists);
 
         if (userAlreadyExists.length > 0) {
-            console.log("User already exists");
             return res.status(400).json({ success: false, message: "User already exists" });
         }
 
@@ -38,12 +37,9 @@ export const signup = async (req, res) => {
         const insertedId = result[0]?.id;
         
         if (!insertedId) {
-            console.log("Failed to get inserted user ID from insert operation");
             const [insertedUser] = await sql`
                 SELECT id FROM users WHERE email = ${email}
-            `;
-            console.log("Query for inserted user:", insertedUser);
-            
+            `;            
             if (insertedUser && insertedUser.id) {
                 console.log("Setting JWT cookie");
                 generateTokenAndSetCookie(res, insertedUser.id);
@@ -63,10 +59,10 @@ export const signup = async (req, res) => {
                 throw new Error("Failed to retrieve user ID after insertion");
             }
         } else {
-            console.log("Setting JWT cookie");
             generateTokenAndSetCookie(res, insertedId);
             
-            console.log("Sending successful response");
+            await sendVerificationEmail(email, verificationToken);
+
             return res.status(201).json({ 
                 success: true, 
                 message: "User created successfully",
@@ -79,13 +75,10 @@ export const signup = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error("Signup error:", error);
-        console.error("Error stack:", error.stack);
         res.status(400).json({ 
             success: false, 
             message: "Error signing up", 
             error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
