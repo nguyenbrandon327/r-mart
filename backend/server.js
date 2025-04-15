@@ -4,10 +4,12 @@ import morgan from "morgan";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import cookieParser from "cookie-parser";
 
 import productRoutes from "./routes/productRoutes.js";
 import { sql } from "./config/db.js";
 import { aj } from "./lib/arcjet.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -17,6 +19,7 @@ const __dirname = path.resolve();
 
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -54,6 +57,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use("/api/products", productRoutes);
+app.use("/api/auth", authRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));
@@ -63,6 +67,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 async function initDB() {
+  // Initialize products
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS products (
@@ -76,9 +81,31 @@ async function initDB() {
       )
     `;
 
-    console.log("Database initialized successfully");
+    console.log("Products table initialized successfully");
   } catch (error) {
-    console.log("Error initDB", error);
+    console.log("Error initializing products table", error);
+  }
+  // Initialize users
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        isVerified BOOLEAN DEFAULT FALSE,
+        resetPasswordToken VARCHAR(255),
+        resetPasswordExpiresAt TIMESTAMP,
+        verificationToken VARCHAR(255),
+        verificationTokenExpiresAt TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    console.log("Users table initialized successfully");
+  } catch (error) {
+    console.log("Error initializing users table", error);
   }
 }
 
