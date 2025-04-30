@@ -1,4 +1,4 @@
-// File: C:\Users\Brandon\r-mart\frontend\app\category\[category]\page.js
+// File: C:\Users\Brandon\r-mart\frontend\app\category\[category]\page.jsx
 import * as entry from '../../../../../app/category/[category]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

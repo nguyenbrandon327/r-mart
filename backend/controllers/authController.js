@@ -16,7 +16,7 @@ export const signup = async (req, res) => {
 
         console.log("Checking if user exists");
         const userAlreadyExists = await sql`
-            SELECT * FROM users WHERE name=${name} OR email=${email}
+            SELECT * FROM users WHERE email=${email}
         `;
         console.log("User exists check result:", userAlreadyExists);
 
@@ -297,37 +297,6 @@ export const resetPassword = async (req, res) => {
         res.status(400).json({
             success: false,
             message: "Error resetting password",
-            error: error.message
-        });
-    }
-};
-
-export const checkAuth = async (req, res) => {
-    try {
-        const user = await sql`
-            SELECT id, name, email FROM users WHERE id=${req.userId}
-        `;
-
-        if (!user || user.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-        
-        res.status(200).json({
-            success: true,
-            user: {
-                ...user[0],
-                password: undefined
-            }
-        });
-        
-    } catch (error) {
-        console.log("Error checking auth:", error);
-        res.status(400).json({
-            success: false,
-            message: "Error checking auth",
             error: error.message
         });
     }
