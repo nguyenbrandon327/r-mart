@@ -21,7 +21,7 @@ r-mart/
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/r-mart.git
+git clone https://github.com/nguyenbrandon327/r-mart.git
 cd r-mart
 ```
 
