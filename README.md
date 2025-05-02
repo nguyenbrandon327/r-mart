@@ -1,6 +1,6 @@
 # R-Mart
 
-A marketplace
+In development!
 
 ## Prerequisites
 
@@ -68,7 +68,3 @@ The frontend development server will start on http://localhost:3000.
 ## Deployment
 
 Instructions for deploying the application will be added in the future.
-
-## License
-
-[Your license information here] 
