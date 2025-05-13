@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductsByCategory, resetForm } from '../../../store/slices/productSlice';
 import ProductCard from '../../../components/ProductCard';
-import { TagIcon, PackageIcon, PlusCircleIcon, RefreshCwIcon } from 'lucide-react';
+import { TagIcon, PackageIcon, PlusCircleIcon } from 'lucide-react';
 import AddProductModal from "../../../components/AddProductModal";
 
 const categoryLabels = {
@@ -26,6 +26,7 @@ export default function CategoryPage({ params }) {
   const { category } = params;
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.products);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   
   useEffect(() => {
     dispatch(fetchProductsByCategory(category));
@@ -47,22 +48,18 @@ export default function CategoryPage({ params }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              dispatch(resetForm());
-              document.getElementById("add_product_modal").showModal();
-            }}
-          >
-            <PlusCircleIcon className="size-5 mr-2" />
-            Add Product
-          </button>
-          <button 
-            className="btn btn-circle btn-ghost"
-            onClick={() => dispatch(fetchProductsByCategory(category))}
-          >
-            <RefreshCwIcon className="size-5" />
-          </button>
+          {isAuthenticated && (
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                dispatch(resetForm());
+                document.getElementById("add_product_modal").showModal();
+              }}
+            >
+              <PlusCircleIcon className="size-5 mr-2" />
+              Add Product
+            </button>
+          )}
         </div>
       </div>
 

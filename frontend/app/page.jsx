@@ -10,6 +10,7 @@ import AddProductModal from "../components/AddProductModal";
 export default function HomePage() {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.products);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [activeSlide, setActiveSlide] = useState(1);
 
   useEffect(() => {
@@ -108,22 +109,18 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              dispatch(resetForm());
-              document.getElementById("add_product_modal").showModal();
-            }}
-          >
-            <PlusCircleIcon className="size-5 mr-2" />
-            Add Product
-          </button>
-          <button 
-            className="btn btn-circle btn-ghost"
-            onClick={() => dispatch(fetchProducts())}
-          >
-            <RefreshCwIcon className="size-5" />
-          </button>
+          {isAuthenticated && (
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                dispatch(resetForm());
+                document.getElementById("add_product_modal").showModal();
+              }}
+            >
+              <PlusCircleIcon className="size-5 mr-2" />
+              Add Product
+            </button>
+          )}
         </div>
       </div>
 

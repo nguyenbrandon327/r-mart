@@ -35,11 +35,15 @@ export const addProduct = createAsyncThunk(
   'products/addProduct',
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/products', formData);
+      const response = await axios.post('/api/products', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       toast.success("Product added successfully");
       return response.data.data;
     } catch (error) {
-      toast.error("Something went wrong");
+      toast.error(error.response?.data?.message || "Something went wrong");
       return rejectWithValue(error.message);
     }
   }
@@ -75,11 +79,31 @@ export const updateProduct = createAsyncThunk(
   'products/updateProduct',
   async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`/api/products/${id}`, formData);
+      const response = await axios.put(`/api/products/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       toast.success("Product updated successfully");
       return response.data.data;
     } catch (error) {
-      toast.error("Something went wrong");
+      toast.error(error.response?.data?.message || "Something went wrong");
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteProductImage = createAsyncThunk(
+  'products/deleteProductImage',
+  async ({ productId, imageUrl }, { rejectWithValue }) => {
+    try {
+      await axios.delete(`/api/products/${productId}/image`, {
+        data: { imageUrl }
+      });
+      toast.success("Image deleted successfully");
+      return { productId, imageUrl };
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete image");
       return rejectWithValue(error.message);
     }
   }
@@ -93,7 +117,6 @@ const initialState = {
   formData: {
     name: "",
     price: "",
-    image: "",
     description: "",
     category: "",
   },
@@ -107,7 +130,7 @@ const productSlice = createSlice({
       state.formData = action.payload;
     },
     resetForm: (state) => {
-      state.formData = { name: "", price: "", image: "", description: "", category: "" };
+      state.formData = { name: "", price: "", description: "", category: "" };
     },
   },
   extraReducers: (builder) => {
@@ -171,7 +194,12 @@ const productSlice = createSlice({
       .addCase(fetchProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.currentProduct = action.payload;
-        state.formData = action.payload;
+        state.formData = {
+          name: action.payload.name,
+          price: action.payload.price,
+          description: action.payload.description,
+          category: action.payload.category,
+        };
       })
       .addCase(fetchProduct.rejected, (state, action) => {
         state.loading = false;
@@ -187,6 +215,32 @@ const productSlice = createSlice({
         state.currentProduct = action.payload;
       })
       .addCase(updateProduct.rejected, (state) => {
+        state.loading = false;
+      })
+      // Delete Product Image
+      .addCase(deleteProductImage.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteProductImage.fulfilled, (state, action) => {
+        state.loading = false;
+        const { productId, imageUrl } = action.payload;
+        
+        // Update the current product if it's the one being modified
+        if (state.currentProduct && state.currentProduct.id === productId) {
+          state.currentProduct.images = state.currentProduct.images.filter(
+            img => img !== imageUrl
+          );
+        }
+        
+        // Update the product in the products list if it exists there
+        const productIndex = state.products.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+          state.products[productIndex].images = state.products[productIndex].images.filter(
+            img => img !== imageUrl
+          );
+        }
+      })
+      .addCase(deleteProductImage.rejected, (state) => {
         state.loading = false;
       });
   },

@@ -5,17 +5,23 @@ import {
     getProduct, 
     updateProduct, 
     deleteProduct, 
-    getProductsByCategory 
+    getProductsByCategory,
+    deleteProductImage
 } from "../controllers/productController.js";
 import { protectRoute } from "../utils/protectRoute.js";
+import { upload } from "../utils/s3.js";
 
 const router = express.Router();
 
 router.get("/", getProducts);
 router.get("/category/:category", getProductsByCategory);
 router.get("/:id", getProduct);
-router.post("/", protectRoute, createProduct);
-router.put("/:id", protectRoute, updateProduct);
+
+router.post("/", protectRoute, upload.array('productImages', 5), createProduct);
+router.put("/:id", protectRoute, upload.array('productImages', 5), updateProduct);
 router.delete("/:id", protectRoute, deleteProduct);
+
+// Route to delete a single image from a product
+router.delete("/:id/image", protectRoute, deleteProductImage);
 
 export default router;

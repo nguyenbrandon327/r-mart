@@ -1,7 +1,6 @@
 'use client';
 
 import Link from "next/link";
-import { TagIcon } from "lucide-react";
 
 function ProductCard({ product }) {
   const getCategoryLabel = (category) => {
@@ -23,30 +22,32 @@ function ProductCard({ product }) {
     return categories[category] || 'Uncategorized';
   };
 
+  // Get cover image (first image in array or use legacy 'image' property as fallback)
+  const getCoverImage = () => {
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    return product.image || 'https://placehold.co/400x400?text=No+Image';
+  };
+
   return (
     <Link href={`/product/${product.id}`}>
-      <div className="bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-none cursor-pointer">
+      <div className="bg-transparent rounded-none cursor-pointer border-2 border-transparent hover:border-gray-500 transition-all duration-300 -m-1 p-1">
         {/* PRODUCT IMAGE */}
-        <figure className="relative pt-[100%]">
+        <figure className="relative pt-[100%] mb-0 rounded-md overflow-hidden">
           <img
-            src={product.image}
+            src={getCoverImage()}
             alt={product.name}
-            className="absolute top-0 left-0 w-full h-full object-cover"
+            className="absolute top-0 left-0 w-full h-full object-cover rounded-md"
           />
         </figure>
 
-        <div className="p-4">
+        <div className="px-0">
           {/* PRODUCT INFO */}
-          <div className="flex items-start justify-between">
-            <h2 className="text-lg font-semibold truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
+          <div className="flex items-start justify-between mt-1">
+            <h2 className="text-xl font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
           </div>
-          <p className="text-2xl font-bold text-primary">${Number(product.price).toFixed(2)}</p>
-          
-          {product.user_name && (
-            <p className="text-xs text-gray-500 mt-1">
-              by {product.user_name}
-            </p>
-          )}
+          <p className="text-xl font-normal text-black">${Number(product.price).toFixed(2)}</p>
         </div>
       </div>
     </Link>
