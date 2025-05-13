@@ -210,8 +210,8 @@ export async function seedProducts() {
     // Insert new products
     for (const product of products) {
       await sql`
-        INSERT INTO products (name, price, description, image, category)
-        VALUES (${product.name}, ${product.price}, ${product.description}, ${product.image}, ${product.category})
+        INSERT INTO products (name, price, description, image, category, user_id)
+        VALUES (${product.name}, ${product.price}, ${product.description}, ${product.image}, ${product.category}, 20)
       `;
     }
 

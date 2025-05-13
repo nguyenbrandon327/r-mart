@@ -13,6 +13,7 @@ export default function ProductPage({ params }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const { currentProduct, loading, error } = useSelector((state) => state.products);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(fetchProduct(id));
@@ -28,6 +29,9 @@ export default function ProductPage({ params }) {
   const handleEdit = () => {
     document.getElementById("add_product_modal").showModal();
   };
+
+  // Check if the current user is the creator of the product
+  const isProductOwner = user && currentProduct && user.id === currentProduct.user_id;
 
   if (loading) {
     return (
@@ -96,20 +100,22 @@ export default function ProductPage({ params }) {
         <div className="md:w-1/2">
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold">{currentProduct.name}</h1>
-            <div className="flex gap-2">
-              <button
-                className="btn btn-circle btn-outline btn-sm"
-                onClick={handleEdit}
-              >
-                <EditIcon className="size-4" />
-              </button>
-              <button
-                className="btn btn-circle btn-outline btn-error btn-sm"
-                onClick={handleDelete}
-              >
-                <Trash2Icon className="size-4" />
-              </button>
-            </div>
+            {isProductOwner && (
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-circle btn-outline btn-sm"
+                  onClick={handleEdit}
+                >
+                  <EditIcon className="size-4" />
+                </button>
+                <button
+                  className="btn btn-circle btn-outline btn-error btn-sm"
+                  onClick={handleDelete}
+                >
+                  <Trash2Icon className="size-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="my-4">
@@ -124,6 +130,14 @@ export default function ProductPage({ params }) {
             <h3>Description</h3>
             <p>{currentProduct.description || "No description available."}</p>
           </div>
+
+          {currentProduct.user_name && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-500">
+                Posted by: <span className="font-medium">{currentProduct.user_name}</span>
+              </p>
+            </div>
+          )}
 
           <div className="mt-6">
             <button className="btn btn-primary w-full">Add to Cart</button>

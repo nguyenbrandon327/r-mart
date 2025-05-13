@@ -41,6 +41,12 @@ function ProductCard({ product }) {
             <h2 className="text-lg font-semibold truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
           </div>
           <p className="text-2xl font-bold text-primary">${Number(product.price).toFixed(2)}</p>
+          
+          {product.user_name && (
+            <p className="text-xs text-gray-500 mt-1">
+              by {product.user_name}
+            </p>
+          )}
         </div>
       </div>
     </Link>

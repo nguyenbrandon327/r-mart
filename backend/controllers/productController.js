@@ -4,8 +4,10 @@ import { sql } from "../config/db.js";
 export const getProducts = async (req, res) => {
     try {
         const products = await sql`
-            SELECT * FROM products
-            ORDER BY created_at DESC
+            SELECT p.*, u.name as user_name 
+            FROM products p
+            LEFT JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
         `;
         console.log("fetched products");
         res.status(200).json({success:true, data:products});
@@ -24,8 +26,8 @@ export const createProduct = async (req, res) => {
 
     try {
         const newProduct = await sql`
-            INSERT INTO products (name, price, description, image, category)  
-            VALUES (${name}, ${price}, ${description}, ${image}, ${category})
+            INSERT INTO products (name, price, description, image, category, user_id)  
+            VALUES (${name}, ${price}, ${description}, ${image}, ${category}, ${req.user.id})
             RETURNING *
         `;
 
@@ -43,7 +45,10 @@ export const getProduct = async (req, res) => {
 
     try {
         const product = await sql `
-            SELECT * FROM products WHERE id=${id}
+            SELECT p.*, u.name as user_name 
+            FROM products p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.id=${id}
         `
         res.status(200).json({ success:true, data:product[0] });
     } catch (error) {
@@ -57,19 +62,32 @@ export const updateProduct = async (req, res) => {
     const { name, price, description, image, category } = req.body;
   
     try {
+      // First verify the product exists and get its current data
+      const existingProduct = await sql`
+        SELECT * FROM products WHERE id=${id}
+      `;
+
+      if (existingProduct.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Check if the user is the owner of the product
+      if (existingProduct[0].user_id && existingProduct[0].user_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to update this product",
+        });
+      }
+
       const updateProduct = await sql`
         UPDATE products
         SET name=${name}, price=${price}, description=${description}, image=${image}, category=${category}
         WHERE id=${id}
         RETURNING *
       `;
-  
-      if (updateProduct.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Product not found",
-        });
-      }
   
       res.status(200).json({ success: true, data: updateProduct[0] });
     } catch (error) {
@@ -82,18 +100,31 @@ export const deleteProduct = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedProduct = await sql`
-        DELETE FROM products WHERE id=${id}
-        RETURNING *
+        // First verify the product exists and get its current data
+        const existingProduct = await sql`
+            SELECT * FROM products WHERE id=${id}
         `;
-        
-        if (deletedProduct.length === 0) {
+
+        if (existingProduct.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Product not found"
             });
         }
 
+        // Check if the user is the owner of the product
+        if (existingProduct[0].user_id && existingProduct[0].user_id !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: "Not authorized to delete this product",
+            });
+        }
+
+        const deletedProduct = await sql`
+            DELETE FROM products WHERE id=${id}
+            RETURNING *
+        `;
+        
         res.status(200).json({success:true, data: deletedProduct[0]});
     } catch (error) {
         console.log("Error in deleteProduct function", error);
@@ -106,9 +137,11 @@ export const getProductsByCategory = async (req, res) => {
     
     try {
         const products = await sql`
-            SELECT * FROM products 
-            WHERE category=${category}
-            ORDER BY created_at DESC
+            SELECT p.*, u.name as user_name 
+            FROM products p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.category=${category}
+            ORDER BY p.created_at DESC
         `;
         
         res.status(200).json({success: true, data: products});

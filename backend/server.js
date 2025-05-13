@@ -82,6 +82,7 @@ async function initDB() {
         price DECIMAL(10, 2) NOT NULL,
         category VARCHAR(255) NOT NULL,
         description TEXT,
+        user_id INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;

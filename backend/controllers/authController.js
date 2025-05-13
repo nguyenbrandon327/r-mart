@@ -301,3 +301,20 @@ export const resetPassword = async (req, res) => {
         });
     }
 };
+
+export const checkAuth = async (req, res) => {
+    try {
+        // The protectRoute middleware already added the user to req
+        // Just return the user information
+        res.status(200).json({
+            success: true,
+            user: req.user
+        });
+    } catch (error) {
+        console.log("Error in checkAuth", error);
+        res.status(500).json({
+            success: false,
+            message: "Error checking authentication"
+        });
+    }
+};

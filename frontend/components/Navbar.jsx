@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ShoppingBagIcon, ShoppingCartIcon, UserIcon, UserPlusIcon, LogOutIcon } from "lucide-react";
-import { useSelector } from 'react-redux';
-import { useAuthStore } from '../store';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
 
 function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useDispatch();
   const isHomePage = pathname === "/";
   const products = useSelector((state) => state.products.products);
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
   
   const handleLogout = async () => {
     try {
-      await logout();
+      await dispatch(logout());
       router.push('/');
     } catch (error) {
       console.error("Logout failed:", error);
@@ -56,10 +57,17 @@ function Navbar() {
                   </Link>
                 </>
               ) : (
-                <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-                  <LogOutIcon className="size-4 mr-1" />
-                  Logout
-                </button>
+                <>
+                  {user && (
+                    <span className="text-sm font-medium mr-2">
+                      Hello, {user.name}
+                    </span>
+                  )}
+                  <button onClick={handleLogout} className="btn btn-ghost btn-sm">
+                    <LogOutIcon className="size-4 mr-1" />
+                    Logout
+                  </button>
+                </>
               )}
               
               <div className="indicator">
