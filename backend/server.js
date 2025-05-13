@@ -104,7 +104,8 @@ async function initDB() {
         resetPasswordExpiresAt TIMESTAMP,
         verificationToken VARCHAR(255),
         verificationTokenExpiresAt TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        googleId VARCHAR(255)
       )
     `;
 

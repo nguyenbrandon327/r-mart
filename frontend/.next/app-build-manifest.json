@@ -26,15 +26,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/auth/signup/page.js"
     ],
-    "/auth/forgot-password/page": [
+    "/category/[category]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/auth/forgot-password/page.js"
+      "static/chunks/app/category/[category]/page.js"
     ],
-    "/auth/reset-password/page": [
+    "/product/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/auth/reset-password/page.js"
+      "static/chunks/app/product/[id]/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

@@ -28,12 +28,15 @@ function AddProductModal({ isEditing = false }) {
     <dialog id="add_product_modal" className="modal">
       <div className="modal-box">
         {/* CLOSE BUTTON */}
-        <form method="dialog">
+        <div>
           <button 
             className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-            onClick={() => dispatch(resetForm())}
+            onClick={() => {
+              dispatch(resetForm());
+              document.getElementById("add_product_modal").close();
+            }}
           >X</button>
-        </form>
+        </div>
 
         {/* MODAL HEADER */}
         <h3 className="font-bold text-xl mb-8">
@@ -153,7 +156,7 @@ function AddProductModal({ isEditing = false }) {
 
           {/* MODAL ACTIONS */}
           <div className="modal-action">
-            <form method="dialog">
+            <div>
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -164,7 +167,7 @@ function AddProductModal({ isEditing = false }) {
               >
                 Cancel
               </button>
-            </form>
+            </div>
             <button
               type="submit"
               className="btn btn-primary min-w-[120px]"
@@ -189,9 +192,9 @@ function AddProductModal({ isEditing = false }) {
       </div>
 
       {/* BACKDROP */}
-      <form method="dialog" className="modal-backdrop">
-        <button>close</button>
-      </form>
+      <div className="modal-backdrop" onClick={() => document.getElementById("add_product_modal").close()}>
+        <button onClick={() => document.getElementById("add_product_modal").close()}>close</button>
+      </div>
     </dialog>
   );
 }
