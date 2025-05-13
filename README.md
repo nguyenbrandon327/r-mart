@@ -1,6 +1,6 @@
 # R-Mart
 
-A marketplace
+In development!
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ r-mart/
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/r-mart.git
+git clone https://github.com/nguyenbrandon327/r-mart.git
 cd r-mart
 ```
 
@@ -34,7 +34,7 @@ npm install
 npm run dev
 ```
 
-The backend server will start on http://localhost:5000 (or the port specified in your .env file).
+The backend server will start on http://localhost:3000.
 
 ### Setup Frontend
 
@@ -44,7 +44,7 @@ npm install
 npm run dev
 ```
 
-The frontend development server will start on http://localhost:3000.
+The frontend development server will start on http://localhost:3001.
 
 ## Available Scripts
 
@@ -68,7 +68,3 @@ The frontend development server will start on http://localhost:3000.
 ## Deployment
 
 Instructions for deploying the application will be added in the future.
-
-## License
-
-[Your license information here] 
