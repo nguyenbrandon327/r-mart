@@ -38,6 +38,11 @@ export default function ProductPage({ params }) {
     }
   };
 
+  // Set the main displayed image without opening gallery
+  const setMainImage = (index) => {
+    setActiveImage(index);
+  };
+
   // Open fullscreen gallery
   const openGallery = (index = 0) => {
     setActiveImage(index);
@@ -158,12 +163,12 @@ export default function ProductPage({ params }) {
               {/* Main image */}
               <div 
                 className="relative rounded-lg overflow-hidden cursor-pointer aspect-square bg-gray-100"
-                onClick={() => openGallery(0)}
+                onClick={() => openGallery(activeImage)}
               >
                 <img
-                  src={images[0]}
+                  src={images[activeImage]}
                   alt={currentProduct.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
               
@@ -173,8 +178,8 @@ export default function ProductPage({ params }) {
                   {images.map((img, index) => (
                     <div 
                       key={index}
-                      className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${index === 0 ? 'border-primary' : 'border-transparent'}`}
-                      onClick={() => openGallery(index)}
+                      className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${index === activeImage ? 'border-primary' : 'border-transparent'}`}
+                      onClick={() => setMainImage(index)}
                     >
                       <img
                         src={img}
@@ -244,66 +249,56 @@ export default function ProductPage({ params }) {
 
       {/* Fullscreen Gallery Modal */}
       {galleryOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col justify-center items-center">
-          {/* Close button */}
-          <button 
-            className="absolute top-4 right-4 text-white hover:text-gray-300"
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-90 z-50"
             onClick={closeGallery}
-          >
-            <XIcon size={24} />
-          </button>
+          />
           
-          {/* Main image container */}
-          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-10">
-            <img 
-              src={images[activeImage]}
-              alt={`${currentProduct.name} - fullscreen view`}
-              className="max-h-full max-w-full object-contain"
-            />
+          {/* Content */}
+          <div className="fixed inset-0 z-50 flex flex-col justify-center items-center">
+            {/* Close button */}
+            <button 
+              className="absolute top-6 right-6 text-white bg-black bg-opacity-60 hover:bg-opacity-80 p-3 rounded-full z-50"
+              onClick={closeGallery}
+            >
+              <XIcon size={24} />
+            </button>
             
-            {/* Previous/Next navigation */}
-            {images.length > 1 && (
-              <>
-                <button 
-                  className="absolute left-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2"
-                  onClick={prevImage}
-                >
-                  <ChevronLeftIcon size={24} />
-                </button>
-                <button 
-                  className="absolute right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2"
-                  onClick={nextImage}
-                >
-                  <ChevronRightIcon size={24} />
-                </button>
-              </>
-            )}
-          </div>
-          
-          {/* Thumbnails */}
-          {images.length > 1 && (
-            <div className="p-4 flex justify-center gap-2 mb-4">
-              {images.map((img, index) => (
-                <button
-                  key={index}
-                  className={`h-16 w-16 border-2 ${index === activeImage ? 'border-white' : 'border-transparent'} rounded-md overflow-hidden`}
-                  onClick={() => setActiveImage(index)}
-                >
-                  <img 
-                    src={img} 
-                    alt={`Thumbnail ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ))}
+            {/* Main image container */}
+            <div className="relative w-full h-full flex items-center justify-center p-4 md:p-10">
+              <img 
+                src={images[activeImage]}
+                alt={`${currentProduct.name} - fullscreen view`}
+                className="max-h-full max-w-full object-contain"
+              />
+              
+              {/* Previous/Next navigation */}
+              {images.length > 1 && (
+                <>
+                  <button 
+                    className="absolute left-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2"
+                    onClick={prevImage}
+                  >
+                    <ChevronLeftIcon size={24} />
+                  </button>
+                  <button 
+                    className="absolute right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2"
+                    onClick={nextImage}
+                  >
+                    <ChevronRightIcon size={24} />
+                  </button>
+                </>
+              )}
             </div>
-          )}
-          
-          {/* Image counter */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white">
-            {activeImage + 1} / {images.length}
+            
+            {/* Image counter */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white">
+              {activeImage + 1} / {images.length}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
