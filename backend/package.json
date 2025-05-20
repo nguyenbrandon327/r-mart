@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
     "seed": "node seeds/seed.js",
-    "migrate:images": "node migrations/imageMigration.js"
+    "migrate:images": "node migrations/imageMigration.js",
+    "migrate:messages": "node migrations/messageMigration.js"
   },
   "keywords": [],
   "author": "",

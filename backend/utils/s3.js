@@ -30,7 +30,9 @@ export const upload = multer({
     key: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname);
-      cb(null, `products/${uniqueSuffix}${ext}`);
+      // Determine folder based on route or other context
+      const folder = req.originalUrl.includes('/message') ? 'messages' : 'products';
+      cb(null, `${folder}/${uniqueSuffix}${ext}`);
     }
   }),
   limits: {

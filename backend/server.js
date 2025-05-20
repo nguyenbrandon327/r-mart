@@ -10,6 +10,7 @@ import productRoutes from "./routes/productRoutes.js";
 import { sql } from "./config/db.js";
 import { aj } from "./lib/arcjet.js";
 import authRoutes from "./routes/authRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use(async (req, res, next) => {
 
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/message", messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));
@@ -113,6 +115,24 @@ async function initDB() {
     console.log("Users table initialized successfully");
   } catch (error) {
     console.log("Error initializing users table", error);
+  }
+  // Initialize messages
+  try {
+    await sql`
+          CREATE TABLE IF NOT EXISTS messages (
+            id SERIAL PRIMARY KEY,
+            sender_id INTEGER NOT NULL REFERENCES users(id),
+            receiver_id INTEGER NOT NULL REFERENCES users(id),
+            text TEXT,
+            image TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `;
+
+    console.log("Messages table initialized successfully");
+  } catch (error) {
+    console.log("Error initializing messages table", error);
   }
 }
 
