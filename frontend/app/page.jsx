@@ -107,21 +107,6 @@ export default function HomePage() {
             Browse all available products in our marketplace
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          {isAuthenticated && (
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                dispatch(resetForm());
-                document.getElementById("add_product_modal").showModal();
-              }}
-            >
-              <PlusCircleIcon className="size-5 mr-2" />
-              Add Product
-            </button>
-          )}
-        </div>
       </div>
 
       <AddProductModal />

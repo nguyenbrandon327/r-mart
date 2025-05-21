@@ -13,7 +13,8 @@ const initialState = {
   error: null,
   isLoading: false,
   isCheckingAuth: true,
-  message: null
+  message: null,
+  socket: null
 };
 
 // Async thunks
@@ -110,6 +111,9 @@ const authSlice = createSlice({
     },
     clearMessage: (state) => {
       state.message = null;
+    },
+    setSocket: (state, action) => {
+      state.socket = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -153,6 +157,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = null;
         state.isAuthenticated = false;
+        state.socket = null;
       })
       .addCase(logout.rejected, (state, action) => {
         state.isLoading = false;
@@ -219,5 +224,5 @@ const authSlice = createSlice({
   }
 });
 
-export const { clearError, clearMessage } = authSlice.actions;
+export const { clearError, clearMessage, setSocket } = authSlice.actions;
 export default authSlice.reducer; 

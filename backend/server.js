@@ -11,6 +11,7 @@ import { sql } from "./config/db.js";
 import { aj } from "./lib/arcjet.js";
 import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
+import savedProductRoutes from "./routes/savedProductRoutes.js";
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use(async (req, res, next) => {
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
+app.use("/api/saved-products", savedProductRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));

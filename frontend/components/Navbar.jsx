@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ShoppingBagIcon, ShoppingCartIcon, UserIcon, UserPlusIcon, LogOutIcon } from "lucide-react";
+import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon, ShoppingCartIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 
@@ -11,7 +11,6 @@ function Navbar() {
   const router = useRouter();
   const dispatch = useDispatch();
   const isHomePage = pathname === "/";
-  const products = useSelector((state) => state.products.products);
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   
   const handleLogout = async () => {
@@ -58,26 +57,36 @@ function Navbar() {
                 </>
               ) : (
                 <>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      document.getElementById("add_product_modal").showModal();
+                    }}
+                  >
+                    <PlusCircleIcon className="size-4 mr-1" />
+                    Add Product
+                  </button>
+                  
+                  <Link href="/saved" className="btn btn-ghost btn-sm btn-circle">
+                    <HeartIcon className="size-4" />
+                  </Link>
+                  
+                  <Link href="/inbox" className="btn btn-ghost btn-sm btn-circle">
+                    <MessageSquareTextIcon className="size-4" />
+                  </Link>
+                  
                   {user && (
-                    <span className="text-sm font-medium mr-2">
+                    <span className="text-sm font-medium">
                       Hello, {user.name}
                     </span>
                   )}
+                  
                   <button onClick={handleLogout} className="btn btn-ghost btn-sm">
                     <LogOutIcon className="size-4 mr-1" />
                     Logout
                   </button>
                 </>
               )}
-              
-              <div className="indicator">
-                <div className="p-2 rounded-full hover:bg-base-200 transition-colors">
-                  <ShoppingBagIcon className="size-5" />
-                  <span className="badge badge-sm badge-primary indicator-item">
-                    {products.length}
-                  </span>
-                </div>
-              </div>
           </div>
         </div>
       </div>

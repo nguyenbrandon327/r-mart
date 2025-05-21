@@ -46,21 +46,6 @@ export default function CategoryPage({ params }) {
             Browse all products in the {categoryLabel.toLowerCase()} category
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          {isAuthenticated && (
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                dispatch(resetForm());
-                document.getElementById("add_product_modal").showModal();
-              }}
-            >
-              <PlusCircleIcon className="size-5 mr-2" />
-              Add Product
-            </button>
-          )}
-        </div>
       </div>
 
       <AddProductModal />

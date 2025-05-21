@@ -4,9 +4,49 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProduct, deleteProduct, deleteProductImage, resetForm } from "../../../store/slices/productSlice";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, Trash2Icon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import AddProductModal from "../../../components/AddProductModal";
+import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
+
+// Save button component for product page
+function SaveButton({ productId }) {
+  const dispatch = useDispatch();
+  const [isSaving, setIsSaving] = useState(false);
+  const { savedProductIds } = useSelector((state) => state.savedProducts);
+  
+  const isSaved = savedProductIds.includes(parseInt(productId));
+  
+  useEffect(() => {
+    dispatch(checkIsSaved(productId));
+  }, [dispatch, productId]);
+  
+  const handleToggleSave = async () => {
+    setIsSaving(true);
+    try {
+      if (isSaved) {
+        await dispatch(unsaveProduct(productId)).unwrap();
+      } else {
+        await dispatch(saveProduct(productId)).unwrap();
+      }
+    } catch (error) {
+      console.error('Error toggling save status:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  return (
+    <button 
+      className={`btn ${isSaved ? 'btn-secondary' : 'btn-primary'} ${isSaving ? 'loading' : ''}`}
+      onClick={handleToggleSave}
+      disabled={isSaving}
+    >
+      <HeartIcon className={`h-5 w-5 mr-1 ${isSaved ? 'fill-current' : ''}`} />
+      {isSaved ? 'Saved' : 'Save'}
+    </button>
+  );
+}
 
 export default function ProductPage({ params }) {
   const { id } = params;
@@ -241,8 +281,19 @@ export default function ProductPage({ params }) {
             </div>
           )}
 
-          <div className="mt-6">
-            <button className="btn btn-primary w-full">Add to Cart</button>
+          <div className="mt-6 grid grid-cols-2 gap-2">
+            {isAuthenticated && !isProductOwner ? (
+              <SaveButton productId={currentProduct.id} />
+            ) : (
+              <button className="btn btn-primary" disabled={!isAuthenticated || isProductOwner}>
+                <HeartIcon className="h-5 w-5 mr-1" />
+                {isProductOwner ? "Your Product" : "Save"}
+              </button>
+            )}
+            <button className="btn btn-outline">
+              <MessageSquareTextIcon className="h-5 w-5 mr-1" />
+              Contact Seller
+            </button>
           </div>
         </div>
       </div>
