@@ -13,10 +13,18 @@ import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/
 function SaveButton({ productId }) {
   const dispatch = useDispatch();
   const [isSaving, setIsSaving] = useState(false);
+  const [localSaved, setLocalSaved] = useState(false);
   const { savedProductIds } = useSelector((state) => state.savedProducts);
   
+  // Derive saved status from Redux state
   const isSaved = savedProductIds.includes(parseInt(productId));
   
+  // Update local state when redux state changes
+  useEffect(() => {
+    setLocalSaved(isSaved);
+  }, [isSaved]);
+  
+  // Check initial saved status on mount
   useEffect(() => {
     dispatch(checkIsSaved(productId));
   }, [dispatch, productId]);
@@ -24,10 +32,12 @@ function SaveButton({ productId }) {
   const handleToggleSave = async () => {
     setIsSaving(true);
     try {
-      if (isSaved) {
+      if (localSaved) {
         await dispatch(unsaveProduct(productId)).unwrap();
+        setLocalSaved(false);
       } else {
         await dispatch(saveProduct(productId)).unwrap();
+        setLocalSaved(true);
       }
     } catch (error) {
       console.error('Error toggling save status:', error);
@@ -38,12 +48,18 @@ function SaveButton({ productId }) {
   
   return (
     <button 
-      className={`btn ${isSaved ? 'btn-secondary' : 'btn-primary'} ${isSaving ? 'loading' : ''}`}
+      className={`btn ${localSaved ? 'btn-secondary' : 'btn-primary'} flex justify-center items-center`}
       onClick={handleToggleSave}
       disabled={isSaving}
     >
-      <HeartIcon className={`h-5 w-5 mr-1 ${isSaved ? 'fill-current' : ''}`} />
-      {isSaved ? 'Saved' : 'Save'}
+      {isSaving ? (
+        <span className="loading loading-spinner"></span>
+      ) : (
+        <>
+          <HeartIcon className={`h-5 w-5 mr-1 ${localSaved ? 'fill-current' : ''}`} />
+          <span>{localSaved ? 'Saved' : 'Save'}</span>
+        </>
+      )}
     </button>
   );
 }

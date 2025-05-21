@@ -9,13 +9,14 @@ import {
     deleteProductImage
 } from "../controllers/productController.js";
 import { protectRoute } from "../utils/protectRoute.js";
+import { checkAuth } from "../utils/checkAuth.js";
 import { upload } from "../utils/s3.js";
 
 const router = express.Router();
 
 router.get("/", getProducts);
 router.get("/category/:category", getProductsByCategory);
-router.get("/:id", getProduct);
+router.get("/:id", checkAuth, getProduct);
 
 router.post("/", protectRoute, upload.array('productImages', 5), createProduct);
 router.put("/:id", protectRoute, upload.array('productImages', 5), updateProduct);

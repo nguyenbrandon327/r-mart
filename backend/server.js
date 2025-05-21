@@ -12,6 +12,7 @@ import { aj } from "./lib/arcjet.js";
 import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import savedProductRoutes from "./routes/savedProductRoutes.js";
+import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 
 dotenv.config();
 
@@ -67,6 +68,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/saved-products", savedProductRoutes);
+app.use("/api/recently-seen", recentlySeenRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));
@@ -135,6 +137,23 @@ async function initDB() {
     console.log("Messages table initialized successfully");
   } catch (error) {
     console.log("Error initializing messages table", error);
+  }
+  
+  // Initialize recently seen products
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS recently_seen_products (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, product_id)
+      )
+    `;
+
+    console.log("Recently seen products table initialized successfully");
+  } catch (error) {
+    console.log("Error initializing recently seen products table", error);
   }
 }
 

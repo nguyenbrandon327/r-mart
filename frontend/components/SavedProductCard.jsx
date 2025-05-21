@@ -3,7 +3,7 @@
 import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import { Trash2Icon } from 'lucide-react';
-import { unsaveProduct, fetchSavedProducts } from '../store/slices/savedProductsSlice';
+import { unsaveProduct } from '../store/slices/savedProductsSlice';
 
 const SavedProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -22,8 +22,7 @@ const SavedProductCard = ({ product }) => {
     
     try {
       await dispatch(unsaveProduct(product.id)).unwrap();
-      // Refresh the saved products list
-      dispatch(fetchSavedProducts());
+      // No need to refresh, the state update will handle removing the item
     } catch (error) {
       console.error('Failed to remove saved product:', error);
     }

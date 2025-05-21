@@ -1,5 +1,6 @@
 import { sql } from "../config/db.js";
 import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
+import { recordProductView } from "./recentlySeenController.js";
 
 // CRUD operations
 export const getProducts = async (req, res) => {
@@ -61,6 +62,18 @@ export const getProduct = async (req, res) => {
             LEFT JOIN users u ON p.user_id = u.id
             WHERE p.id=${id}
         `
+        
+        // Only record views for authenticated users
+        // req.user will only exist if the user is logged in via protectRoute middleware
+        console.log("Authentication status:", req.user ? `Authenticated as ${req.user.name} (ID: ${req.user.id})` : "Not authenticated");
+        
+        if (req.user && req.user.id) {
+            console.log(`Recording product view: user=${req.user.id}, product=${id}`);
+            await recordProductView(req.user.id, id);
+        } else {
+            console.log("Skipping product view recording - user not authenticated");
+        }
+        
         res.status(200).json({ success:true, data:product[0] });
     } catch (error) {
         console.log("Error in getProduct", error);

@@ -135,8 +135,11 @@ const savedProductsSlice = createSlice({
       })
       .addCase(saveProduct.fulfilled, (state, action) => {
         state.loading = false;
-        // The backend returns the saved_products entry, not the full product
-        // We'll refetch saved products after saving to get the full data
+        // Add the saved product ID to the savedProductIds array
+        const productId = parseInt(action.payload.product_id);
+        if (!state.savedProductIds.includes(productId)) {
+          state.savedProductIds.push(productId);
+        }
       })
       .addCase(saveProduct.rejected, (state, action) => {
         state.loading = false;

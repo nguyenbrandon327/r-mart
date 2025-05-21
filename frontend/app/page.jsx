@@ -1,21 +1,30 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import { PackageIcon, PlusCircleIcon, RefreshCwIcon, ShoppingBagIcon } from "lucide-react";
+import { PackageIcon, ShoppingBagIcon, HistoryIcon, ChevronsRightIcon, ChevronsLeftIcon, XCircleIcon } from "lucide-react";
 import { fetchProducts, resetForm } from '../store/slices/productSlice';
 import ProductCard from "../components/ProductCard";
 import AddProductModal from "../components/AddProductModal";
+import { fetchRecentlyViewedProducts, clearRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
 
 export default function HomePage() {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.products);
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [activeSlide, setActiveSlide] = useState(1);
+  const { products: recentlyViewedProducts, loading: recentlyViewedLoading } = useSelector((state) => state.recentlyViewed);
+  const carouselRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchRecentlyViewedProducts(10));
+    }
+  }, [dispatch, isAuthenticated]);
 
   const goToSlide = (slideNumber) => {
     const slide = document.getElementById(`slide${slideNumber}`);
@@ -23,6 +32,93 @@ export default function HomePage() {
       slide.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
       setActiveSlide(slideNumber);
     }
+  };
+
+  const scrollLeft = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({
+        left: -300,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({
+        left: 300,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleClearHistory = () => {
+    dispatch(clearRecentlyViewedProducts());
+  };
+
+  const renderRecentlyViewed = () => {
+    if (!isAuthenticated || recentlyViewedProducts.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mb-12">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold flex items-center mb-2">
+              <HistoryIcon className="size-7 mr-2" />
+              Recently Viewed
+            </h2>
+            <p className="text-base-content/70">
+              Products you've recently checked out
+            </p>
+          </div>
+          <button 
+            onClick={handleClearHistory}
+            className="btn btn-sm btn-outline"
+          >
+            <XCircleIcon className="size-4 mr-1" />
+            Clear History
+          </button>
+        </div>
+
+        {recentlyViewedLoading ? (
+          <div className="flex justify-center py-8">
+            <span className="loading loading-spinner loading-md"></span>
+          </div>
+        ) : (
+          <div className="relative group">
+            <button 
+              onClick={scrollLeft} 
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 btn btn-circle btn-sm opacity-80 hover:opacity-100 shadow-md"
+            >
+              <ChevronsLeftIcon className="size-4" />
+            </button>
+            
+            <div 
+              ref={carouselRef} 
+              className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide hover:scrollbar-default"
+            >
+              {recentlyViewedProducts.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="flex-none w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 max-w-[calc(100%/5-1.2rem)]"
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+            
+            <button 
+              onClick={scrollRight} 
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 btn btn-circle btn-sm opacity-80 hover:opacity-100 shadow-md"
+            >
+              <ChevronsRightIcon className="size-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -96,6 +192,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Recently Viewed Products */}
+      {renderRecentlyViewed()}
 
       <div className="flex justify-between items-center mb-8">
         <div>
