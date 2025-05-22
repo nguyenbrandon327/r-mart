@@ -4,7 +4,20 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductsByCategory, resetForm } from '../../../store/slices/productSlice';
 import ProductCard from '../../../components/ProductCard';
-import { TagIcon, PackageIcon, PlusCircleIcon } from 'lucide-react';
+import { 
+  ShirtIcon, 
+  LaptopIcon, 
+  BookTextIcon, 
+  SofaIcon, 
+  CookingPotIcon, 
+  SoupIcon, 
+  CarIcon, 
+  HomeIcon, 
+  BusIcon, 
+  ShapesIcon, 
+  TagIcon, 
+  SearchIcon
+} from 'lucide-react';
 import AddProductModal from "../../../components/AddProductModal";
 
 const categoryLabels = {
@@ -22,6 +35,21 @@ const categoryLabels = {
   'in-searching-for': 'I\'m searching for'
 };
 
+const categoryIcons = {
+  'clothes': ShirtIcon,
+  'tech': LaptopIcon,
+  'textbooks': BookTextIcon,
+  'furniture': SofaIcon,
+  'kitchen': CookingPotIcon,
+  'food': SoupIcon,
+  'vehicles': CarIcon,
+  'housing': HomeIcon,
+  'rides': BusIcon,
+  'merch': ShapesIcon,
+  'other': TagIcon,
+  'in-searching-for': SearchIcon
+};
+
 export default function CategoryPage({ params }) {
   const { category } = params;
   const dispatch = useDispatch();
@@ -33,13 +61,14 @@ export default function CategoryPage({ params }) {
   }, [dispatch, category]);
   
   const categoryLabel = categoryLabels[category] || 'Unknown Category';
+  const CategoryIcon = categoryIcons[category] || TagIcon;
   
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center mb-2">
-            <TagIcon className="size-7 mr-2" />
+            <CategoryIcon className="size-7 mr-2" />
             {categoryLabel}
           </h1>
           <p className="text-base-content/70">
@@ -55,7 +84,7 @@ export default function CategoryPage({ params }) {
       {products.length === 0 && !loading && (
         <div className="flex flex-col justify-center items-center h-80 space-y-4">
           <div className="bg-base-200 rounded-full p-6">
-            <PackageIcon className="size-12" />
+            <CategoryIcon className="size-12" />
           </div>
           <div className="text-center space-y-2">
             <h3 className="text-2xl font-semibold">No products found</h3>

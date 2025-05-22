@@ -10,6 +10,7 @@ import SecondaryNavbar from './SecondaryNavbar';
 export default function NavigationWrapper({ children }) {
   const pathname = usePathname();
   const isAuthPage = pathname?.startsWith('/auth');
+  const isProductDetailPage = pathname?.startsWith('/product/');
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export default function NavigationWrapper({ children }) {
       {!isAuthPage && (
         <>
           <Navbar />
-          <SecondaryNavbar />
+          {!isProductDetailPage && <SecondaryNavbar />}
         </>
       )}
       <main className={isAuthPage ? "" : "container mx-auto px-4 py-6"}>

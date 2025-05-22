@@ -205,10 +205,13 @@ export default function ProductPage({ params }) {
       <AddProductModal isEditing={true} />
 
       <div className="mb-6">
-        <Link href="/" className="btn btn-ghost">
+        <button 
+          onClick={() => router.back()} 
+          className="btn btn-ghost"
+        >
           <ArrowLeftIcon className="size-4 mr-2" />
           Back to Products
-        </Link>
+        </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
