@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { PackageIcon, ShoppingBagIcon, HistoryIcon, ChevronsRightIcon, ChevronsLeftIcon, XCircleIcon } from "lucide-react";
 import { fetchProducts, resetForm } from '../store/slices/productSlice';
 import ProductCard from "../components/ProductCard";
-import AddProductModal from "../components/AddProductModal";
+import AddProductModal from "../components/EditProductModal";
 import { fetchRecentlyViewedProducts, clearRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
 
 export default function HomePage() {

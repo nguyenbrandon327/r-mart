@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { DollarSignIcon, ImageIcon, Package2Icon, PlusCircleIcon, SaveIcon, TagIcon, X } from "lucide-react";
+import { DollarSignIcon, ImageIcon, Package2Icon, SaveIcon, TagIcon, X } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
-import { addProduct, updateProduct, setFormData, resetForm } from '../store/slices/productSlice';
+import { updateProduct, setFormData, resetForm } from '../store/slices/productSlice';
 
-function AddProductModal({ isEditing = false }) {
+function EditProductModal() {
   const dispatch = useDispatch();
   const { formData, loading, currentProduct } = useSelector((state) => state.products);
   
@@ -15,22 +15,27 @@ function AddProductModal({ isEditing = false }) {
   const [draggedImage, setDraggedImage] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Initialize images when editing and currentProduct is available
+  // Initialize images when currentProduct is available
   useEffect(() => {
-    if (isEditing && currentProduct?.images) {
+    if (currentProduct?.images) {
       setAllImages(currentProduct.images.map((url, index) => ({
         id: `existing-${index}-${Date.now()}`,
         type: 'existing',
         data: url
       })));
-    } else if (!isEditing) {
+    } else {
       setAllImages([]);
     }
-  }, [isEditing, currentProduct?.images]);
+  }, [currentProduct?.images]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!currentProduct) {
+      console.error('No current product to update');
+      return;
+    }
     
     // Create a FormData object for submitting files
     const productFormData = new FormData();
@@ -56,24 +61,18 @@ function AddProductModal({ isEditing = false }) {
     });
     
     // Send the ordered existing images
-    if (isEditing) {
-      productFormData.append('existingImages', JSON.stringify(existingImages));
-      // Send position information for new images
-      if (newImagePositions.length > 0) {
-        productFormData.append('newImagePositions', JSON.stringify(newImagePositions));
-      }
+    productFormData.append('existingImages', JSON.stringify(existingImages));
+    // Send position information for new images
+    if (newImagePositions.length > 0) {
+      productFormData.append('newImagePositions', JSON.stringify(newImagePositions));
     }
     
-    if (isEditing && currentProduct) {
-      await dispatch(updateProduct({ id: currentProduct.id, formData: productFormData }));
-    } else {
-      await dispatch(addProduct(productFormData));
-    }
+    await dispatch(updateProduct({ id: currentProduct.id, formData: productFormData }));
     
-    // Reset state
+    // Reset state and close modal
     setAllImages([]);
     dispatch(resetForm());
-    document.getElementById("add_product_modal").close();
+    document.getElementById("edit_product_modal").close();
   };
 
   const handleChange = (e) => {
@@ -134,24 +133,26 @@ function AddProductModal({ isEditing = false }) {
     }
   };
 
+  const handleCloseModal = () => {
+    setAllImages([]);
+    dispatch(resetForm());
+    document.getElementById("edit_product_modal").close();
+  };
+
   return (
-    <dialog id="add_product_modal" className="modal">
+    <dialog id="edit_product_modal" className="modal">
       <div className="modal-box max-w-3xl">
         {/* CLOSE BUTTON */}
         <div>
           <button 
             className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-            onClick={() => {
-              setAllImages([]);
-              dispatch(resetForm());
-              document.getElementById("add_product_modal").close();
-            }}
+            onClick={handleCloseModal}
           >X</button>
         </div>
 
         {/* MODAL HEADER */}
         <h3 className="font-bold text-xl mb-8">
-          {isEditing ? "Edit Product" : "Add New Product"}
+          Edit Product
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
@@ -321,11 +322,7 @@ function AddProductModal({ isEditing = false }) {
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => {
-                  setAllImages([]);
-                  dispatch(resetForm());
-                  document.getElementById("add_product_modal").close();
-                }}
+                onClick={handleCloseModal}
               >
                 Cancel
               </button>
@@ -338,15 +335,10 @@ function AddProductModal({ isEditing = false }) {
             >
               {loading ? (
                 <span className="loading loading-spinner loading-sm" />
-              ) : isEditing ? (
+              ) : (
                 <>
                   <SaveIcon className="size-5 mr-2" />
                   Save Changes
-                </>
-              ) : (
-                <>
-                  <PlusCircleIcon className="size-5 mr-2" />
-                  Add Product
                 </>
               )}
             </button>
@@ -355,11 +347,11 @@ function AddProductModal({ isEditing = false }) {
       </div>
 
       {/* BACKDROP */}
-      <div className="modal-backdrop" onClick={() => document.getElementById("add_product_modal").close()}>
-        <button onClick={() => document.getElementById("add_product_modal").close()}>close</button>
+      <div className="modal-backdrop" onClick={handleCloseModal}>
+        <button onClick={handleCloseModal}>close</button>
       </div>
     </dialog>
   );
 }
 
-export default AddProductModal; 
+export default EditProductModal; 

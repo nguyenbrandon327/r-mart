@@ -6,7 +6,7 @@ import { fetchProduct, deleteProduct, deleteProductImage, resetForm } from "../.
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
-import AddProductModal from "../../../components/AddProductModal";
+import EditProductModal from "../../../components/EditProductModal";
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
 
 // Save button component for product page
@@ -85,7 +85,7 @@ export default function ProductPage({ params }) {
   };
 
   const handleEdit = () => {
-    document.getElementById("add_product_modal").showModal();
+    document.getElementById("edit_product_modal").showModal();
   };
 
   const handleDeleteImage = async (imageUrl) => {
@@ -202,7 +202,7 @@ export default function ProductPage({ params }) {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8" data-theme="light">
-      <AddProductModal isEditing={true} />
+      <EditProductModal />
 
       <div className="mb-6">
         <button 

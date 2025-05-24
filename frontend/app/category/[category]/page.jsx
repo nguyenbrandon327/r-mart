@@ -18,7 +18,7 @@ import {
   TagIcon, 
   SearchIcon
 } from 'lucide-react';
-import AddProductModal from "../../../components/AddProductModal";
+import AddProductModal from "../../../components/EditProductModal";
 
 const categoryLabels = {
   'clothes': 'Clothes',

@@ -57,15 +57,10 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => {
-                      document.getElementById("add_product_modal").showModal();
-                    }}
-                  >
+                  <Link href="/add-listing" className="btn btn-primary btn-sm">
                     <PlusCircleIcon className="size-4 mr-1" />
                     Add Product
-                  </button>
+                  </Link>
                   
                   <Link href="/saved" className="btn btn-ghost btn-sm btn-circle">
                     <HeartIcon className="size-4" />
