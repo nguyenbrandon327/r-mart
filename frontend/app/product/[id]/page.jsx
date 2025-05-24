@@ -221,7 +221,7 @@ export default function ProductPage({ params }) {
             <div className="space-y-4">
               {/* Main image */}
               <div 
-                className="relative rounded-lg overflow-hidden cursor-pointer aspect-square bg-gray-100"
+                className="relative rounded-lg overflow-hidden cursor-zoom-in aspect-square bg-gray-100"
                 onClick={() => openGallery(activeImage)}
               >
                 <img

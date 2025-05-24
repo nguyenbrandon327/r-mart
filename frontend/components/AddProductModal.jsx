@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DollarSignIcon, ImageIcon, Package2Icon, PlusCircleIcon, SaveIcon, TagIcon, X } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { addProduct, updateProduct, setFormData, resetForm } from '../store/slices/productSlice';
@@ -8,10 +8,25 @@ import { addProduct, updateProduct, setFormData, resetForm } from '../store/slic
 function AddProductModal({ isEditing = false }) {
   const dispatch = useDispatch();
   const { formData, loading, currentProduct } = useSelector((state) => state.products);
-  const [uploadedImages, setUploadedImages] = useState([]);
+  
+  // Unified image management - each image has { id, type: 'existing'|'new', data: url|file }
+  const [allImages, setAllImages] = useState([]);
+  
   const [draggedImage, setDraggedImage] = useState(null);
-  const [existingImages, setExistingImages] = useState(isEditing && currentProduct?.images ? [...currentProduct.images] : []);
   const fileInputRef = useRef(null);
+
+  // Initialize images when editing and currentProduct is available
+  useEffect(() => {
+    if (isEditing && currentProduct?.images) {
+      setAllImages(currentProduct.images.map((url, index) => ({
+        id: `existing-${index}-${Date.now()}`,
+        type: 'existing',
+        data: url
+      })));
+    } else if (!isEditing) {
+      setAllImages([]);
+    }
+  }, [isEditing, currentProduct?.images]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -26,16 +41,27 @@ function AddProductModal({ isEditing = false }) {
     productFormData.append('description', formData.description);
     productFormData.append('category', formData.category);
     
-    // Add existing images if editing
-    if (isEditing && existingImages.length > 0) {
-      productFormData.append('existingImages', JSON.stringify(existingImages));
-    }
+    // Separate existing images and new images while maintaining order
+    const existingImages = [];
+    const newImagePositions = [];
     
-    // Add files to form data
-    if (uploadedImages.length > 0) {
-      uploadedImages.forEach(file => {
-        productFormData.append('productImages', file);
-      });
+    allImages.forEach((image, index) => {
+      if (image.type === 'existing') {
+        existingImages.push(image.data);
+      } else {
+        // For new images, we'll append them and track their intended positions
+        newImagePositions.push(index);
+        productFormData.append('productImages', image.data);
+      }
+    });
+    
+    // Send the ordered existing images
+    if (isEditing) {
+      productFormData.append('existingImages', JSON.stringify(existingImages));
+      // Send position information for new images
+      if (newImagePositions.length > 0) {
+        productFormData.append('newImagePositions', JSON.stringify(newImagePositions));
+      }
     }
     
     if (isEditing && currentProduct) {
@@ -45,8 +71,7 @@ function AddProductModal({ isEditing = false }) {
     }
     
     // Reset state
-    setUploadedImages([]);
-    setExistingImages([]);
+    setAllImages([]);
     dispatch(resetForm());
     document.getElementById("add_product_modal").close();
   };
@@ -60,61 +85,53 @@ function AddProductModal({ isEditing = false }) {
   const handleImageSelect = (e) => {
     if (e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files);
-      setUploadedImages(prev => [...prev, ...filesArray]);
+      const newImages = filesArray.map((file, index) => ({
+        id: `new-${Date.now()}-${index}`,
+        type: 'new',
+        data: file
+      }));
+      setAllImages(prev => [...prev, ...newImages]);
     }
   };
 
-  // Remove an uploaded image
-  const removeUploadedImage = (index) => {
-    setUploadedImages(prevImages => prevImages.filter((_, i) => i !== index));
-  };
-
-  // Remove an existing image
-  const removeExistingImage = (index) => {
-    setExistingImages(prevImages => prevImages.filter((_, i) => i !== index));
+  // Remove an image
+  const removeImage = (index) => {
+    setAllImages(prevImages => prevImages.filter((_, i) => i !== index));
   };
 
   // Handle drag start
-  const handleDragStart = (e, index, isExisting) => {
-    setDraggedImage({ index, isExisting });
+  const handleDragStart = (e, index) => {
+    setDraggedImage(index);
   };
 
   // Handle drag over
-  const handleDragOver = (e, index, isExisting) => {
+  const handleDragOver = (e, index) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
   // Handle drop
-  const handleDrop = (e, dropIndex, isExistingTarget) => {
+  const handleDrop = (e, dropIndex) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (draggedImage === null) return;
+    if (draggedImage === null || draggedImage === dropIndex) return;
     
-    const { index: dragIndex, isExisting: isExistingSource } = draggedImage;
-    
-    // If dragging within the same list (both existing or both new)
-    if (isExistingSource === isExistingTarget) {
-      if (isExistingSource) {
-        // Reorder existing images
-        const newOrder = [...existingImages];
-        const [movedItem] = newOrder.splice(dragIndex, 1);
-        newOrder.splice(dropIndex, 0, movedItem);
-        setExistingImages(newOrder);
-      } else {
-        // Reorder new uploaded images
-        const newOrder = [...uploadedImages];
-        const [movedItem] = newOrder.splice(dragIndex, 1);
-        newOrder.splice(dropIndex, 0, movedItem);
-        setUploadedImages(newOrder);
-      }
-    } else {
-      // Cannot move between existing and new images
-      // For simplicity and clarity of the API
-    }
-    
+    // Reorder the unified image array
+    const newOrder = [...allImages];
+    const [movedItem] = newOrder.splice(draggedImage, 1);
+    newOrder.splice(dropIndex, 0, movedItem);
+    setAllImages(newOrder);
     setDraggedImage(null);
+  };
+
+  // Helper function to get image URL for display
+  const getImageUrl = (image) => {
+    if (image.type === 'existing') {
+      return image.data;
+    } else {
+      return URL.createObjectURL(image.data);
+    }
   };
 
   return (
@@ -125,8 +142,7 @@ function AddProductModal({ isEditing = false }) {
           <button 
             className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
             onClick={() => {
-              setUploadedImages([]);
-              setExistingImages([]);
+              setAllImages([]);
               dispatch(resetForm());
               document.getElementById("add_product_modal").close();
             }}
@@ -236,89 +252,47 @@ function AddProductModal({ isEditing = false }) {
                 />
               </div>
 
-              {/* Display selected images with reordering capability */}
+              {/* Display all images in one unified section */}
               <div className="text-sm font-medium mb-2">
                 The first image will be used as the cover image
               </div>
               
-              <div className="mt-2 flex flex-wrap gap-3">
-                {/* Existing images (if editing) */}
-                {existingImages.length > 0 && (
-                  <>
-                    <div className="text-sm text-gray-500 w-full mb-1">Existing Images</div>
-                    <div className="flex flex-wrap gap-3 w-full mb-4">
-                      {existingImages.map((img, index) => (
-                        <div 
-                          key={`existing-${index}`}
-                          className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 ${index === 0 ? 'border-primary' : 'border-gray-200'}`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index, true)}
-                          onDragOver={(e) => handleDragOver(e, index, true)}
-                          onDrop={(e) => handleDrop(e, index, true)}
-                        >
-                          <img 
-                            src={img} 
-                            alt={`Preview ${index}`} 
-                            className="w-full h-full object-cover" 
-                          />
-                          <button 
-                            type="button"
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeExistingImage(index)}
-                          >
-                            <X size={14} />
-                          </button>
-                          {index === 0 && (
-                            <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs text-center py-0.5">
-                              Cover
-                            </div>
-                          )}
+              {allImages.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-3">
+                  {allImages.map((image, index) => (
+                    <div 
+                      key={image.id}
+                      className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 ${index === 0 ? 'border-primary' : 'border-gray-200'} cursor-move`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                    >
+                      <img 
+                        src={getImageUrl(image)} 
+                        alt={`Preview ${index}`} 
+                        className="w-full h-full object-cover" 
+                      />
+                      <button 
+                        type="button"
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X size={14} />
+                      </button>
+                      {/* Cover badge */}
+                      {index === 0 && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs text-center py-0.5">
+                          Cover
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </>
-                )}
-
-                {/* New uploaded images */}
-                {uploadedImages.length > 0 && (
-                  <>
-                    <div className="text-sm text-gray-500 w-full mb-1">New Images</div>
-                    <div className="flex flex-wrap gap-3 w-full">
-                      {uploadedImages.map((file, index) => (
-                        <div 
-                          key={`new-${index}`}
-                          className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 ${existingImages.length === 0 && index === 0 ? 'border-primary' : 'border-gray-200'}`}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index, false)}
-                          onDragOver={(e) => handleDragOver(e, index, false)}
-                          onDrop={(e) => handleDrop(e, index, false)}
-                        >
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            alt={`Preview ${index}`} 
-                            className="w-full h-full object-cover" 
-                          />
-                          <button 
-                            type="button"
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeUploadedImage(index)}
-                          >
-                            <X size={14} />
-                          </button>
-                          {existingImages.length === 0 && index === 0 && (
-                            <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs text-center py-0.5">
-                              Cover
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
               
               <div className="text-xs text-gray-500 mt-2">
-                <p>• Drag and drop to reorder images</p>
+                <p>• Drag and drop to reorder images freely</p>
                 <p>• Up to 5 images can be uploaded</p>
                 <p>• Supported formats: JPG, PNG, WEBP</p>
                 <p>• Maximum size: 5MB per image</p>
@@ -348,8 +322,7 @@ function AddProductModal({ isEditing = false }) {
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => {
-                  setUploadedImages([]);
-                  setExistingImages([]);
+                  setAllImages([]);
                   dispatch(resetForm());
                   document.getElementById("add_product_modal").close();
                 }}
@@ -361,7 +334,7 @@ function AddProductModal({ isEditing = false }) {
               type="submit"
               className="btn btn-primary min-w-[120px]"
               disabled={!formData.name || !formData.price || !formData.category || loading || 
-                        (uploadedImages.length === 0 && existingImages.length === 0)}
+                        allImages.length === 0}
             >
               {loading ? (
                 <span className="loading loading-spinner loading-sm" />

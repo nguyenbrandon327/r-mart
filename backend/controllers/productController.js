@@ -83,9 +83,8 @@ export const getProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { name, price, description, category, existingImages } = req.body;
-    let images = existingImages ? JSON.parse(existingImages) : [];
-  
+    const { name, price, description, category, existingImages, newImagePositions } = req.body;
+    
     try {
       // First verify the product exists and get its current data
       const existingProduct = await sql`
@@ -107,16 +106,47 @@ export const updateProduct = async (req, res) => {
         });
       }
 
-      // Add new uploaded images to the existing images array
-      if (req.files && req.files.length > 0) {
-        // Generate the URL manually from the S3 bucket and object key
+      // Start with existing images in their new order
+      let finalImages = existingImages ? JSON.parse(existingImages) : [];
+      
+      // If we have new images to insert
+      if (req.files && req.files.length > 0 && newImagePositions) {
+        const bucketUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`;
+        const newImageUrls = req.files.map(file => `${bucketUrl}/${file.key}`);
+        const positions = JSON.parse(newImagePositions);
+        
+        // Create a final ordered array by inserting new images at their specified positions
+        const totalImages = finalImages.length + newImageUrls.length;
+        const orderedImages = new Array(totalImages);
+        
+        // First, place existing images in positions not occupied by new images
+        let existingIndex = 0;
+        let newImageIndex = 0;
+        
+        for (let i = 0; i < totalImages; i++) {
+          if (positions.includes(i)) {
+            // This position should have a new image
+            orderedImages[i] = newImageUrls[newImageIndex];
+            newImageIndex++;
+          } else {
+            // This position should have an existing image
+            if (existingIndex < finalImages.length) {
+              orderedImages[i] = finalImages[existingIndex];
+              existingIndex++;
+            }
+          }
+        }
+        
+        finalImages = orderedImages.filter(img => img !== undefined);
+      } else if (req.files && req.files.length > 0) {
+        // If no position information, append new images to the end (legacy behavior)
         const bucketUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`;
         const newImages = req.files.map(file => `${bucketUrl}/${file.key}`);
-        images = [...images, ...newImages];
+        finalImages = [...finalImages, ...newImages];
       }
 
       // Ensure we have at least one image
-      if (images.length === 0) {
+      if (finalImages.length === 0) {
         return res.status(400).json({
           success: false,
           message: "At least one product image is required",
@@ -125,7 +155,7 @@ export const updateProduct = async (req, res) => {
 
       const updateProduct = await sql`
         UPDATE products
-        SET name=${name}, price=${price}, description=${description}, images=${images}, category=${category}
+        SET name=${name}, price=${price}, description=${description}, images=${finalImages}, category=${category}
         WHERE id=${id}
         RETURNING *
       `;

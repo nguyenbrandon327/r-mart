@@ -7,7 +7,7 @@ import ProductCard from '../../../components/ProductCard';
 import { 
   ShirtIcon, 
   LaptopIcon, 
-  BookTextIcon, 
+  NotebookIcon,
   SofaIcon, 
   CookingPotIcon, 
   SoupIcon, 
@@ -38,7 +38,7 @@ const categoryLabels = {
 const categoryIcons = {
   'clothes': ShirtIcon,
   'tech': LaptopIcon,
-  'textbooks': BookTextIcon,
+  'textbooks': NotebookIcon,
   'furniture': SofaIcon,
   'kitchen': CookingPotIcon,
   'food': SoupIcon,
