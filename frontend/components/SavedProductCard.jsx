@@ -6,7 +6,7 @@ import { Trash2Icon } from 'lucide-react';
 import { unsaveProduct } from '../store/slices/savedProductsSlice';
 import UserLink from "./UserLink";
 
-const SavedProductCard = ({ product }) => {
+const SavedProductCard = ({ product, hideUserInfo = false }) => {
   const dispatch = useDispatch();
   
   // Get cover image (first image in array or use fallback)
@@ -30,26 +30,26 @@ const SavedProductCard = ({ product }) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
-      {/* User info at the top */}
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
-            {product.user_name ? product.user_name.charAt(0).toUpperCase() : 'U'}
-          </div>
-          <div>
+    <div className={`bg-white shadow-md rounded-lg overflow-hidden ${hideUserInfo ? '' : 'mb-6'} border border-gray-200 hover:shadow-lg transition-shadow duration-300`}>
+      {/* User info at the top - only show if not hidden */}
+      {!hideUserInfo && (
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center">
             <UserLink 
               user={{ 
                 id: product.user_id, 
                 name: product.user_name,
                 user_name: product.user_name,
-                user_email: product.user_email
+                user_email: product.user_email,
+                user_profile_pic: product.user_profile_pic
               }}
+              showProfilePic={true}
+              profilePicSize="w-8 h-8"
               className="font-medium"
             />
           </div>
         </div>
-      </div>
+      )}
       
       {/* Main content area with image and product details */}
       <Link href={`/product/${product.id}`}>

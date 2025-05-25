@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-export default function UserLink({ user, children, className = "", showProfilePic = false, profilePicSize = "w-8 h-8" }) {
+export default function UserLink({ user, children, className = "", showProfilePic = false, profilePicSize = "w-10 h-10" }) {
   // Extract username from email
   const getUsername = (email) => {
     return email ? email.split('@')[0] : '';
@@ -44,11 +44,11 @@ export default function UserLink({ user, children, className = "", showProfilePi
 
   // Content to display
   const content = (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-3 ${className}`}>
       {showProfilePic && (
         <ProfilePicture user={user} size={profilePicSize} />
       )}
-      <span>{children || getUserName(user)}</span>
+      <span className="text-base font-medium">{children || getUserName(user)}</span>
     </div>
   );
 

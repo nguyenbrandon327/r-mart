@@ -337,7 +337,7 @@ export default function ProductPage({ params }) {
                     user_profile_pic: currentProduct.user_profile_pic
                   }}
                   showProfilePic={true}
-                  profilePicSize="w-6 h-6"
+                  profilePicSize="w-8 h-8"
                   className="font-medium"
                 />
               </div>

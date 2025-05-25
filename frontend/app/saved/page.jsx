@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { BookmarkIcon } from 'lucide-react';
 import { fetchSavedProducts } from '../../store/slices/savedProductsSlice';
 import SavedProductCard from '../../components/SavedProductCard';
+import SavedProductGroup from '../../components/SavedProductGroup';
 
 export default function SavedPage() {
   const dispatch = useDispatch();
@@ -13,6 +14,27 @@ export default function SavedPage() {
   
   const { items: savedProducts, loading, error } = useSelector((state) => state.savedProducts);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  // Group products by user
+  const groupedProducts = savedProducts.reduce((groups, product) => {
+    const userId = product.user_id;
+    if (!groups[userId]) {
+      groups[userId] = {
+        user: {
+          id: product.user_id,
+          name: product.user_name,
+          user_name: product.user_name,
+          user_email: product.user_email,
+          user_profile_pic: product.user_profile_pic
+        },
+        products: []
+      };
+    }
+    groups[userId].products.push(product);
+    return groups;
+  }, {});
+
+  const groupedProductsArray = Object.values(groupedProducts);
 
   useEffect(() => {
     // Redirect if not authenticated
@@ -67,8 +89,12 @@ export default function SavedPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {savedProducts.map((product) => (
-            <SavedProductCard key={product.id} product={product} />
+          {groupedProductsArray.map((group) => (
+            <SavedProductGroup 
+              key={group.user.id} 
+              user={group.user} 
+              products={group.products} 
+            />
           ))}
         </div>
       )}
