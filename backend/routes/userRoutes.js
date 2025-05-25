@@ -6,7 +6,6 @@ import {
   updateUserProfile,
   uploadProfilePic,
   deleteProfilePic,
-  getUserById,
   getUserByUsername
 } from "../controllers/userController.js";
 
@@ -17,9 +16,6 @@ router.get("/profile", protectRoute, getUserProfile);
 
 // Get user by username (public but requires auth)
 router.get("/by-username/:username", protectRoute, getUserByUsername);
-
-// Get user by ID (public but requires auth)
-router.get("/:id", protectRoute, getUserById);
 
 // Update user profile (name, description)
 router.put("/profile", protectRoute, updateUserProfile);

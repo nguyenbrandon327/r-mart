@@ -3,16 +3,24 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { getUserByUsername, clearViewedUserProfile } from '../../../store/slices/userSlice';
+import { getUserByUsername, clearViewedUserProfile, getCurrentUserProfile } from '../../../store/slices/userSlice';
 import ProductCard from '../../../components/ProductCard';
+import EditProfileModal from '../../../components/EditProfileModal';
+import { EditIcon } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 
 export default function ProfilePage() {
   const { username } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
   
-  const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
-  const { viewedUserProfile, userProducts, isLoading, error } = useSelector((state) => state.user);
+  const { isAuthenticated, isCheckingAuth, user } = useSelector((state) => state.auth);
+  const { viewedUserProfile, userProducts, isLoading, error, currentUserProfile } = useSelector((state) => state.user);
+
+  // Helper function to extract username from email
+  const getUsername = (email) => {
+    return email ? email.split('@')[0] : '';
+  };
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -31,6 +39,20 @@ export default function ProfilePage() {
       dispatch(clearViewedUserProfile());
     };
   }, [username, isAuthenticated, isCheckingAuth, dispatch, router]);
+
+  // Check if the current user is viewing their own profile
+  const isOwnProfile = user && viewedUserProfile && getUsername(user.email) === username;
+
+  // Fetch current user profile if viewing own profile and not already loaded
+  useEffect(() => {
+    if (isOwnProfile && !currentUserProfile) {
+      dispatch(getCurrentUserProfile());
+    }
+  }, [isOwnProfile, currentUserProfile, dispatch]);
+
+  const handleEditProfile = () => {
+    document.getElementById("edit_profile_modal").showModal();
+  };
 
   // Show loading while checking auth
   if (isCheckingAuth) {
@@ -77,10 +99,6 @@ export default function ProfilePage() {
     );
   }
 
-  const getUsername = (email) => {
-    return email ? email.split('@')[0] : '';
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -90,11 +108,22 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen py-8">
+      <EditProfileModal />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative">
+            {/* Edit button for own profile */}
+            {isOwnProfile && (
+              <button
+                onClick={handleEditProfile}
+                className="absolute top-0 right-0 btn btn-circle btn-outline btn-sm"
+                title="Edit Profile"
+              >
+                <EditIcon className="size-4" />
+              </button>
+            )}
             {/* Profile Picture */}
             <div className="flex-shrink-0">
               {viewedUserProfile.profile_pic ? (
@@ -119,11 +148,15 @@ export default function ProfilePage() {
                 @{getUsername(viewedUserProfile.email)}
               </p>
               
-              {viewedUserProfile.description && (
+              {viewedUserProfile.description ? (
                 <p className="text-gray-700 mb-4 max-w-2xl">
                   {viewedUserProfile.description}
                 </p>
-              )}
+              ) : isOwnProfile ? (
+                <p className="text-gray-500 italic mb-4 max-w-2xl">
+                  No bio yet. Click the edit button to add one!
+                </p>
+              ) : null}
               
               <div className="flex items-center gap-6 text-sm text-gray-500">
                 <div className="flex items-center gap-1">
@@ -162,6 +195,7 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+      <Toaster />
     </div>
   );
 } 

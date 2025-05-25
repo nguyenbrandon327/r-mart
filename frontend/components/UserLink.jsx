@@ -21,14 +21,15 @@ export default function UserLink({ user, children, className = "" }) {
     );
   }
 
-  // If we only have a user ID, create a profile link using ID
-  if (user && user.id) {
+  // If we have user_email (from product queries), create a profile link
+  if (user && user.user_email) {
+    const username = getUsername(user.user_email);
     return (
       <Link 
-        href={`/profile/user/${user.id}`}
+        href={`/profile/${username}`}
         className={`hover:text-blue-600 hover:underline transition-colors ${className}`}
       >
-        {children || user.name || 'Unknown User'}
+        {children || user.user_name || user.name}
       </Link>
     );
   }
@@ -48,7 +49,7 @@ export default function UserLink({ user, children, className = "" }) {
   // Fallback: just render the children or user name without link
   return (
     <span className={className}>
-      {children || (user && user.name) || 'Unknown User'}
+      {children || (user && (user.name || user.user_name)) || 'Unknown User'}
     </span>
   );
 } 

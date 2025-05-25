@@ -78,47 +78,6 @@ export const getUserByUsername = async (req, res) => {
   }
 };
 
-// Get user by ID (public endpoint)
-export const getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const [user] = await sql`
-      SELECT id, name, profile_pic, description, created_at
-      FROM users 
-      WHERE id = ${id}
-    `;
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-    
-    // Get user's products
-    const products = await sql`
-      SELECT id, name, images, price, category, description, created_at
-      FROM products 
-      WHERE user_id = ${id}
-      ORDER BY created_at DESC
-    `;
-    
-    res.status(200).json({
-      success: true,
-      user,
-      products
-    });
-  } catch (error) {
-    console.error("Error getting user by ID:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error getting user",
-      error: error.message
-    });
-  }
-};
-
 // Update user profile (name and description)
 export const updateUserProfile = async (req, res) => {
   try {

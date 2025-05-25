@@ -5,7 +5,12 @@ module.exports = {
     "./components/**/*.{js,jsx}"
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'gt-america': ['Inter', 'system-ui', 'sans-serif'],
+        'gt-america-expanded': ['GT-America-Expanded', 'Inter', 'system-ui', 'sans-serif'],
+      },
+    },
   },
   plugins: [require("daisyui")],
   daisyui: {

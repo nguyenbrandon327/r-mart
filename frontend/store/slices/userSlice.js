@@ -43,19 +43,6 @@ export const getUserByUsername = createAsyncThunk(
   }
 );
 
-// Get user by ID
-export const getUserById = createAsyncThunk(
-  'user/getUserById',
-  async (userId, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(`${API_URL}/${userId}`);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "User not found");
-    }
-  }
-);
-
 // Update user profile
 export const updateUserProfile = createAsyncThunk(
   'user/updateUserProfile',
@@ -145,21 +132,6 @@ const userSlice = createSlice({
         state.error = action.payload;
       })
       
-      // Get user by ID
-      .addCase(getUserById.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(getUserById.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.viewedUserProfile = action.payload.user;
-        state.userProducts = action.payload.products || [];
-      })
-      .addCase(getUserById.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      
       // Update user profile
       .addCase(updateUserProfile.pending, (state) => {
         state.isLoading = true;
@@ -168,6 +140,10 @@ const userSlice = createSlice({
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentUserProfile = action.payload.user;
+        // Also update viewedUserProfile if it's the same user
+        if (state.viewedUserProfile && state.viewedUserProfile.id === action.payload.user.id) {
+          state.viewedUserProfile = action.payload.user;
+        }
         state.message = action.payload.message;
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
@@ -183,6 +159,10 @@ const userSlice = createSlice({
       .addCase(uploadProfilePic.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentUserProfile = action.payload.user;
+        // Also update viewedUserProfile if it's the same user
+        if (state.viewedUserProfile && state.viewedUserProfile.id === action.payload.user.id) {
+          state.viewedUserProfile = action.payload.user;
+        }
         state.message = action.payload.message;
       })
       .addCase(uploadProfilePic.rejected, (state, action) => {
@@ -198,6 +178,10 @@ const userSlice = createSlice({
       .addCase(deleteProfilePic.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentUserProfile = action.payload.user;
+        // Also update viewedUserProfile if it's the same user
+        if (state.viewedUserProfile && state.viewedUserProfile.id === action.payload.user.id) {
+          state.viewedUserProfile = action.payload.user;
+        }
         state.message = action.payload.message;
       })
       .addCase(deleteProfilePic.rejected, (state, action) => {

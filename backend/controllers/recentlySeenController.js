@@ -46,7 +46,7 @@ export const getRecentlyViewedProducts = async (req, res) => {
 
   try {
     const recentlyViewedProducts = await sql`
-      SELECT p.*, r.viewed_at
+      SELECT p.*, r.viewed_at, u.name as user_name, u.email as user_email
       FROM recently_seen_products r
       JOIN products p ON r.product_id = p.id
       LEFT JOIN users u ON p.user_id = u.id

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon, ShoppingCartIcon } from "lucide-react";
+import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 
@@ -30,9 +30,13 @@ function Navbar() {
           <div className="flex-1 lg:flex-none">
             <Link href="/" className="hover:opacity-80 transition-opacity">
               <div className="flex items-center gap-2">
-                <ShoppingCartIcon className="size-9 text-primary" />
+                <img 
+                  src="/logo-pic.png" 
+                  alt="R'mart Logo" 
+                  className="size-12 object-contain"
+                />
                 <span
-                  className="font-semibold font-mono tracking-widest text-2xl 
+                  className="font-black font-gt-america-expanded tracking-widest text-2xl 
                     bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
                 >
                   r'mart
@@ -71,9 +75,12 @@ function Navbar() {
                   </Link>
                   
                   {user && (
-                    <span className="text-sm font-medium">
+                    <Link 
+                      href={`/profile/${user.email.split('@')[0]}`}
+                      className="text-sm font-medium hover:text-primary transition-colors"
+                    >
                       Hello, {user.name}
-                    </span>
+                    </Link>
                   )}
                   
                   <button onClick={handleLogout} className="btn btn-ghost btn-sm">

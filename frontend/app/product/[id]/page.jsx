@@ -322,7 +322,12 @@ export default function ProductPage({ params }) {
             <div className="mt-4">
               <p className="text-sm text-gray-500">
                 Posted by: <UserLink 
-                  user={{ id: currentProduct.user_id, name: currentProduct.user_name }}
+                  user={{ 
+                    id: currentProduct.user_id, 
+                    name: currentProduct.user_name,
+                    user_name: currentProduct.user_name,
+                    user_email: currentProduct.user_email
+                  }}
                   className="font-medium"
                 />
               </p>

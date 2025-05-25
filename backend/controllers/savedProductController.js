@@ -103,9 +103,10 @@ export const getSavedProducts = async (req, res) => {
 
   try {
     const savedProducts = await sql`
-      SELECT p.*, sp.created_at as saved_at
+      SELECT p.*, sp.created_at as saved_at, u.name as user_name, u.email as user_email
       FROM saved_products sp
       JOIN products p ON sp.product_id = p.id
+      LEFT JOIN users u ON p.user_id = u.id
       WHERE sp.user_id = ${userId}
       ORDER BY sp.created_at DESC
     `;

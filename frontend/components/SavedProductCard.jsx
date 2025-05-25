@@ -39,7 +39,12 @@ const SavedProductCard = ({ product }) => {
           </div>
           <div>
             <UserLink 
-              user={{ id: product.user_id, name: product.user_name }}
+              user={{ 
+                id: product.user_id, 
+                name: product.user_name,
+                user_name: product.user_name,
+                user_email: product.user_email
+              }}
               className="font-medium"
             />
           </div>

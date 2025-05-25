@@ -6,7 +6,7 @@ import { recordProductView } from "./recentlySeenController.js";
 export const getProducts = async (req, res) => {
     try {
         const products = await sql`
-            SELECT p.*, u.name as user_name 
+            SELECT p.*, u.name as user_name, u.email as user_email 
             FROM products p
             LEFT JOIN users u ON p.user_id = u.id
             ORDER BY p.created_at DESC
@@ -57,7 +57,7 @@ export const getProduct = async (req, res) => {
 
     try {
         const product = await sql `
-            SELECT p.*, u.name as user_name 
+            SELECT p.*, u.name as user_name, u.email as user_email 
             FROM products p
             LEFT JOIN users u ON p.user_id = u.id
             WHERE p.id=${id}
@@ -222,7 +222,7 @@ export const getProductsByCategory = async (req, res) => {
     
     try {
         const products = await sql`
-            SELECT p.*, u.name as user_name 
+            SELECT p.*, u.name as user_name, u.email as user_email 
             FROM products p
             LEFT JOIN users u ON p.user_id = u.id
             WHERE p.category=${category}
