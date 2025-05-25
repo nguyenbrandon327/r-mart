@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProduct, deleteProduct, deleteProductImage, resetForm } from "../../../store/slices/productSlice";
+import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData } from "../../../store/slices/productSlice";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
+import UserLink from "../../../components/UserLink";
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
 
 // Save button component for product page
@@ -85,6 +86,7 @@ export default function ProductPage({ params }) {
   };
 
   const handleEdit = () => {
+    dispatch(populateFormData());
     document.getElementById("edit_product_modal").showModal();
   };
 
@@ -229,6 +231,30 @@ export default function ProductPage({ params }) {
                   alt={currentProduct.name}
                   className="w-full h-full object-contain"
                 />
+                
+                {/* Navigation arrows - only show if there are multiple images */}
+                {images.length > 1 && (
+                  <>
+                    <button 
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent opening gallery
+                        prevImage();
+                      }}
+                    >
+                      <ChevronLeftIcon size={20} />
+                    </button>
+                    <button 
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent opening gallery
+                        nextImage();
+                      }}
+                    >
+                      <ChevronRightIcon size={20} />
+                    </button>
+                  </>
+                )}
               </div>
               
               {/* Thumbnail gallery */}
@@ -295,7 +321,10 @@ export default function ProductPage({ params }) {
           {currentProduct.user_name && (
             <div className="mt-4">
               <p className="text-sm text-gray-500">
-                Posted by: <span className="font-medium">{currentProduct.user_name}</span>
+                Posted by: <UserLink 
+                  user={{ id: currentProduct.user_id, name: currentProduct.user_name }}
+                  className="font-medium"
+                />
               </p>
             </div>
           )}

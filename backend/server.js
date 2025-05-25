@@ -13,6 +13,7 @@ import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/saved-products", savedProductRoutes);
 app.use("/api/recently-seen", recentlySeenRoutes);
+app.use("/api/users", userRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));
@@ -105,6 +107,8 @@ async function initDB() {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         password VARCHAR(255) NOT NULL,
+        profile_pic TEXT,
+        description TEXT,
         lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         isVerified BOOLEAN DEFAULT FALSE,
         resetPasswordToken VARCHAR(255),

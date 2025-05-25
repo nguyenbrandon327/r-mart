@@ -165,8 +165,14 @@ export const login = async (req, res) => {
             success: true,
             message: "Logged in successfully",
             user: {
-                ...user[0],
-                password: undefined
+                id: user[0].id,
+                name: user[0].name,
+                email: user[0].email,
+                profile_pic: user[0].profile_pic,
+                description: user[0].description,
+                isVerified: user[0].isverified,
+                lastLogin: user[0].lastlogin,
+                created_at: user[0].created_at
             }
         });
     } catch (error) {

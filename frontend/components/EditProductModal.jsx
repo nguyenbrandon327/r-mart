@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DollarSignIcon, ImageIcon, Package2Icon, SaveIcon, TagIcon, X } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
-import { updateProduct, setFormData, resetForm } from '../store/slices/productSlice';
+import { updateProduct, setFormData, resetForm, populateFormData } from '../store/slices/productSlice';
 
 function EditProductModal() {
   const dispatch = useDispatch();
@@ -27,6 +27,13 @@ function EditProductModal() {
       setAllImages([]);
     }
   }, [currentProduct?.images]);
+
+  // Populate form data when currentProduct changes
+  useEffect(() => {
+    if (currentProduct) {
+      dispatch(populateFormData());
+    }
+  }, [currentProduct, dispatch]);
 
   // Handle form submission
   const handleSubmit = async (e) => {

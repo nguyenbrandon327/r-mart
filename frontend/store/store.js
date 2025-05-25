@@ -4,6 +4,7 @@ import productReducer from './slices/productSlice';
 import authReducer from './slices/authSlice';
 import savedProductsReducer from './slices/savedProductsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
+import userReducer from './slices/userSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     auth: authReducer,
     savedProducts: savedProductsReducer,
     recentlyViewed: recentlyViewedReducer,
+    user: userReducer,
   },
 }); 

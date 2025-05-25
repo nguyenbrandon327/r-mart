@@ -31,7 +31,12 @@ export const upload = multer({
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname);
       // Determine folder based on route or other context
-      const folder = req.originalUrl.includes('/message') ? 'messages' : 'products';
+      let folder = 'products';
+      if (req.originalUrl.includes('/message')) {
+        folder = 'messages';
+      } else if (req.originalUrl.includes('/profile-pic')) {
+        folder = 'profile-pics';
+      }
       cb(null, `${folder}/${uniqueSuffix}${ext}`);
     }
   }),

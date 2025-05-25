@@ -132,6 +132,16 @@ const productSlice = createSlice({
     resetForm: (state) => {
       state.formData = { name: "", price: "", description: "", category: "" };
     },
+    populateFormData: (state) => {
+      if (state.currentProduct) {
+        state.formData = {
+          name: state.currentProduct.name,
+          price: state.currentProduct.price,
+          description: state.currentProduct.description,
+          category: state.currentProduct.category,
+        };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -213,6 +223,13 @@ const productSlice = createSlice({
       .addCase(updateProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.currentProduct = action.payload;
+        // Update formData with the updated product information
+        state.formData = {
+          name: action.payload.name,
+          price: action.payload.price,
+          description: action.payload.description,
+          category: action.payload.category,
+        };
       })
       .addCase(updateProduct.rejected, (state) => {
         state.loading = false;
@@ -246,5 +263,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { setFormData, resetForm } = productSlice.actions;
+export const { setFormData, resetForm, populateFormData } = productSlice.actions;
 export default productSlice.reducer; 

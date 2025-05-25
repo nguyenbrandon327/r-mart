@@ -11,20 +11,25 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/saved/page": [
+    "/profile/[username]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/saved/page.js"
+      "static/chunks/app/profile/[username]/page.js"
     ],
     "/product/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/product/[id]/page.js"
     ],
-    "/add-listing/page": [
+    "/auth/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/add-listing/page.js"
+      "static/chunks/app/auth/login/page.js"
+    ],
+    "/auth/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auth/layout.js"
     ]
   }
 }

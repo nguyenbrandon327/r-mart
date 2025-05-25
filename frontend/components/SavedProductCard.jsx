@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import { Trash2Icon } from 'lucide-react';
 import { unsaveProduct } from '../store/slices/savedProductsSlice';
+import UserLink from "./UserLink";
 
 const SavedProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -37,7 +38,10 @@ const SavedProductCard = ({ product }) => {
             {product.user_name ? product.user_name.charAt(0).toUpperCase() : 'U'}
           </div>
           <div>
-            <span className="font-medium">{product.user_name || 'Unknown User'}</span>
+            <UserLink 
+              user={{ id: product.user_id, name: product.user_name }}
+              className="font-medium"
+            />
           </div>
         </div>
       </div>
