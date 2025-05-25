@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon } from "lucide-react";
+import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 
@@ -20,6 +20,19 @@ function Navbar() {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const closeDropdown = () => {
+    // Close dropdown by removing focus from the trigger
+    const dropdown = document.activeElement;
+    if (dropdown) {
+      dropdown.blur();
+    }
+  };
+
+  // Helper function to get username from email
+  const getUsername = (email) => {
+    return email ? email.split('@')[0] : '';
   };
 
   return (
@@ -61,9 +74,9 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/add-listing" className="btn btn-primary btn-sm">
+                  <Link href="/add-listing" className="btn btn-primary btn-sm rounded-none">
                     <PlusCircleIcon className="size-4 mr-1" />
-                    Add Product
+                    Add a Listing
                   </Link>
                   
                   <Link href="/saved" className="btn btn-ghost btn-sm btn-circle">
@@ -74,19 +87,46 @@ function Navbar() {
                     <MessageSquareTextIcon className="size-4" />
                   </Link>
                   
+                  {/* Profile Picture Dropdown */}
                   {user && (
-                    <Link 
-                      href={`/profile/${user.email.split('@')[0]}`}
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      Hello, {user.name}
-                    </Link>
+                    <div className="dropdown dropdown-end">
+                      <div tabIndex={0} role="button" className="btn btn-ghost btn-sm px-2 gap-1 flex items-center">
+                        <div className="avatar">
+                          <div className="w-8 rounded-full">
+                            {user.profile_pic ? (
+                              <img
+                                src={user.profile_pic}
+                                alt={`${user.name}'s profile`}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                                <UserCircleIcon className="size-6 text-base-content/70" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronDownIcon className="size-3" />
+                      </div>
+                      <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-0 w-52 p-2 shadow">
+                        <li className="menu-title">
+                          <span>Hello, {user.name}</span>
+                        </li>
+                        <li>
+                          <Link href={`/profile/${getUsername(user.email)}`} className="justify-between" onClick={closeDropdown}>
+                            <span>Profile</span>
+                            <UserIcon className="size-4" />
+                          </Link>
+                        </li>
+                        <li>
+                          <button onClick={handleLogout} className="justify-between">
+                            <span>Logout</span>
+                            <LogOutIcon className="size-4" />
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
                   )}
-                  
-                  <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-                    <LogOutIcon className="size-4 mr-1" />
-                    Logout
-                  </button>
                 </>
               )}
           </div>

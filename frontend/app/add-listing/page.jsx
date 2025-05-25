@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DollarSignIcon, ImageIcon, Package2Icon, PlusCircleIcon, TagIcon, X, ArrowLeftIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { addProduct, setFormData, resetForm } from '../../store/slices/productSlice';
@@ -11,6 +11,11 @@ export default function AddListingPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { formData, loading } = useSelector((state) => state.products);
+  
+  // Reset form data when component mounts to ensure clean slate for new product
+  useEffect(() => {
+    dispatch(resetForm());
+  }, [dispatch]);
   
   // Image management for new products only
   const [images, setImages] = useState([]);

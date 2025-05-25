@@ -13,6 +13,7 @@ export default function NavigationWrapper({ children }) {
   const isProductDetailPage = pathname?.startsWith('/product/');
   const isSavedPage = pathname?.startsWith('/saved');
   const isProfilePage = pathname?.startsWith('/profile');
+  const isAddListingPage = pathname?.startsWith('/add-listing');
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export default function NavigationWrapper({ children }) {
       {!isAuthPage && (
         <>
           <Navbar />
-          {!isProductDetailPage && !isSavedPage && !isProfilePage && <SecondaryNavbar />}
+          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isAddListingPage && <SecondaryNavbar />}
         </>
       )}
       <main className={isAuthPage ? "" : "container mx-auto px-4 py-6"}>

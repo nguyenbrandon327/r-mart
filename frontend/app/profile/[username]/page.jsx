@@ -112,7 +112,7 @@ export default function ProfilePage() {
       <EditProfileModal />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+        <div className="bg-white rounded-lg p-8 mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative">
             {/* Edit button for own profile */}
             {isOwnProfile && (
@@ -173,7 +173,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Products Section */}
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-white rounded-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Listings by {viewedUserProfile.name}
           </h2>

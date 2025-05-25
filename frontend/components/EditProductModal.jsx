@@ -28,6 +28,17 @@ function EditProductModal() {
     }
   }, [currentProduct?.images]);
 
+  // Reinitialize images when modal is reopened (currentProduct exists but allImages is empty)
+  useEffect(() => {
+    if (currentProduct?.images && allImages.length === 0) {
+      setAllImages(currentProduct.images.map((url, index) => ({
+        id: `existing-${index}-${Date.now()}`,
+        type: 'existing',
+        data: url
+      })));
+    }
+  }, [currentProduct, allImages.length]);
+
   // Populate form data when currentProduct changes
   useEffect(() => {
     if (currentProduct) {
