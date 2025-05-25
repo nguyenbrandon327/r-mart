@@ -208,11 +208,17 @@ export default function ProductPage({ params }) {
 
       <div className="mb-6">
         <button 
-          onClick={() => router.back()} 
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push('/');
+            }
+          }} 
           className="btn btn-ghost"
         >
           <ArrowLeftIcon className="size-4 mr-2" />
-          Back to Products
+          Go Back
         </button>
       </div>
 
