@@ -325,18 +325,31 @@ export default function ProductPage({ params }) {
           </div>
 
           {currentProduct.user_name && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">
-                Posted by: <UserLink 
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center text-sm text-gray-700">
+                <span className="text-gray-500 mr-2">Posted by:</span>
+                <UserLink 
                   user={{ 
                     id: currentProduct.user_id, 
                     name: currentProduct.user_name,
                     user_name: currentProduct.user_name,
-                    user_email: currentProduct.user_email
+                    user_email: currentProduct.user_email,
+                    user_profile_pic: currentProduct.user_profile_pic
                   }}
+                  showProfilePic={true}
+                  profilePicSize="w-6 h-6"
                   className="font-medium"
                 />
-              </p>
+              </div>
+              {currentProduct.created_at && (
+                <p className="text-xs text-gray-500">
+                  Listed on {new Date(currentProduct.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              )}
             </div>
           )}
 

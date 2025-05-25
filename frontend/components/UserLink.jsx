@@ -2,11 +2,55 @@
 
 import Link from 'next/link';
 
-export default function UserLink({ user, children, className = "" }) {
+export default function UserLink({ user, children, className = "", showProfilePic = false, profilePicSize = "w-8 h-8" }) {
   // Extract username from email
   const getUsername = (email) => {
     return email ? email.split('@')[0] : '';
   };
+
+  // Get profile picture URL or fallback
+  const getProfilePicture = (user) => {
+    return user?.profile_pic || user?.user_profile_pic || null;
+  };
+
+  // Get user name
+  const getUserName = (user) => {
+    return user?.name || user?.user_name || 'Unknown User';
+  };
+
+  // Profile picture component
+  const ProfilePicture = ({ user, size }) => {
+    const profilePic = getProfilePicture(user);
+    const userName = getUserName(user);
+    
+    if (profilePic) {
+      return (
+        <img
+          src={profilePic}
+          alt={`${userName}'s profile`}
+          className={`${size} rounded-full object-cover`}
+        />
+      );
+    } else {
+      // Fallback to initials
+      const initials = userName.charAt(0).toUpperCase();
+      return (
+        <div className={`${size} rounded-full bg-blue-500 flex items-center justify-center text-white font-medium`}>
+          {initials}
+        </div>
+      );
+    }
+  };
+
+  // Content to display
+  const content = (
+    <div className={`flex items-center gap-2 ${className}`}>
+      {showProfilePic && (
+        <ProfilePicture user={user} size={profilePicSize} />
+      )}
+      <span>{children || getUserName(user)}</span>
+    </div>
+  );
 
   // If we have user data with email, create a profile link
   if (user && user.email) {
@@ -14,9 +58,9 @@ export default function UserLink({ user, children, className = "" }) {
     return (
       <Link 
         href={`/profile/${username}`}
-        className={`hover:text-blue-600 hover:underline transition-colors ${className}`}
+        className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
       >
-        {children || user.name}
+        {content}
       </Link>
     );
   }
@@ -27,9 +71,9 @@ export default function UserLink({ user, children, className = "" }) {
     return (
       <Link 
         href={`/profile/${username}`}
-        className={`hover:text-blue-600 hover:underline transition-colors ${className}`}
+        className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
       >
-        {children || user.user_name || user.name}
+        {content}
       </Link>
     );
   }
@@ -39,17 +83,13 @@ export default function UserLink({ user, children, className = "" }) {
     return (
       <Link 
         href={`/profile/${user}`}
-        className={`hover:text-blue-600 hover:underline transition-colors ${className}`}
+        className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
       >
-        {children || user}
+        {content}
       </Link>
     );
   }
 
-  // Fallback: just render the children or user name without link
-  return (
-    <span className={className}>
-      {children || (user && (user.name || user.user_name)) || 'Unknown User'}
-    </span>
-  );
+  // Fallback: just render the content without link
+  return content;
 } 

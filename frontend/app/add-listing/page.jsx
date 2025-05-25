@@ -109,10 +109,6 @@ export default function AddListingPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/" className="btn btn-ghost mb-4">
-            <ArrowLeftIcon className="size-4 mr-2" />
-            Back to Home
-          </Link>
           <h1 className="text-3xl font-bold">Add New Listing</h1>
           <p className="text-gray-600 mt-2">Create a new product listing to sell your items</p>
         </div>
