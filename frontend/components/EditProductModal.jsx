@@ -13,6 +13,7 @@ function EditProductModal() {
   const [allImages, setAllImages] = useState([]);
   
   const [draggedImage, setDraggedImage] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
   const fileInputRef = useRef(null);
 
   // Initialize images when currentProduct is available
@@ -125,6 +126,17 @@ function EditProductModal() {
   const handleDragOver = (e, index) => {
     e.preventDefault();
     e.stopPropagation();
+    setDropTarget(index);
+  };
+
+  // Handle drag leave
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only clear drop target if we're leaving the container entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDropTarget(null);
+    }
   };
 
   // Handle drop
@@ -132,7 +144,10 @@ function EditProductModal() {
     e.preventDefault();
     e.stopPropagation();
     
-    if (draggedImage === null || draggedImage === dropIndex) return;
+    if (draggedImage === null || draggedImage === dropIndex) {
+      setDropTarget(null);
+      return;
+    }
     
     // Reorder the unified image array
     const newOrder = [...allImages];
@@ -140,6 +155,13 @@ function EditProductModal() {
     newOrder.splice(dropIndex, 0, movedItem);
     setAllImages(newOrder);
     setDraggedImage(null);
+    setDropTarget(null);
+  };
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    setDraggedImage(null);
+    setDropTarget(null);
   };
 
   // Helper function to get image URL for display
@@ -281,11 +303,21 @@ function EditProductModal() {
                   {allImages.map((image, index) => (
                     <div 
                       key={image.id}
-                      className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 ${index === 0 ? 'border-primary' : 'border-gray-200'} cursor-move`}
+                      className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 cursor-move transition-all duration-200 ${
+                        index === 0 ? 'border-primary' : 'border-gray-200'
+                      } ${
+                        draggedImage === index ? 'opacity-50 scale-95' : ''
+                      } ${
+                        dropTarget === index && draggedImage !== null && draggedImage !== index 
+                          ? 'border-blue-400 bg-blue-50 scale-105 shadow-lg' 
+                          : ''
+                      }`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, index)}
                       onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
                     >
                       <img 
                         src={getImageUrl(image)} 
