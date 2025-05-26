@@ -14,10 +14,9 @@ import messageRoutes from "./routes/messageRoutes.js";
 import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import { app, server } from "./utils/socket.js";
 
 dotenv.config();
-
-const app = express();
 const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
@@ -162,7 +161,7 @@ async function initDB() {
 }
 
 initDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log("Server is running on port " + PORT);
   });
 });

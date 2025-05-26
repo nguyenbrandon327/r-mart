@@ -20,8 +20,8 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['chat/setSocket'],
-        ignoredPaths: ['chat.socket'],
+        ignoredActions: ['auth/setSocket'],
+        ignoredPaths: ['auth.socket'],
       },
     }),
 }); 

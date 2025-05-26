@@ -16,10 +16,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/inbox/page.js"
     ],
-    "/inbox/[userId]/page": [
+    "/saved/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/inbox/[userId]/page.js"
+      "static/chunks/app/saved/page.js"
+    ],
+    "/product/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/product/[id]/page.js"
+    ],
+    "/profile/[username]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/profile/[username]/page.js"
+    ],
+    "/category/[category]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/category/[category]/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
