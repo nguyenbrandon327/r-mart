@@ -24,9 +24,6 @@ const SavedProductGroup = ({ user, products }) => {
                 profilePicSize="w-10 h-10"
                 className="font-semibold text-lg"
               />
-              <p className="text-sm text-gray-600 ml-13">
-                {products.length} saved product{products.length !== 1 ? 's' : ''}
-              </p>
             </div>
           </div>
           <div className="flex items-center">

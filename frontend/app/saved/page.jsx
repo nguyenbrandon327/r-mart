@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { BookmarkIcon } from 'lucide-react';
 import { fetchSavedProducts } from '../../store/slices/savedProductsSlice';
-import SavedProductCard from '../../components/SavedProductCard';
 import SavedProductGroup from '../../components/SavedProductGroup';
 
 export default function SavedPage() {

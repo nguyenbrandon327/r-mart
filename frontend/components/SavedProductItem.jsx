@@ -31,11 +31,11 @@ const SavedProductItem = ({ product }) => {
     <div className="flex flex-col md:flex-row hover:bg-gray-50 transition-colors rounded-lg">
       <Link href={`/product/${product.id}`} className="flex flex-col md:flex-row flex-1">
         {/* Product image */}
-        <div className="md:w-32 h-32 md:h-24 flex-shrink-0">
+        <div className="md:w-40 h-40 md:h-40 flex-shrink-0">
           <img
             src={getCoverImage()}
             alt={product.name}
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full object-cover"
           />
         </div>
         
@@ -45,7 +45,7 @@ const SavedProductItem = ({ product }) => {
             <div className="flex-1">
               <h4 className="font-semibold text-lg mb-1">{product.name}</h4>
               <p className="text-gray-600 text-sm line-clamp-2 mb-2">{product.description}</p>
-              <p className="text-lg font-bold text-blue-600">${Number(product.price).toFixed(2)}</p>
+              <p className="text-lg font-bold text-black">${Number(product.price).toFixed(2)}</p>
             </div>
           </div>
         </div>

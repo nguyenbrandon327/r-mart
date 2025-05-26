@@ -5,6 +5,7 @@ import authReducer from './slices/authSlice';
 import savedProductsReducer from './slices/savedProductsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
 import userReducer from './slices/userSlice';
+import chatReducer from './slices/chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +15,13 @@ export const store = configureStore({
     savedProducts: savedProductsReducer,
     recentlyViewed: recentlyViewedReducer,
     user: userReducer,
+    chat: chatReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['chat/setSocket'],
+        ignoredPaths: ['chat.socket'],
+      },
+    }),
 }); 
