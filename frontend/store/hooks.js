@@ -1,8 +1,6 @@
 'use client';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect } from 'react';
-import { io } from 'socket.io-client';
 import { 
   signup as signupAction,
   login as loginAction,
@@ -12,8 +10,7 @@ import {
   forgotPassword as forgotPasswordAction,
   resetPassword as resetPasswordAction,
   clearError,
-  clearMessage,
-  setSocket
+  clearMessage 
 } from './slices/authSlice';
 import {
   getUsers as getUsersAction,
@@ -99,27 +96,7 @@ export const useAuthStore = () => {
     },
 
     clearError: () => dispatch(clearError()),
-    clearMessage: () => dispatch(clearMessage()),
-
-    // Socket methods
-    connectSocket: () => {
-      if (auth.user && !auth.socket) {
-        const socketUrl = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "";
-        const socket = io(socketUrl, {
-          query: {
-            userId: auth.user.id,
-          },
-        });
-        dispatch(setSocket(socket));
-      }
-    },
-
-    disconnectSocket: () => {
-      if (auth.socket) {
-        auth.socket.close();
-        dispatch(setSocket(null));
-      }
-    }
+    clearMessage: () => dispatch(clearMessage())
   };
 };
 
@@ -156,47 +133,83 @@ export const useChatStore = () => {
     },
 
     sendMessage: async (messageData) => {
-      if (!chat.selectedUser) return;
+      const selectedUserId = chat.selectedUser?.id;
+      if (!selectedUserId) {
+        throw new Error("No user selected");
+      }
+      
       try {
-        await dispatch(sendMessageAction({ 
-          userId: chat.selectedUser.id, 
-          messageData 
-        })).unwrap();
+        await dispatch(sendMessageAction({ messageData, selectedUserId })).unwrap();
       } catch (error) {
         throw error;
       }
     },
 
     subscribeToMessages: () => {
-      if (!chat.selectedUser || !auth.socket) return;
+      if (!chat.selectedUser) {
+        console.log('No selected user for subscription');
+        return;
+      }
 
-      auth.socket.on("newMessage", (newMessage) => {
-        const isPartOfCurrentConversation = 
-          (newMessage.sender_id === chat.selectedUser.id && newMessage.receiver_id === auth.user.id) || 
-          (newMessage.receiver_id === chat.selectedUser.id && newMessage.sender_id === auth.user.id);
+      const socket = auth.socket;
+      if (!socket || !socket.connected) {
+        console.log('Socket not available or not connected for subscription');
+        return;
+      }
+
+      // Always remove ALL existing listeners first to prevent duplicates
+      socket.removeAllListeners("newMessage");
+
+      console.log('Subscribing to messages for user:', chat.selectedUser.id);
+
+      // Create a specific handler function to avoid closure issues
+      const messageHandler = (newMessage) => {
+        console.log('Received new message:', newMessage);
+        // Get current selected user at the time of message receipt
+        const currentSelectedUser = chat.selectedUser;
+        if (!currentSelectedUser) {
+          console.log('No selected user when message received, ignoring');
+          return;
+        }
         
-        if (!isPartOfCurrentConversation) return;
+        // Only add messages from the selected user (incoming messages)
+        const isMessageFromSelectedUser = newMessage.sender_id === currentSelectedUser.id;
+        if (isMessageFromSelectedUser) {
+          console.log('Adding message from selected user to chat');
+          dispatch(addMessage(newMessage));
+        } else {
+          console.log('Message not from selected user, ignoring');
+        }
+      };
 
-        dispatch(addMessage(newMessage));
-      });
+      socket.on("newMessage", messageHandler);
     },
 
     unsubscribeFromMessages: () => {
-      if (!auth.socket) return;
-      auth.socket.off("newMessage");
+      const socket = auth.socket;
+      if (!socket) {
+        console.log('No socket available for unsubscription');
+        return;
+      }
+      
+      console.log('Unsubscribing from messages - removing all listeners');
+      socket.removeAllListeners("newMessage");
     },
 
     subscribeToOnlineUsers: () => {
-      if (!auth.socket) return;
-      
-      auth.socket.on("getOnlineUsers", (users) => {
-        dispatch(setOnlineUsers(users));
+      const socket = auth.socket;
+      if (!socket) return;
+
+      socket.on("getOnlineUsers", (onlineUsers) => {
+        dispatch(setOnlineUsers(onlineUsers));
       });
     },
 
     unsubscribeFromOnlineUsers: () => {
-      if (!auth.socket) return;
-      auth.socket.off("getOnlineUsers");
+      const socket = auth.socket;
+      if (!socket) return;
+      
+      socket.off("getOnlineUsers");
     },
 
     setSelectedUser: (user) => dispatch(setSelectedUser(user)),

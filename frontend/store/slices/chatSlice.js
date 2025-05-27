@@ -2,6 +2,7 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const API_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/api/message" : "/api/message";
 
@@ -25,7 +26,9 @@ export const getUsers = createAsyncThunk(
       const response = await axios.get(`${API_URL}/users`);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Failed to fetch users");
+      const errorMessage = error.response?.data?.message || "Failed to fetch users";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -37,19 +40,27 @@ export const getMessages = createAsyncThunk(
       const response = await axios.get(`${API_URL}/${userId}`);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Failed to fetch messages");
+      const errorMessage = error.response?.data?.message || "Failed to fetch messages";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async ({ userId, messageData }, { rejectWithValue }) => {
+  async ({ messageData, selectedUserId }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/send/${userId}`, messageData);
+      const response = await axios.post(`${API_URL}/send/${selectedUserId}`, messageData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Failed to send message");
+      const errorMessage = error.response?.data?.message || "Failed to send message";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -59,10 +70,15 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     setSelectedUser: (state, action) => {
+      console.log('Redux setSelectedUser - Previous user:', state.selectedUser?.id);
+      console.log('Redux setSelectedUser - New user:', action.payload?.id);
       state.selectedUser = action.payload;
     },
     addMessage: (state, action) => {
+      console.log('Redux addMessage - Current messages count:', state.messages.length);
+      console.log('Redux addMessage - Adding message:', action.payload);
       state.messages.push(action.payload);
+      console.log('Redux addMessage - New messages count:', state.messages.length);
     },
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
@@ -71,6 +87,7 @@ const chatSlice = createSlice({
       state.error = null;
     },
     clearMessages: (state) => {
+      console.log('Redux clearMessages - Clearing', state.messages.length, 'messages');
       state.messages = [];
     }
   },
@@ -109,7 +126,7 @@ const chatSlice = createSlice({
         state.error = null;
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
-        // Don't add the message here as it will come through the socket
+        state.messages.push(action.payload);
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.error = action.payload;

@@ -3,7 +3,24 @@ const nextConfig = {
   // Configure async storage for better local storage compatibility
   reactStrictMode: true,
   images: {
-    domains: ['example.com', 'placehold.co', 'placekitten.com'], // Add your image domains here
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placekitten.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'r-mart.s3.us-west-1.amazonaws.com',
+      },
+    ],
   },
   async rewrites() {
     return [

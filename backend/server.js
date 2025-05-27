@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import path from "path";
 import cookieParser from "cookie-parser";
 
+import { app, server } from "./socket/socket.js";
+
 import productRoutes from "./routes/productRoutes.js";
 import { sql } from "./config/db.js";
 import { aj } from "./lib/arcjet.js";
@@ -14,9 +16,9 @@ import messageRoutes from "./routes/messageRoutes.js";
 import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import { app, server } from "./utils/socket.js";
 
 dotenv.config();
+
 const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 

@@ -1,6 +1,6 @@
 import { sql } from "../config/db.js";
 import { upload } from "../utils/s3.js";
-import { getReceiverSocketId, io, sendMessageToUser } from "../utils/socket.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
     try {
@@ -50,8 +50,8 @@ export const sendMessage = async (req, res) => {
                 return res.status(400).json({success: false, message: err.message});
             }
             
-            // After multer processes the form, text is available in req.body
-            const text = req.body.text || '';
+            // Extract text from body after multer processing
+            const text = req.body.text || null;
             
             // Image will be passed as a file, not in the body
             let imageURL = null;
@@ -63,19 +63,22 @@ export const sendMessage = async (req, res) => {
                 imageURL = `${bucketUrl}/${req.file.key}`;
             }
 
-            // Ensure we have either text or image
-            if (!text.trim() && !imageURL) {
+            // Ensure at least text or image is provided
+            if (!text && !imageURL) {
                 return res.status(400).json({success: false, message: "Message must contain text or image"});
             }
     
             const newMessage = await sql`
                 INSERT INTO messages (sender_id, receiver_id, text, image)
-                VALUES (${senderId}, ${receiverId}, ${text || null}, ${imageURL})
+                VALUES (${senderId}, ${receiverId}, ${text}, ${imageURL})
                 RETURNING *
             `;
-    
-            // Use our new function to send messages regardless of online status
-            sendMessageToUser(newMessage[0]);
+
+            // Real-time functionality with socket.io
+            const receiverSocketId = getReceiverSocketId(receiverId);
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("newMessage", newMessage[0]);
+            }
     
             res.status(201).json({success: true, data: newMessage[0]});
         });
