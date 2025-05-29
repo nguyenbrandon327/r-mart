@@ -20,13 +20,26 @@ export default function InboxPage() {
     updateChatLastMessage
   } = useChatStore();
 
-  const { user: currentUser, socket } = useAuthStore();
+  const { user: currentUser, socket, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [deletingChatId, setDeletingChatId] = useState(null);
   const [timeUpdateTrigger, setTimeUpdateTrigger] = useState(0);
 
   // Initialize socket connection
   useSocket();
+
+  // Check authentication
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      router.push('/auth/login');
+      return;
+    }
+  }, [isAuthenticated, router]);
+
+  // Don't render anything if not authenticated
+  if (isAuthenticated === false) {
+    return null;
+  }
 
   useEffect(() => {
     // Load chats when component mounts
@@ -134,7 +147,7 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div>
       <div className="max-w-4xl mx-auto p-4">
         {/* Header */}
         <div className="mb-6">

@@ -33,7 +33,7 @@ export default function ChatPage({ params }) {
     leaveChatRoom
   } = useChatStore();
 
-  const { user: currentUser, socket } = useAuthStore();
+  const { user: currentUser, socket, isAuthenticated } = useAuthStore();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -43,9 +43,23 @@ export default function ChatPage({ params }) {
   const [chatData, setChatData] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isTabVisible, setIsTabVisible] = useState(true);
 
   // Initialize socket connection
   useSocket();
+
+  // Check authentication
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      router.push('/auth/login');
+      return;
+    }
+  }, [isAuthenticated, router]);
+
+  // Don't render anything if not authenticated
+  if (isAuthenticated === false) {
+    return null;
+  }
 
   // Load chats and find the current chat
   useEffect(() => {
@@ -95,7 +109,7 @@ export default function ChatPage({ params }) {
 
   // Auto-mark messages as seen when new messages arrive
   useEffect(() => {
-    if (messages.length > 0 && selectedChat) {
+    if (messages.length > 0 && selectedChat && isTabVisible) {
       // Mark messages as seen after a short delay to ensure they're visible
       const timer = setTimeout(() => {
         markMessagesAsSeen(selectedChat.id);
@@ -103,7 +117,7 @@ export default function ChatPage({ params }) {
 
       return () => clearTimeout(timer);
     }
-  }, [messages.length, selectedChat?.id]);
+  }, [messages.length, selectedChat?.id, isTabVisible]);
 
   // Subscribe to online users
   useEffect(() => {
@@ -308,6 +322,30 @@ export default function ChatPage({ params }) {
     return null;
   };
 
+  // Handle tab visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = document.visibilityState === 'visible';
+      setIsTabVisible(isVisible);
+      
+      // Mark messages as seen when user returns to the tab
+      if (isVisible && selectedChat && messages.length > 0) {
+        markMessagesAsSeen(selectedChat.id);
+      }
+    };
+
+    // Set initial visibility state
+    setIsTabVisible(document.visibilityState === 'visible');
+    
+    // Add event listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedChat, messages.length, markMessagesAsSeen]);
+
   if (!chatData) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -317,249 +355,314 @@ export default function ChatPage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <div className="max-w-4xl mx-auto h-screen flex flex-col bg-base-100">
-        {/* Chat Header */}
-        <div className="p-4 border-b border-base-content/10 bg-base-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/inbox" className="btn btn-ghost btn-circle btn-sm">
-                <ArrowLeftIcon className="w-5 h-5" />
-              </Link>
-              
-              <div className="relative">
-                <div className="avatar">
-                  <div className="w-10 rounded-full">
-                    {chatData.other_user_profile_pic ? (
-                      <Image
-                        src={chatData.other_user_profile_pic}
-                        alt={chatData.other_user_name}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <UserCircleIcon className="w-6 h-6 text-primary" />
-                      </div>
-                    )}
+    <div className="h-[calc(100vh-4.25rem)] bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto h-[calc(100vh-4.25rem)] flex bg-white">
+        {/* LEFT COLUMN - Chat */}
+        <div className="flex-1 flex flex-col border-r border-base-content/10">
+          {/* User Header */}
+          <div className="p-4 border-b border-base-content/10 bg-base-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Link href="/inbox" className="btn btn-ghost btn-circle btn-sm">
+                  <ArrowLeftIcon className="w-5 h-5" />
+                </Link>
+                
+                <div className="relative">
+                  <div className="avatar">
+                    <div className="w-10 rounded-full">
+                      {chatData.other_user_profile_pic ? (
+                        <Image
+                          src={chatData.other_user_profile_pic}
+                          alt={chatData.other_user_name}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <UserCircleIcon className="w-6 h-6 text-primary" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex-1">
-                <h3 className="font-semibold text-base-content">{chatData.other_user_name}</h3>
-                {currentChatTypingUsers.length > 0 ? (
-                  <p className="text-sm text-primary animate-pulse">
-                    typing...
-                  </p>
-                ) : chatData.product_name ? (
-                  <p className="text-sm text-base-content/60">
-                    About: {chatData.product_name}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <button
-              onClick={handleDeleteChat}
-              disabled={isDeleting}
-              className="btn btn-ghost btn-circle btn-sm text-error"
-              title="Delete chat"
-            >
-              {isDeleting ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : (
-                <Trash2Icon className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-
-          {/* Product info if available */}
-          {chatData.product_name && (
-            <div className="mt-3 p-3 bg-base-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                {chatData.product_image && (
-                  <Image
-                    src={chatData.product_image}
-                    alt={chatData.product_name}
-                    width={48}
-                    height={48}
-                    className="rounded-lg object-cover"
-                  />
-                )}
-                <div>
-                  <p className="font-medium text-sm">{chatData.product_name}</p>
-                  {chatData.product_price && (
-                    <p className="text-sm text-primary font-semibold">
-                      ${parseFloat(chatData.product_price).toFixed(2)}
+                
+                <div className="flex-1">
+                  <h3 className="font-semibold text-base-content">{chatData.other_user_name}</h3>
+                  {currentChatTypingUsers.length > 0 ? (
+                    <p className="text-sm text-primary animate-pulse">
+                      typing...
+                    </p>
+                  ) : (
+                    <p className="text-sm text-base-content/60">
+                      Online
                     </p>
                   )}
                 </div>
               </div>
+
+              <button
+                onClick={handleDeleteChat}
+                disabled={isDeleting}
+                className="btn btn-ghost btn-circle btn-sm text-error"
+                title="Delete chat"
+              >
+                {isDeleting ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <Trash2Icon className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {isMessagesLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <span className="loading loading-spinner loading-lg"></span>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-base-content/60">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">💬</div>
+                  <p>Start a conversation with {chatData.other_user_name}</p>
+                  {chatData.product_name && (
+                    <p className="text-sm mt-1">About {chatData.product_name}</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages.map((message, index) => {
+                  const isCurrentUser = message.sender_id === currentUser?.id;
+                  const mostRecentUserMessage = getMostRecentUserMessage();
+                  const isTheMostRecentUserMessage = mostRecentUserMessage && message.id === mostRecentUserMessage.id;
+                  const mostRecentSeenUserMessage = getMostRecentSeenUserMessage();
+                  const isTheMostRecentSeenUserMessage = mostRecentSeenUserMessage && message.id === mostRecentSeenUserMessage.id;
+                  const shouldShowStatus = isCurrentUser && (isTheMostRecentSeenUserMessage || (isTheMostRecentUserMessage && !message.seen_at));
+                  
+                  return (
+                    <div key={message.id}>
+                      {/* Timestamp above message if needed */}
+                      {shouldShowTimestamp(message, index) && (
+                        <div className="flex justify-center mb-2">
+                          <span className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full">
+                            {formatMessageTime(message.created_at)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                            isCurrentUser
+                              ? 'bg-primary text-primary-content'
+                              : 'bg-base-200 text-base-content'
+                          }`}
+                        >
+                          {message.text && (
+                            <p className="break-words">{message.text}</p>
+                          )}
+                          {message.image && (
+                            <div className={message.text ? 'mt-2' : ''}>
+                              <Image
+                                src={message.image}
+                                alt="Message attachment"
+                                width={200}
+                                height={200}
+                                className="rounded-lg object-cover max-w-full h-auto"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Show status after appropriate user messages */}
+                      {shouldShowStatus && getMessageStatus(message) && (
+                        <div className="flex justify-end mt-1">
+                          <p className="text-xs text-base-content/50 mr-4">
+                            {getMessageStatus(message)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            
+            {/* Typing indicator */}
+            {currentChatTypingUsers.length > 0 && (
+              <div className="flex justify-start">
+                <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl bg-base-200 text-base-content">
+                  <div className="flex items-center space-x-1">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Image Preview */}
+          {previewImage && (
+            <div className="p-4 border-t border-base-content/10">
+              <div className="relative inline-block">
+                <Image
+                  src={previewImage}
+                  alt="Preview"
+                  width={100}
+                  height={100}
+                  className="rounded-lg object-cover"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 btn btn-circle btn-xs btn-error"
+                >
+                  <XIcon className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Message Input */}
+          <div className="p-4 border-t border-base-content/10">
+            <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept="image/*"
+                className="hidden"
+              />
+              
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-ghost btn-circle btn-sm"
+              >
+                <ImageIcon className="w-5 h-5" />
+              </button>
+              
+              <div className="flex-1">
+                <textarea
+                  value={messageText}
+                  onChange={handleMessageChange}
+                  placeholder="Type a message..."
+                  className="textarea textarea-bordered w-full resize-none min-h-[2.5rem] max-h-32"
+                  rows={1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
+                  onBlur={handleTypingStop}
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={!messageText.trim() && !selectedImage}
+                className="btn btn-primary btn-circle"
+              >
+                <SendIcon className="w-5 h-5" />
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {isMessagesLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-base-content/60">
-              <div className="text-center">
-                <div className="text-4xl mb-2">💬</div>
-                <p>Start a conversation with {chatData.other_user_name}</p>
-                {chatData.product_name && (
-                  <p className="text-sm mt-1">About {chatData.product_name}</p>
+        {/* RIGHT COLUMN - Product Information */}
+        <div className="w-80 bg-base-50 border-l border-base-content/10 overflow-y-auto">
+          {chatData.product_name ? (
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-base-content mb-4">Product Details</h3>
+              
+              {/* Product Images */}
+              {chatData.product_images && chatData.product_images.length > 0 ? (
+                <div className="space-y-3 mb-4">
+                  {chatData.product_images.map((image, index) => (
+                    <div key={index} className="relative">
+                      <Image
+                        src={image}
+                        alt={`${chatData.product_name} - Image ${index + 1}`}
+                        width={300}
+                        height={300}
+                        className="rounded-lg object-cover w-full"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : chatData.product_image ? (
+                <div className="mb-4">
+                  <Image
+                    src={chatData.product_image}
+                    alt={chatData.product_name}
+                    width={300}
+                    height={300}
+                    className="rounded-lg object-cover w-full"
+                  />
+                </div>
+              ) : (
+                <div className="mb-4 bg-base-200 rounded-lg h-48 flex items-center justify-center">
+                  <p className="text-base-content/40">No image available</p>
+                </div>
+              )}
+              
+              {/* Product Info */}
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-base-content">{chatData.product_name}</h4>
+                </div>
+                
+                {chatData.product_price && (
+                  <div>
+                    <p className="text-2xl font-bold text-primary">
+                      ${parseFloat(chatData.product_price).toFixed(2)}
+                    </p>
+                  </div>
+                )}
+                
+                {chatData.product_description && (
+                  <div>
+                    <h5 className="font-medium text-base-content mb-2">Description</h5>
+                    <p className="text-sm text-base-content/70 leading-relaxed">
+                      {chatData.product_description}
+                    </p>
+                  </div>
+                )}
+                
+                {chatData.product_category && (
+                  <div>
+                    <h5 className="font-medium text-base-content mb-1">Category</h5>
+                    <span className="badge badge-outline">
+                      {chatData.product_category}
+                    </span>
+                  </div>
+                )}
+                
+                {chatData.product_condition && (
+                  <div>
+                    <h5 className="font-medium text-base-content mb-1">Condition</h5>
+                    <span className="badge badge-secondary">
+                      {chatData.product_condition}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
-            <>
-              {messages.map((message, index) => {
-                const isCurrentUser = message.sender_id === currentUser?.id;
-                const mostRecentUserMessage = getMostRecentUserMessage();
-                const isTheMostRecentUserMessage = mostRecentUserMessage && message.id === mostRecentUserMessage.id;
-                const mostRecentSeenUserMessage = getMostRecentSeenUserMessage();
-                const isTheMostRecentSeenUserMessage = mostRecentSeenUserMessage && message.id === mostRecentSeenUserMessage.id;
-                const shouldShowStatus = isCurrentUser && (isTheMostRecentSeenUserMessage || (isTheMostRecentUserMessage && !message.seen_at));
-                
-                return (
-                  <div key={message.id}>
-                    {/* Timestamp above message if needed */}
-                    {shouldShowTimestamp(message, index) && (
-                      <div className="flex justify-center mb-2">
-                        <span className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full">
-                          {formatMessageTime(message.created_at)}
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                          isCurrentUser
-                            ? 'bg-primary text-primary-content'
-                            : 'bg-base-200 text-base-content'
-                        }`}
-                      >
-                        {message.text && (
-                          <p className="break-words">{message.text}</p>
-                        )}
-                        {message.image && (
-                          <div className={message.text ? 'mt-2' : ''}>
-                            <Image
-                              src={message.image}
-                              alt="Message attachment"
-                              width={200}
-                              height={200}
-                              className="rounded-lg object-cover max-w-full h-auto"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Show status after appropriate user messages */}
-                    {shouldShowStatus && getMessageStatus(message) && (
-                      <div className="flex justify-end mt-1">
-                        <p className="text-xs text-base-content/50 mr-4">
-                          {getMessageStatus(message)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </>
-          )}
-          
-          {/* Typing indicator */}
-          {currentChatTypingUsers.length > 0 && (
-            <div className="flex justify-start">
-              <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl bg-base-200 text-base-content">
-                <div className="flex items-center space-x-1">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                </div>
-              </div>
+            <div className="p-6 text-center">
+              <div className="text-4xl mb-3">📦</div>
+              <p className="text-base-content/60">No product associated with this chat</p>
             </div>
           )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Image Preview */}
-        {previewImage && (
-          <div className="p-4 border-t border-base-content/10">
-            <div className="relative inline-block">
-              <Image
-                src={previewImage}
-                alt="Preview"
-                width={100}
-                height={100}
-                className="rounded-lg object-cover"
-              />
-              <button
-                onClick={removeImage}
-                className="absolute -top-2 -right-2 btn btn-circle btn-xs btn-error"
-              >
-                <XIcon className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Message Input */}
-        <div className="p-4 border-t border-base-content/10">
-          <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageSelect}
-              accept="image/*"
-              className="hidden"
-            />
-            
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="btn btn-ghost btn-circle btn-sm"
-            >
-              <ImageIcon className="w-5 h-5" />
-            </button>
-            
-            <div className="flex-1">
-              <textarea
-                value={messageText}
-                onChange={handleMessageChange}
-                placeholder="Type a message..."
-                className="textarea textarea-bordered w-full resize-none min-h-[2.5rem] max-h-32"
-                rows={1}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage(e);
-                  }
-                }}
-                onBlur={handleTypingStop}
-              />
-            </div>
-            
-            <button
-              type="submit"
-              disabled={!messageText.trim() && !selectedImage}
-              className="btn btn-primary btn-circle"
-            >
-              <SendIcon className="w-5 h-5" />
-            </button>
-          </form>
         </div>
       </div>
     </div>

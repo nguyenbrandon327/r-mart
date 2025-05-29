@@ -11,7 +11,25 @@ export default function AddListingPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { formData, loading } = useSelector((state) => state.products);
+  const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
   
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      router.push('/auth/login');
+      return;
+    }
+  }, [isAuthenticated, router]);
+
+  // Don't render anything if not authenticated or still checking auth
+  if (isAuthenticated === false || isCheckingAuth) {
+    return (
+      <div className="flex justify-center items-center h-screen" data-theme="light">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
+
   // Reset form data when component mounts to ensure clean slate for new product
   useEffect(() => {
     dispatch(resetForm());

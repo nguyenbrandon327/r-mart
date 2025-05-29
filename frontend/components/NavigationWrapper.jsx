@@ -15,6 +15,7 @@ export default function NavigationWrapper({ children }) {
   const isProfilePage = pathname?.startsWith('/profile');
   const isAddListingPage = pathname?.startsWith('/add-listing');
   const isInboxPage = pathname?.startsWith('/inbox');
+  const isChatPage = pathname?.match(/^\/inbox\/\d+$/); // Matches /inbox/[chatId]
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function NavigationWrapper({ children }) {
           {!isProductDetailPage && !isSavedPage && !isProfilePage && !isAddListingPage && !isInboxPage && <SecondaryNavbar />}
         </>
       )}
-      <main className={isAuthPage ? "" : "container mx-auto px-4 py-6"}>
+      <main className={isAuthPage || isChatPage ? "" : "container mx-auto px-4 py-6"}>
         {children}
       </main>
     </>

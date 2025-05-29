@@ -37,7 +37,7 @@ export default function SavedPage() {
 
   useEffect(() => {
     // Redirect if not authenticated
-    if (!isAuthenticated) {
+    if (isAuthenticated === false) {
       router.push('/auth/login');
       return;
     }
@@ -45,6 +45,11 @@ export default function SavedPage() {
     // Fetch saved products
     dispatch(fetchSavedProducts());
   }, [dispatch, isAuthenticated, router]);
+
+  // Don't render anything if not authenticated
+  if (isAuthenticated === false) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
