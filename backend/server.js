@@ -125,15 +125,36 @@ async function initDB() {
   } catch (error) {
     console.log("Error initializing users table", error);
   }
+  // Initialize chats
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS chats (
+        id SERIAL PRIMARY KEY,
+        user1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user1_id, user2_id, product_id)
+      )
+    `;
+
+    console.log("Chats table initialized successfully");
+  } catch (error) {
+    console.log("Error initializing chats table", error);
+  }
+
   // Initialize messages
   try {
     await sql`
           CREATE TABLE IF NOT EXISTS messages (
             id SERIAL PRIMARY KEY,
+            chat_id INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
             sender_id INTEGER NOT NULL REFERENCES users(id),
-            receiver_id INTEGER NOT NULL REFERENCES users(id),
             text TEXT,
             image TEXT,
+            seen_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           )

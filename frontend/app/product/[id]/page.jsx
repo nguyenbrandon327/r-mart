@@ -9,6 +9,8 @@ import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
 import UserLink from "../../../components/UserLink";
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
+import { useChatStore } from "../../../store/hooks";
+import toast from "react-hot-toast";
 
 // Save button component for product page
 function SaveButton({ productId }) {
@@ -71,12 +73,36 @@ export default function ProductPage({ params }) {
   const dispatch = useDispatch();
   const { currentProduct, loading, error } = useSelector((state) => state.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { createChat } = useChatStore();
   const [activeImage, setActiveImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [isContactingSeller, setIsContactingSeller] = useState(false);
 
   useEffect(() => {
     dispatch(fetchProduct(id));
   }, [dispatch, id]);
+
+  const handleContactSeller = async () => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (!currentProduct?.user_id) {
+      toast.error('Seller information not available');
+      return;
+    }
+
+    setIsContactingSeller(true);
+    try {
+      const chat = await createChat(currentProduct.user_id, currentProduct.id);
+      router.push(`/inbox/${chat.id}`);
+    } catch (error) {
+      console.error('Failed to create chat:', error);
+    } finally {
+      setIsContactingSeller(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this product?")) {
@@ -362,9 +388,17 @@ export default function ProductPage({ params }) {
                 {isProductOwner ? "Your Product" : "Save"}
               </button>
             )}
-            <button className="btn btn-outline">
-              <MessageSquareTextIcon className="h-5 w-5 mr-1" />
-              Contact Seller
+            <button 
+              className="btn btn-outline"
+              onClick={handleContactSeller}
+              disabled={isContactingSeller || !isAuthenticated || isProductOwner}
+            >
+              {isContactingSeller ? (
+                <span className="loading loading-spinner loading-sm mr-1"></span>
+              ) : (
+                <MessageSquareTextIcon className="h-5 w-5 mr-1" />
+              )}
+              {isContactingSeller ? 'Creating Chat...' : 'Contact Seller'}
             </button>
           </div>
         </div>

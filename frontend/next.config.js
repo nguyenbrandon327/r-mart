@@ -20,6 +20,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'r-mart.s3.us-west-1.amazonaws.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
   async rewrites() {

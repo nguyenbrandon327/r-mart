@@ -10,23 +10,55 @@ axios.defaults.withCredentials = true;
 
 const initialState = {
   messages: [],
-  users: [],
-  selectedUser: null,
-  isUsersLoading: false,
+  chats: [],
+  selectedChat: null,
+  isChatsLoading: false,
   isMessagesLoading: false,
   error: null,
-  onlineUsers: []
+  onlineUsers: [],
+  typingUsers: {} // { chatId: [userId1, userId2] }
 };
 
 // Async thunks
-export const getUsers = createAsyncThunk(
-  'chat/getUsers',
-  async (_, { rejectWithValue }) => {
+export const createChat = createAsyncThunk(
+  'chat/createChat',
+  async ({ otherUserId, productId }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/users`);
+      const response = await axios.post(`${API_URL}/create`, {
+        otherUserId,
+        productId
+      });
       return response.data.data;
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to fetch users";
+      const errorMessage = error.response?.data?.message || "Failed to create chat";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+export const getChats = createAsyncThunk(
+  'chat/getChats',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/chats`);
+      return response.data.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to fetch chats";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+export const deleteChat = createAsyncThunk(
+  'chat/deleteChat',
+  async (chatId, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${API_URL}/chat/${chatId}`);
+      return { chatId, message: response.data.message };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to delete chat";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
@@ -35,9 +67,9 @@ export const getUsers = createAsyncThunk(
 
 export const getMessages = createAsyncThunk(
   'chat/getMessages',
-  async (userId, { rejectWithValue }) => {
+  async (chatId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/${userId}`);
+      const response = await axios.get(`${API_URL}/chat/${chatId}`);
       return response.data.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to fetch messages";
@@ -49,9 +81,9 @@ export const getMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async ({ messageData, selectedUserId }, { rejectWithValue }) => {
+  async ({ messageData, chatId }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/send/${selectedUserId}`, messageData, {
+      const response = await axios.post(`${API_URL}/chat/${chatId}`, messageData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -65,14 +97,27 @@ export const sendMessage = createAsyncThunk(
   }
 );
 
+export const markMessagesAsSeen = createAsyncThunk(
+  'chat/markMessagesAsSeen',
+  async (chatId, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/chat/${chatId}/seen`);
+      return response.data.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to mark messages as seen";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
-    setSelectedUser: (state, action) => {
-      console.log('Redux setSelectedUser - Previous user:', state.selectedUser?.id);
-      console.log('Redux setSelectedUser - New user:', action.payload?.id);
-      state.selectedUser = action.payload;
+    setSelectedChat: (state, action) => {
+      console.log('Redux setSelectedChat - Previous chat:', state.selectedChat?.id);
+      console.log('Redux setSelectedChat - New chat:', action.payload?.id);
+      state.selectedChat = action.payload;
     },
     addMessage: (state, action) => {
       console.log('Redux addMessage - Current messages count:', state.messages.length);
@@ -83,27 +128,104 @@ const chatSlice = createSlice({
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
     },
+    setUserTyping: (state, action) => {
+      const { userId, chatId, isTyping } = action.payload;
+      
+      if (!state.typingUsers[chatId]) {
+        state.typingUsers[chatId] = [];
+      }
+      
+      if (isTyping) {
+        // Add user to typing list if not already there
+        if (!state.typingUsers[chatId].includes(userId)) {
+          state.typingUsers[chatId].push(userId);
+        }
+      } else {
+        // Remove user from typing list
+        state.typingUsers[chatId] = state.typingUsers[chatId].filter(id => id !== userId);
+        if (state.typingUsers[chatId].length === 0) {
+          delete state.typingUsers[chatId];
+        }
+      }
+    },
+    markMessagesAsSeenLocal: (state, action) => {
+      const { messageIds } = action.payload;
+      state.messages = state.messages.map(message => {
+        if (messageIds.includes(message.id)) {
+          return { ...message, seen_at: new Date().toISOString() };
+        }
+        return message;
+      });
+    },
     clearError: (state) => {
       state.error = null;
     },
     clearMessages: (state) => {
       console.log('Redux clearMessages - Clearing', state.messages.length, 'messages');
       state.messages = [];
+    },
+    clearTypingUsers: (state) => {
+      state.typingUsers = {};
+    },
+    updateChatLastMessage: (state, action) => {
+      const { chatId, message, timestamp } = action.payload;
+      const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+      if (chatIndex !== -1) {
+        state.chats[chatIndex].last_message = message;
+        state.chats[chatIndex].last_message_at = timestamp;
+        // Move chat to top of list
+        const updatedChat = state.chats[chatIndex];
+        state.chats.splice(chatIndex, 1);
+        state.chats.unshift(updatedChat);
+      }
     }
   },
   extraReducers: (builder) => {
     builder
-      // Get Users
-      .addCase(getUsers.pending, (state) => {
-        state.isUsersLoading = true;
+      // Create Chat
+      .addCase(createChat.pending, (state) => {
         state.error = null;
       })
-      .addCase(getUsers.fulfilled, (state, action) => {
-        state.isUsersLoading = false;
-        state.users = action.payload;
+      .addCase(createChat.fulfilled, (state, action) => {
+        // Add new chat to the list if it doesn't exist
+        const existingChat = state.chats.find(chat => chat.id === action.payload.id);
+        if (!existingChat) {
+          // Add basic chat info, will be enriched when getChats is called
+          state.chats.unshift(action.payload);
+        }
+        toast.success("Chat created successfully!");
       })
-      .addCase(getUsers.rejected, (state, action) => {
-        state.isUsersLoading = false;
+      .addCase(createChat.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      // Get Chats
+      .addCase(getChats.pending, (state) => {
+        state.isChatsLoading = true;
+        state.error = null;
+      })
+      .addCase(getChats.fulfilled, (state, action) => {
+        state.isChatsLoading = false;
+        state.chats = action.payload;
+      })
+      .addCase(getChats.rejected, (state, action) => {
+        state.isChatsLoading = false;
+        state.error = action.payload;
+      })
+
+      // Delete Chat
+      .addCase(deleteChat.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(deleteChat.fulfilled, (state, action) => {
+        state.chats = state.chats.filter(chat => chat.id !== action.payload.chatId);
+        if (state.selectedChat?.id === action.payload.chatId) {
+          state.selectedChat = null;
+          state.messages = [];
+        }
+        toast.success(action.payload.message);
+      })
+      .addCase(deleteChat.rejected, (state, action) => {
         state.error = action.payload;
       })
       
@@ -130,16 +252,32 @@ const chatSlice = createSlice({
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.error = action.payload;
+      })
+
+      // Mark Messages as Seen
+      .addCase(markMessagesAsSeen.fulfilled, (state, action) => {
+        // Update local state to mark messages as seen
+        const seenMessageIds = action.payload.map(msg => msg.id);
+        state.messages = state.messages.map(message => {
+          if (seenMessageIds.includes(message.id)) {
+            return { ...message, seen_at: new Date().toISOString() };
+          }
+          return message;
+        });
       });
   }
 });
 
 export const { 
-  setSelectedUser, 
+  setSelectedChat, 
   addMessage, 
   setOnlineUsers, 
+  setUserTyping,
+  markMessagesAsSeenLocal,
   clearError, 
-  clearMessages 
+  clearMessages,
+  clearTypingUsers,
+  updateChatLastMessage 
 } = chatSlice.actions;
 
 export default chatSlice.reducer; 

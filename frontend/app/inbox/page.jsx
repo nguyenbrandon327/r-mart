@@ -1,43 +1,36 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useChatStore, useAuthStore } from '../../store/hooks';
 import { useSocket } from '../../lib/socket';
-import { UserCircleIcon, SendIcon, ImageIcon, XIcon, SmileIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { UserCircleIcon, MessageSquareIcon, Trash2Icon, ShoppingBagIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function InboxPage() {
   const {
-    messages,
-    users,
-    selectedUser,
-    isUsersLoading,
-    isMessagesLoading,
+    chats,
+    isChatsLoading,
     onlineUsers,
-    getUsers,
-    getMessages,
-    sendMessage,
-    setSelectedUser,
-    subscribeToMessages,
-    unsubscribeFromMessages,
+    getChats,
     subscribeToOnlineUsers,
     unsubscribeFromOnlineUsers,
-    clearMessages
+    deleteChat,
+    updateChatLastMessage
   } = useChatStore();
 
   const { user: currentUser, socket } = useAuthStore();
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const [messageText, setMessageText] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+  const router = useRouter();
+  const [deletingChatId, setDeletingChatId] = useState(null);
+  const [timeUpdateTrigger, setTimeUpdateTrigger] = useState(0);
 
   // Initialize socket connection
   useSocket();
 
   useEffect(() => {
-    // Load users when component mounts
-    getUsers();
+    // Load chats when component mounts
+    getChats();
     
     // Subscribe to online users
     subscribeToOnlineUsers();
@@ -47,347 +40,234 @@ export default function InboxPage() {
     };
   }, []);
 
+  // Real-time updates for new messages
   useEffect(() => {
-    if (selectedUser) {
-      console.log('Selected user changed, setting up for user:', selectedUser.id);
-      
-      // Clear previous messages and load new ones
-      console.log('Clearing messages and loading new ones');
-      clearMessages();
-      getMessages(selectedUser.id);
+    if (socket?.connected && currentUser) {
+      const handleNewMessage = (newMessage) => {
+        console.log('Inbox received new message:', newMessage);
+        // Update the chat list locally with the new message
+        updateChatLastMessage(
+          newMessage.chat_id, 
+          newMessage.text || (newMessage.image ? 'Image' : 'Message'), 
+          newMessage.created_at
+        );
+      };
+
+      socket.on("newMessage", handleNewMessage);
 
       return () => {
-        console.log('Cleanup: unsubscribing from messages');
-        unsubscribeFromMessages();
+        socket.off("newMessage", handleNewMessage);
       };
     }
-  }, [selectedUser]);
+  }, [socket?.connected, currentUser, updateChatLastMessage]);
 
-  // Single effect to handle socket subscription - only when both user is selected AND socket is ready
+  // Update time display every minute
   useEffect(() => {
-    console.log('Socket/User subscription check:', {
-      socketExists: !!socket,
-      socketConnected: socket?.connected,
-      selectedUserId: selectedUser?.id,
-      hasCurrentUser: !!currentUser
-    });
+    const interval = setInterval(() => {
+      setTimeUpdateTrigger(prev => prev + 1);
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleChatClick = (chatId) => {
+    router.push(`/inbox/${chatId}`);
+  };
+
+  const handleDeleteChat = async (e, chatId) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
     
-    if (selectedUser && socket?.connected && currentUser) {
-      console.log('All conditions met - subscribing to messages for user:', selectedUser.id);
-      
-      // Small delay to ensure everything is ready
-      const timer = setTimeout(() => {
-        subscribeToMessages();
-      }, 200);
-
-      return () => {
-        console.log('Cleanup: clearing subscription timer');
-        clearTimeout(timer);
-      };
-    }
-  }, [socket?.connected, selectedUser, currentUser]);
-
-  // Auto scroll to bottom when new messages arrive
-  useEffect(() => {
-    console.log('Messages updated in component, count:', messages.length);
-    console.log('Current messages:', messages);
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleUserSelect = (user) => {
-    setSelectedUser(user);
-    setMessageText('');
-    setSelectedImage(null);
-    setPreviewImage(null);
-  };
-
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
+    if (confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+      setDeletingChatId(chatId);
+      try {
+        await deleteChat(chatId);
+      } catch (error) {
+        console.error('Failed to delete chat:', error);
+      } finally {
+        setDeletingChatId(null);
+      }
     }
   };
 
-  const removeImage = () => {
-    setSelectedImage(null);
-    setPreviewImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
+  const formatLastMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.abs(now - date) / (1000 * 60);
+    const diffInHours = diffInMinutes / 60;
+    const diffInDays = diffInHours / 24;
     
-    if (!messageText.trim() && !selectedImage) return;
-    if (!selectedUser) return;
-
-    try {
-      const formData = new FormData();
-      if (messageText.trim()) {
-        formData.append('text', messageText.trim());
-      }
-      if (selectedImage) {
-        formData.append('image', selectedImage);
-      }
-
-      await sendMessage(formData);
-      setMessageText('');
-      removeImage();
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      const minutes = Math.floor(diffInMinutes);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else if (diffInHours < 24) {
+      const hours = Math.floor(diffInHours);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else if (diffInDays < 7) {
+      const days = Math.floor(diffInDays);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
     }
-  };
-
-  const formatMessageTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const isOnline = (userId) => {
     return onlineUsers.includes(userId.toString());
   };
 
-  return (
-    <div className="min-h-screen bg-base-200">
-      <div className="max-w-7xl mx-auto h-screen flex">
-        {/* Users Sidebar */}
-        <div className="w-80 bg-base-100 border-r border-base-content/10 flex flex-col">
-          {/* Header */}
-          <div className="p-4 border-b border-base-content/10">
-            <h1 className="text-xl font-bold text-base-content">Messages</h1>
-          </div>
+  const truncateMessage = (message, maxLength = 50) => {
+    if (!message) return '';
+    return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
+  };
 
-          {/* Users List */}
-          <div className="flex-1 overflow-y-auto">
-            {isUsersLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <span className="loading loading-spinner loading-md"></span>
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center p-8 text-base-content/60">
-                No users available to chat with
-              </div>
-            ) : (
-              <div className="space-y-1 p-2">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-base-200 ${
-                      selectedUser?.id === user.id ? 'bg-primary/10 border-l-4 border-primary' : ''
-                    }`}
-                    onClick={() => handleUserSelect(user)}
-                  >
-                    <div className="relative">
+  // Check if the current user sent the last message and if it's been seen
+  const getLastMessageStatus = (chat) => {
+    if (!chat.last_message || !currentUser) return null;
+    
+    // This would need to be enhanced with actual seen status from the backend
+    // For now, we'll show a simple indicator
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto p-4">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-base-content">Messages</h1>
+          <p className="text-base-content/60 mt-1">Your conversations</p>
+        </div>
+
+        {/* Chats List */}
+        <div className="bg-base-100 rounded-lg shadow-lg">
+          {isChatsLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
+          ) : chats.length === 0 ? (
+            <div className="text-center p-12">
+              <MessageSquareIcon className="w-16 h-16 text-base-content/40 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-base-content mb-2">No conversations yet</h3>
+              <p className="text-base-content/60 mb-4">
+                Start a conversation by contacting a seller from a product page
+              </p>
+              <Link href="/" className="btn btn-primary">
+                Browse Products
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-base-content/10">
+              {chats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className="p-4 hover:bg-base-200 cursor-pointer transition-colors group"
+                  onClick={() => handleChatClick(chat.id)}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* User Avatar */}
+                    <div className="relative flex-shrink-0">
                       <div className="avatar">
-                        <div className="w-12 rounded-full">
-                          {user.profile_pic ? (
+                        <div className="w-14 rounded-full">
+                          {chat.other_user_profile_pic ? (
                             <Image
-                              src={user.profile_pic}
-                              alt={user.name}
-                              width={48}
-                              height={48}
+                              src={chat.other_user_profile_pic}
+                              alt={chat.other_user_name}
+                              width={56}
+                              height={56}
                               className="rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                              <UserCircleIcon className="w-8 h-8 text-primary" />
+                            <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                              <UserCircleIcon className="w-9 h-9 text-primary" />
                             </div>
                           )}
                         </div>
                       </div>
-                      {isOnline(user.id) && (
+                      {isOnline(chat.other_user_id) && (
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-base-100"></div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-base-content truncate">{user.name}</p>
-                      <p className="text-sm text-base-content/60 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-base-100">
-          {selectedUser ? (
-            <>
-              {/* Chat Header */}
-              <div className="p-4 border-b border-base-content/10 bg-base-100">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="avatar">
-                      <div className="w-10 rounded-full">
-                        {selectedUser.profile_pic ? (
-                          <Image
-                            src={selectedUser.profile_pic}
-                            alt={selectedUser.name}
-                            width={40}
-                            height={40}
-                            className="rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <UserCircleIcon className="w-6 h-6 text-primary" />
-                          </div>
+                    {/* Chat Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-base-content truncate">
+                          {chat.other_user_name}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {chat.last_message_at && (
+                            <span className="text-xs text-base-content/60 flex-shrink-0">
+                              {formatLastMessageTime(chat.last_message_at)}
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => handleDeleteChat(e, chat.id)}
+                            disabled={deletingChatId === chat.id}
+                            className="btn btn-ghost btn-circle btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Delete chat"
+                          >
+                            {deletingChatId === chat.id ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              <Trash2Icon className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Product Info */}
+                      {chat.product_name && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <ShoppingBagIcon className="w-3 h-3 text-base-content/40" />
+                          <span className="text-xs text-base-content/60 truncate">
+                            {chat.product_name}
+                          </span>
+                          {chat.product_price && (
+                            <span className="text-xs text-primary font-medium">
+                              ${parseFloat(chat.product_price).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Last Message */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <p className="text-sm text-base-content/60 truncate">
+                            {chat.last_message 
+                              ? truncateMessage(chat.last_message)
+                              : 'No messages yet'
+                            }
+                          </p>
+                          {/* Seen indicator would go here - needs backend support for proper implementation */}
+                        </div>
+                        {chat.message_count > 0 && (
+                          <span className="badge badge-primary badge-sm ml-2">
+                            {chat.message_count}
+                          </span>
                         )}
                       </div>
                     </div>
-                    {isOnline(selectedUser.id) && (
-                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-base-100"></div>
+
+                    {/* Product Image */}
+                    {chat.product_image && (
+                      <div className="flex-shrink-0">
+                        <Image
+                          src={chat.product_image}
+                          alt={chat.product_name}
+                          width={64}
+                          height={64}
+                          className="rounded-lg object-cover w-16 h-16"
+                        />
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-base-content">{selectedUser.name}</h3>
-                    <p className="text-sm text-base-content/60">
-                      {isOnline(selectedUser.id) ? 'Online' : 'Offline'}
-                    </p>
-                  </div>
                 </div>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {isMessagesLoading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <span className="loading loading-spinner loading-lg"></span>
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-base-content/60">
-                    <div className="text-center">
-                      <div className="text-4xl mb-2">💬</div>
-                      <p>Start a conversation with {selectedUser.name}</p>
-                    </div>
-                  </div>
-                ) : (
-                  messages.map((message) => {
-                    const isCurrentUser = message.sender_id === currentUser?.id;
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                            isCurrentUser
-                              ? 'bg-primary text-primary-content'
-                              : 'bg-base-200 text-base-content'
-                          }`}
-                        >
-                          {message.text && (
-                            <p className="break-words">{message.text}</p>
-                          )}
-                          {message.image && (
-                            <div className={message.text ? 'mt-2' : ''}>
-                              <Image
-                                src={message.image}
-                                alt="Message attachment"
-                                width={200}
-                                height={200}
-                                className="rounded-lg object-cover max-w-full h-auto"
-                              />
-                            </div>
-                          )}
-                          <p className={`text-xs mt-1 ${
-                            isCurrentUser ? 'text-primary-content/70' : 'text-base-content/60'
-                          }`}>
-                            {formatMessageTime(message.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Image Preview */}
-              {previewImage && (
-                <div className="p-4 border-t border-base-content/10">
-                  <div className="relative inline-block">
-                    <Image
-                      src={previewImage}
-                      alt="Preview"
-                      width={100}
-                      height={100}
-                      className="rounded-lg object-cover"
-                    />
-                    <button
-                      onClick={removeImage}
-                      className="absolute -top-2 -right-2 btn btn-circle btn-xs btn-error"
-                    >
-                      <XIcon className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Message Input */}
-              <div className="p-4 border-t border-base-content/10">
-                <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageSelect}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="btn btn-ghost btn-circle btn-sm"
-                  >
-                    <ImageIcon className="w-5 h-5" />
-                  </button>
-                  
-                  <div className="flex-1">
-                    <textarea
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      placeholder="Type a message..."
-                      className="textarea textarea-bordered w-full resize-none min-h-[2.5rem] max-h-32"
-                      rows={1}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage(e);
-                        }
-                      }}
-                    />
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={!messageText.trim() && !selectedImage}
-                    className="btn btn-primary btn-circle"
-                  >
-                    <SendIcon className="w-5 h-5" />
-                  </button>
-                </form>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-base-200">
-              <div className="text-center">
-                <div className="text-6xl mb-4">💬</div>
-                <h2 className="text-2xl font-bold text-base-content mb-2">Welcome to Messages</h2>
-                <p className="text-base-content/60">Select a conversation to start messaging</p>
-              </div>
+              ))}
             </div>
           )}
         </div>

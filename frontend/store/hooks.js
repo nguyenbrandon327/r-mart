@@ -13,14 +13,21 @@ import {
   clearMessage 
 } from './slices/authSlice';
 import {
-  getUsers as getUsersAction,
+  createChat as createChatAction,
+  getChats as getChatsAction,
+  deleteChat as deleteChatAction,
   getMessages as getMessagesAction,
   sendMessage as sendMessageAction,
-  setSelectedUser,
+  markMessagesAsSeen as markMessagesAsSeenAction,
+  setSelectedChat,
   addMessage,
   setOnlineUsers,
+  setUserTyping,
+  markMessagesAsSeenLocal,
   clearError as clearChatError,
-  clearMessages
+  clearMessages,
+  clearTypingUsers,
+  updateChatLastMessage
 } from './slices/chatSlice';
 
 export const useAuthStore = () => {
@@ -108,46 +115,101 @@ export const useChatStore = () => {
   return {
     // State
     messages: chat.messages,
-    users: chat.users,
-    selectedUser: chat.selectedUser,
-    isUsersLoading: chat.isUsersLoading,
+    chats: chat.chats,
+    selectedChat: chat.selectedChat,
+    isChatsLoading: chat.isChatsLoading,
     isMessagesLoading: chat.isMessagesLoading,
     error: chat.error,
     onlineUsers: chat.onlineUsers,
+    typingUsers: chat.typingUsers,
 
     // Actions
-    getUsers: async () => {
+    createChat: async (otherUserId, productId) => {
       try {
-        await dispatch(getUsersAction()).unwrap();
+        const result = await dispatch(createChatAction({ otherUserId, productId })).unwrap();
+        return result;
       } catch (error) {
         throw error;
       }
     },
 
-    getMessages: async (userId) => {
+    getChats: async () => {
       try {
-        await dispatch(getMessagesAction(userId)).unwrap();
+        await dispatch(getChatsAction()).unwrap();
       } catch (error) {
         throw error;
       }
     },
 
-    sendMessage: async (messageData) => {
-      const selectedUserId = chat.selectedUser?.id;
-      if (!selectedUserId) {
-        throw new Error("No user selected");
+    deleteChat: async (chatId) => {
+      try {
+        await dispatch(deleteChatAction(chatId)).unwrap();
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    getMessages: async (chatId) => {
+      try {
+        await dispatch(getMessagesAction(chatId)).unwrap();
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    sendMessage: async (messageData, chatId) => {
+      if (!chatId) {
+        throw new Error("No chat selected");
       }
       
       try {
-        await dispatch(sendMessageAction({ messageData, selectedUserId })).unwrap();
+        await dispatch(sendMessageAction({ messageData, chatId })).unwrap();
       } catch (error) {
         throw error;
       }
     },
 
+    markMessagesAsSeen: async (chatId) => {
+      try {
+        await dispatch(markMessagesAsSeenAction(chatId)).unwrap();
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    emitTyping: (chatId, isTyping) => {
+      const socket = auth.socket;
+      if (!socket || !socket.connected || !chatId) {
+        console.log('Cannot emit typing: socket not available or not connected');
+        return;
+      }
+      
+      socket.emit("typing", { chatId, isTyping });
+    },
+
+    joinChatRoom: (chatId) => {
+      const socket = auth.socket;
+      if (!socket || !socket.connected || !chatId) {
+        console.log('Cannot join chat room: socket not available or not connected');
+        return;
+      }
+      
+      socket.emit("joinChat", chatId);
+    },
+
+    leaveChatRoom: (chatId) => {
+      const socket = auth.socket;
+      if (!socket || !socket.connected || !chatId) {
+        console.log('Cannot leave chat room: socket not available or not connected');
+        return;
+      }
+      
+      socket.emit("leaveChat", chatId);
+    },
+
     subscribeToMessages: () => {
-      if (!chat.selectedUser) {
-        console.log('No selected user for subscription');
+      if (!chat.selectedChat) {
+        console.log('No selected chat for subscription');
         return;
       }
 
@@ -159,30 +221,45 @@ export const useChatStore = () => {
 
       // Always remove ALL existing listeners first to prevent duplicates
       socket.removeAllListeners("newMessage");
+      socket.removeAllListeners("userTyping");
+      socket.removeAllListeners("messagesSeen");
 
-      console.log('Subscribing to messages for user:', chat.selectedUser.id);
+      console.log('Subscribing to messages for chat:', chat.selectedChat.id);
 
-      // Create a specific handler function to avoid closure issues
+      // Handle new messages
       const messageHandler = (newMessage) => {
         console.log('Received new message:', newMessage);
-        // Get current selected user at the time of message receipt
-        const currentSelectedUser = chat.selectedUser;
-        if (!currentSelectedUser) {
-          console.log('No selected user when message received, ignoring');
+        const currentSelectedChat = chat.selectedChat;
+        if (!currentSelectedChat) {
+          console.log('No selected chat when message received, ignoring');
           return;
         }
         
-        // Only add messages from the selected user (incoming messages)
-        const isMessageFromSelectedUser = newMessage.sender_id === currentSelectedUser.id;
-        if (isMessageFromSelectedUser) {
-          console.log('Adding message from selected user to chat');
+        const isMessageForSelectedChat = newMessage.chat_id === currentSelectedChat.id;
+        if (isMessageForSelectedChat) {
+          console.log('Adding message for selected chat');
           dispatch(addMessage(newMessage));
         } else {
-          console.log('Message not from selected user, ignoring');
+          console.log('Message not for selected chat, ignoring');
         }
       };
 
+      // Handle typing indicators
+      const typingHandler = ({ userId, isTyping, chatId }) => {
+        const currentSelectedChat = chat.selectedChat;
+        if (currentSelectedChat && chatId === currentSelectedChat.id) {
+          dispatch(setUserTyping({ userId: userId.toString(), chatId, isTyping }));
+        }
+      };
+
+      // Handle messages seen
+      const messagesSeenHandler = ({ messageIds }) => {
+        dispatch(markMessagesAsSeenLocal({ messageIds }));
+      };
+
       socket.on("newMessage", messageHandler);
+      socket.on("userTyping", typingHandler);
+      socket.on("messagesSeen", messagesSeenHandler);
     },
 
     unsubscribeFromMessages: () => {
@@ -194,6 +271,8 @@ export const useChatStore = () => {
       
       console.log('Unsubscribing from messages - removing all listeners');
       socket.removeAllListeners("newMessage");
+      socket.removeAllListeners("userTyping");
+      socket.removeAllListeners("messagesSeen");
     },
 
     subscribeToOnlineUsers: () => {
@@ -212,8 +291,10 @@ export const useChatStore = () => {
       socket.off("getOnlineUsers");
     },
 
-    setSelectedUser: (user) => dispatch(setSelectedUser(user)),
+    setSelectedChat: (chat) => dispatch(setSelectedChat(chat)),
     clearError: () => dispatch(clearChatError()),
-    clearMessages: () => dispatch(clearMessages())
+    clearMessages: () => dispatch(clearMessages()),
+    clearTypingUsers: () => dispatch(clearTypingUsers()),
+    updateChatLastMessage: (chatId, message, timestamp) => dispatch(updateChatLastMessage({ chatId, message, timestamp }))
   };
 }; 
