@@ -22,9 +22,13 @@ export default function ProfilePage() {
     return email ? email.split('@')[0] : '';
   };
 
+  // Check if the current user is viewing their own profile
+  const isOwnProfile = user && viewedUserProfile && getUsername(user.email) === username;
+
+  // First useEffect - handle authentication and fetch user profile
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (isAuthenticated === false) {
+    // Redirect to login if not authenticated (but only after auth check is complete)
+    if (isAuthenticated === false && !isCheckingAuth) {
       router.push('/auth/login');
       return;
     }
@@ -40,15 +44,7 @@ export default function ProfilePage() {
     };
   }, [username, isAuthenticated, isCheckingAuth, dispatch, router]);
 
-  // Don't render anything if not authenticated
-  if (isAuthenticated === false) {
-    return null;
-  }
-
-  // Check if the current user is viewing their own profile
-  const isOwnProfile = user && viewedUserProfile && getUsername(user.email) === username;
-
-  // Fetch current user profile if viewing own profile and not already loaded
+  // Second useEffect - fetch current user profile if viewing own profile
   useEffect(() => {
     if (isOwnProfile && !currentUserProfile) {
       dispatch(getCurrentUserProfile());
@@ -58,6 +54,11 @@ export default function ProfilePage() {
   const handleEditProfile = () => {
     document.getElementById("edit_profile_modal").showModal();
   };
+
+  // Don't render anything if not authenticated (but only after auth check is complete)
+  if (isAuthenticated === false && !isCheckingAuth) {
+    return null;
+  }
 
   // Show loading while checking auth
   if (isCheckingAuth) {

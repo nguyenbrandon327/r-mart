@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData } from "../../../store/slices/productSlice";
+import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData, fetchSellerOtherProducts } from "../../../store/slices/productSlice";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
 import UserLink from "../../../components/UserLink";
+import SellerOtherProductsCarousel from "../../../components/SellerOtherProductsCarousel";
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
 import { useChatStore } from "../../../store/hooks";
 import toast from "react-hot-toast";
@@ -71,7 +72,7 @@ export default function ProductPage({ params }) {
   const { id } = params;
   const router = useRouter();
   const dispatch = useDispatch();
-  const { currentProduct, loading, error } = useSelector((state) => state.products);
+  const { currentProduct, loading, error, sellerOtherProducts, sellerOtherProductsLoading } = useSelector((state) => state.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { createChat } = useChatStore();
   const [activeImage, setActiveImage] = useState(0);
@@ -81,6 +82,16 @@ export default function ProductPage({ params }) {
   useEffect(() => {
     dispatch(fetchProduct(id));
   }, [dispatch, id]);
+
+  // Fetch seller's other products when current product loads
+  useEffect(() => {
+    if (currentProduct && currentProduct.user_id) {
+      dispatch(fetchSellerOtherProducts({ 
+        userId: currentProduct.user_id, 
+        excludeProductId: id 
+      }));
+    }
+  }, [dispatch, currentProduct, id]);
 
   const handleContactSeller = async () => {
     if (!isAuthenticated) {
@@ -456,6 +467,23 @@ export default function ProductPage({ params }) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Seller Other Products Carousel */}
+      {currentProduct && currentProduct.user_id && (
+        <SellerOtherProductsCarousel 
+          products={sellerOtherProducts}
+          loading={sellerOtherProductsLoading}
+          seller={{
+            id: currentProduct.user_id,
+            name: currentProduct.user_name,
+            user_name: currentProduct.user_name,
+            email: currentProduct.user_email,
+            user_email: currentProduct.user_email,
+            profile_pic: currentProduct.user_profile_pic,
+            user_profile_pic: currentProduct.user_profile_pic
+          }}
+        />
       )}
     </div>
   );

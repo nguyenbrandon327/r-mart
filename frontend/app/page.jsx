@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { PackageIcon, ShoppingBagIcon, HistoryIcon, ChevronsRightIcon, ChevronsLeftIcon, XCircleIcon } from "lucide-react";
-import { fetchProducts, resetForm } from '../store/slices/productSlice';
+import { fetchProducts } from '../store/slices/productSlice';
 import ProductCard from "../components/ProductCard";
 import AddProductModal from "../components/EditProductModal";
 import { fetchRecentlyViewedProducts, clearRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
@@ -11,20 +11,30 @@ import { fetchRecentlyViewedProducts, clearRecentlyViewedProducts } from '../sto
 export default function HomePage() {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.products);
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
   const [activeSlide, setActiveSlide] = useState(1);
   const { products: recentlyViewedProducts, loading: recentlyViewedLoading } = useSelector((state) => state.recentlyViewed);
   const carouselRef = useRef(null);
 
   useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+    // Only fetch when auth check is complete
+    if (!isCheckingAuth) {
+      if (isAuthenticated) {
+        // First fetch recently viewed products for authenticated users
+        dispatch(fetchRecentlyViewedProducts(10));
+      } else {
+        // For non-authenticated users, fetch all products immediately
+        dispatch(fetchProducts(false));
+      }
+    }
+  }, [dispatch, isAuthenticated, isCheckingAuth]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchRecentlyViewedProducts(10));
+    // After recently viewed products are loaded, fetch products with exclusion
+    if (isAuthenticated && !recentlyViewedLoading && !isCheckingAuth) {
+      dispatch(fetchProducts(true));
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, isAuthenticated, recentlyViewedLoading, isCheckingAuth]);
 
   const goToSlide = (slideNumber) => {
     const slide = document.getElementById(`slide${slideNumber}`);
@@ -54,6 +64,10 @@ export default function HomePage() {
 
   const handleClearHistory = () => {
     dispatch(clearRecentlyViewedProducts());
+    // Re-fetch products to show previously hidden items in "All Products"
+    if (isAuthenticated && !isCheckingAuth) {
+      dispatch(fetchProducts(true));
+    }
   };
 
   const renderRecentlyViewed = () => {

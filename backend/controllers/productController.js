@@ -5,13 +5,35 @@ import { recordProductView } from "./recentlySeenController.js";
 // CRUD operations
 export const getProducts = async (req, res) => {
     try {
-        const products = await sql`
-            SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
-            FROM products p
-            LEFT JOIN users u ON p.user_id = u.id
-            ORDER BY p.created_at DESC
-        `;
-        console.log("fetched products");
+        const { excludeRecentlyViewed } = req.query;
+        const userId = req.user?.id; // Get user ID if authenticated
+        
+        let products;
+        
+        if (excludeRecentlyViewed === 'true' && userId) {
+            // Exclude recently viewed products for authenticated users
+            products = await sql`
+                SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                FROM products p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.id NOT IN (
+                    SELECT DISTINCT product_id 
+                    FROM recently_seen_products 
+                    WHERE user_id = ${userId}
+                )
+                ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
+            `;
+        } else {
+            // Default behavior - show all products with randomized date-emphasized ordering
+            products = await sql`
+                SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                FROM products p
+                LEFT JOIN users u ON p.user_id = u.id
+                ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
+            `;
+        }
+        
+        console.log("fetched products", excludeRecentlyViewed === 'true' && userId ? "(excluding recently viewed)" : "");
         res.status(200).json({success:true, data:products});
     } catch (error) {
         console.log("Error in getProducts", error);
@@ -226,9 +248,10 @@ export const getProductsByCategory = async (req, res) => {
             FROM products p
             LEFT JOIN users u ON p.user_id = u.id
             WHERE p.category=${category}
-            ORDER BY p.created_at DESC
+            ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
         `;
         
+        console.log(`Fetched ${products.length} products for category: ${category} (randomized order)`);
         res.status(200).json({success: true, data: products});
     } catch (error) {
         console.log("Error in getProductsByCategory", error);
@@ -303,6 +326,28 @@ export const deleteProductImage = async (req, res) => {
             success: false,
             message: "Failed to delete product image"
         });
+    }
+};
+
+// Get seller's other products (excluding current product)
+export const getSellerOtherProducts = async (req, res) => {
+    const { userId, excludeProductId } = req.params;
+    
+    try {
+        const products = await sql`
+            SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+            FROM products p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = ${userId} AND p.id != ${excludeProductId}
+            ORDER BY p.created_at DESC
+            LIMIT 10
+        `;
+        
+        console.log(`Fetched ${products.length} other products for seller ${userId}, excluding product ${excludeProductId}`);
+        res.status(200).json({success: true, data: products});
+    } catch (error) {
+        console.log("Error in getSellerOtherProducts", error);
+        res.status(500).json({success: false, message: "Failed to fetch seller's other products"});
     }
 };
 

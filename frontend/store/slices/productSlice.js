@@ -7,9 +7,10 @@ import toast from 'react-hot-toast';
 // Async thunks
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async (_, { rejectWithValue }) => {
+  async (excludeRecentlyViewed = false, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/api/products');
+      const queryParam = excludeRecentlyViewed ? '?excludeRecentlyViewed=true' : '';
+      const response = await axios.get(`/api/products${queryParam}`);
       return response.data.data;
     } catch (err) {
       if (err.status === 429) return rejectWithValue("Rate limit exceeded");
@@ -109,11 +110,26 @@ export const deleteProductImage = createAsyncThunk(
   }
 );
 
+export const fetchSellerOtherProducts = createAsyncThunk(
+  'products/fetchSellerOtherProducts',
+  async ({ userId, excludeProductId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`/api/products/seller/${userId}/other/${excludeProductId}`);
+      return response.data.data;
+    } catch (err) {
+      if (err.status === 429) return rejectWithValue("Rate limit exceeded");
+      return rejectWithValue("Something went wrong");
+    }
+  }
+);
+
 const initialState = {
   products: [],
   loading: false,
   error: null,
   currentProduct: null,
+  sellerOtherProducts: [],
+  sellerOtherProductsLoading: false,
   formData: {
     name: "",
     price: "",
@@ -259,6 +275,20 @@ const productSlice = createSlice({
       })
       .addCase(deleteProductImage.rejected, (state) => {
         state.loading = false;
+      })
+      // Fetch Seller Other Products
+      .addCase(fetchSellerOtherProducts.pending, (state) => {
+        state.sellerOtherProductsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSellerOtherProducts.fulfilled, (state, action) => {
+        state.sellerOtherProductsLoading = false;
+        state.sellerOtherProducts = action.payload;
+      })
+      .addCase(fetchSellerOtherProducts.rejected, (state, action) => {
+        state.sellerOtherProductsLoading = false;
+        state.error = action.payload;
+        state.sellerOtherProducts = [];
       });
   },
 });
