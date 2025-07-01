@@ -15,7 +15,7 @@ export default function AuthLayout({ children }) {
               className="size-12 object-contain"
             />
             <span
-              className="font-black font-gt-america-expanded tracking-widest text-2xl 
+              className="font-black font-gt-america-expanded tracking-tighter text-2xl 
                 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
             >
               r'mart

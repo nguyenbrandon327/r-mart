@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "seed": "node seeds/seed.js"
+    "start": "node server.js",
+    "seed": "node seeds/seed.js",
+    "sync-elasticsearch": "node utils/syncElasticsearch.js",
+    "test-elastic": "node test-elastic-cloud.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +18,7 @@
   "dependencies": {
     "@arcjet/node": "^1.0.0-beta.5",
     "@aws-sdk/client-s3": "^3.808.0",
+    "@elastic/elasticsearch": "^9.0.2",
     "@neondatabase/serverless": "^1.0.0",
     "aws-sdk": "^2.1692.0",
     "bcryptjs": "^3.0.2",

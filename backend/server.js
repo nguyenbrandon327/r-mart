@@ -16,6 +16,9 @@ import messageRoutes from "./routes/messageRoutes.js";
 import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import searchRoutes from "./routes/searchRoutes.js";
+import { initializeElasticsearch } from "./config/elasticsearch.js";
+import { syncExistingProducts } from "./utils/syncElasticsearch.js";
 
 dotenv.config();
 
@@ -66,12 +69,18 @@ app.use(async (req, res, next) => {
   }
 });
 
+// Health check endpoint for Docker
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/saved-products", savedProductRoutes);
 app.use("/api/recently-seen", recentlySeenRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/search", searchRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));
@@ -183,7 +192,21 @@ async function initDB() {
   }
 }
 
-initDB().then(() => {
+initDB().then(async () => {
+  try {
+    // Initialize Elasticsearch
+    await initializeElasticsearch();
+    
+    // Optionally sync existing products on startup
+    if (process.env.SYNC_ELASTICSEARCH_ON_STARTUP === 'true') {
+      console.log('Syncing existing products to Elasticsearch...');
+      await syncExistingProducts();
+    }
+  } catch (error) {
+    console.error('Elasticsearch initialization error:', error);
+    // Continue server startup even if Elasticsearch fails
+  }
+  
   server.listen(PORT, () => {
     console.log("Server is running on port " + PORT);
   });

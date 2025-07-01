@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import SearchBar from './SearchBar';
 
 function Navbar() {
   const pathname = usePathname();
@@ -39,36 +40,39 @@ function Navbar() {
     <div className="bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto">
         <div className="navbar px-4 min-h-[4rem] justify-between">
-          {/* LOGO */}
-          <div className="flex-1 lg:flex-none">
-            <Link href="/" className="hover:opacity-80 transition-opacity">
-              <div className="flex items-center gap-2">
-                <img 
-                  src="/logo-pic.png" 
-                  alt="R'mart Logo" 
-                  className="size-12 object-contain"
-                />
-                <span
-                  className="font-black font-gt-america-expanded tracking-widest text-2xl 
-                    bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
-                >
-                  r'mart
-                </span>
-              </div>
-            </Link>
+          {/* LEFT SECTION - LOGO AND SEARCH */}
+          <div className="flex items-center gap-1 flex-1">
+            <div className="flex-none">
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-2">
+                  <img 
+                    src="/logo-pic.png" 
+                    alt="R'mart Logo" 
+                    className="size-12 object-contain"
+                  />
+                  <span
+                    className="font-black font-gt-america-expanded tracking-tighter text-2xl 
+                      bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
+                  >
+                    r'mart
+                  </span>
+                </div>
+              </Link>
+            </div>
+            
+            {/* SEARCH BAR */}
+            <SearchBar />
           </div>
 
           {/* RIGHT SECTION */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-none">
               {/* Conditional rendering based on authentication status */}
               {!isAuthenticated ? (
                 <>
-                  <Link href="/auth/login" className="btn btn-ghost btn-sm">
-                    <UserIcon className="size-4 mr-1" />
+                  <Link href="/auth/login" className="btn btn-ghost btn-sm rounded-none">
                     Login
                   </Link>
-                  <Link href="/auth/signup" className="btn btn-primary btn-sm">
-                    <UserPlusIcon className="size-4 mr-1" />
+                  <Link href="/auth/signup" className="btn btn-primary btn-sm rounded-none">
                     Sign Up
                   </Link>
                 </>

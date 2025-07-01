@@ -1,6 +1,7 @@
 import { sql } from "../config/db.js";
 import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
 import { recordProductView } from "./recentlySeenController.js";
+import { indexProduct, updateProductIndex, deleteProductIndex } from "./searchController.js";
 
 // CRUD operations
 export const getProducts = async (req, res) => {
@@ -66,6 +67,26 @@ export const createProduct = async (req, res) => {
         `;
 
         console.log("Product created successfully", newProduct);
+
+        // Get user info for Elasticsearch
+        const userInfo = await sql`
+            SELECT name, email, profile_pic 
+            FROM users 
+            WHERE id = ${req.user.id}
+        `;
+        
+        // Index product in Elasticsearch
+        try {
+            await indexProduct({
+                ...newProduct[0],
+                user_name: userInfo[0].name,
+                user_email: userInfo[0].email,
+                user_profile_pic: userInfo[0].profile_pic
+            });
+        } catch (esError) {
+            console.error("Failed to index product in Elasticsearch:", esError);
+            // Continue even if indexing fails
+        }
 
         res.status(201).json({ success:true, data: newProduct[0] });
     } catch (error) {
@@ -181,6 +202,21 @@ export const updateProduct = async (req, res) => {
         WHERE id=${id}
         RETURNING *
       `;
+      
+      // Update product in Elasticsearch
+      try {
+        await updateProductIndex({
+          id: updateProduct[0].id,
+          name: updateProduct[0].name,
+          description: updateProduct[0].description,
+          price: updateProduct[0].price,
+          category: updateProduct[0].category,
+          images: updateProduct[0].images
+        });
+      } catch (esError) {
+        console.error("Failed to update product in Elasticsearch:", esError);
+        // Continue even if indexing fails
+      }
   
       res.status(200).json({ success: true, data: updateProduct[0] });
     } catch (error) {
@@ -228,6 +264,14 @@ export const deleteProduct = async (req, res) => {
         DELETE FROM products
         WHERE id=${id}
       `;
+      
+      // Delete product from Elasticsearch
+      try {
+        await deleteProductIndex(id);
+      } catch (esError) {
+        console.error("Failed to delete product from Elasticsearch:", esError);
+        // Continue even if deletion fails
+      }
   
       res.status(200).json({
         success: true,

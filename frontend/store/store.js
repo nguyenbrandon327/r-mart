@@ -6,6 +6,7 @@ import savedProductsReducer from './slices/savedProductsSlice';
 import recentlyViewedReducer from './slices/recentlyViewedSlice';
 import userReducer from './slices/userSlice';
 import chatReducer from './slices/chatSlice';
+import searchReducer from './slices/searchSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     recentlyViewed: recentlyViewedReducer,
     user: userReducer,
     chat: chatReducer,
+    search: searchReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
