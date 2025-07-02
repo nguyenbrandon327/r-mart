@@ -4,8 +4,13 @@ import { Toaster } from 'react-hot-toast';
 import NavigationWrapper from '../components/NavigationWrapper';
 
 export const metadata = {
-  title: 'R-Mart',
+  title: 'R\'Mart',
   description: 'R-Mart Shopping Application',
+  icons: {
+    icon: '/logo-icon.png',
+    shortcut: '/logo-icon.png',
+    apple: '/logo-icon.png',
+  },
 };
 
 export default function RootLayout({ children }) {

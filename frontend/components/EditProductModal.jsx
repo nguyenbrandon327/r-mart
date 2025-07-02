@@ -267,6 +267,7 @@ function EditProductModal() {
                   <option value="vehicles">Vehicles</option>
                   <option value="housing">Housing</option>
                   <option value="rides">Rides</option>
+                  <option value="renting">Renting</option>
                   <option value="merch">Merch</option>
                   <option value="other">Other</option>
                   <option value="in-searching-for">I'm searching for</option>

@@ -25,13 +25,13 @@ export default function NavigationWrapper({ children }) {
 
   return (
     <>
-      {!isAuthPage && (
+      {!isAuthPage && !isAddListingPage && (
         <>
           <Navbar />
-          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isAddListingPage && !isInboxPage && <SecondaryNavbar />}
+          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isInboxPage && <SecondaryNavbar />}
         </>
       )}
-      <main className={isAuthPage || isChatPage ? "" : "container mx-auto px-4 py-6"}>
+      <main className={isAuthPage || isAddListingPage || isChatPage ? "" : "container mx-auto px-4 py-6"}>
         {children}
       </main>
     </>

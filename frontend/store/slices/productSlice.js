@@ -21,9 +21,10 @@ export const fetchProducts = createAsyncThunk(
 
 export const fetchProductsByCategory = createAsyncThunk(
   'products/fetchProductsByCategory',
-  async (category, { rejectWithValue }) => {
+  async ({ category, sort = 'best_match' }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/products/category/${category}`);
+      const params = new URLSearchParams({ sort });
+      const response = await axios.get(`/api/products/category/${category}?${params}`);
       return response.data.data;
     } catch (err) {
       if (err.status === 429) return rejectWithValue("Rate limit exceeded");
@@ -130,6 +131,7 @@ const initialState = {
   currentProduct: null,
   sellerOtherProducts: [],
   sellerOtherProductsLoading: false,
+  sort: 'best_match',
   formData: {
     name: "",
     price: "",
@@ -157,6 +159,9 @@ const productSlice = createSlice({
           category: state.currentProduct.category,
         };
       }
+    },
+    setSort: (state, action) => {
+      state.sort = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -293,5 +298,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { setFormData, resetForm, populateFormData } = productSlice.actions;
+export const { setFormData, resetForm, populateFormData, setSort } = productSlice.actions;
 export default productSlice.reducer; 

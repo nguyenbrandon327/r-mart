@@ -136,11 +136,11 @@ export default function ProfilePage() {
                 <img
                   src={viewedUserProfile.profile_pic}
                   alt={`${viewedUserProfile.name}'s profile`}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                  className="w-40 h-40 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center border-4 border-gray-200">
-                  <span className="text-4xl text-gray-600">👤</span>
+                <div className="w-40 h-40 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span className="text-5xl text-gray-600">👤</span>
                 </div>
               )}
             </div>

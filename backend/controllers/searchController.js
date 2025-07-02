@@ -3,7 +3,7 @@ import { esClient, PRODUCT_INDEX } from '../config/elasticsearch.js';
 // Search products by title and description
 export const searchProducts = async (req, res) => {
   try {
-    const { q, category, minPrice, maxPrice, limit = 20, offset = 0 } = req.query;
+    const { q, category, minPrice, maxPrice, sort = 'best_match', limit = 20, offset = 0 } = req.query;
 
     if (!q || q.trim() === '') {
       return res.status(400).json({
@@ -44,6 +44,27 @@ export const searchProducts = async (req, res) => {
       searchQuery.bool.filter.push(rangeFilter);
     }
 
+    // Determine sort order
+    let sortOrder;
+    switch (sort) {
+      case 'recent_first':
+        sortOrder = [{ created_at: 'desc' }];
+        break;
+      case 'price_low_high':
+        sortOrder = [{ price: 'asc' }];
+        break;
+      case 'price_high_low':
+        sortOrder = [{ price: 'desc' }];
+        break;
+      case 'best_match':
+      default:
+        sortOrder = [
+          { _score: 'desc' },
+          { created_at: 'desc' }
+        ];
+        break;
+    }
+
     // Execute the search
     const searchResult = await esClient.search({
       index: PRODUCT_INDEX,
@@ -51,10 +72,7 @@ export const searchProducts = async (req, res) => {
         query: searchQuery,
         from: parseInt(offset),
         size: parseInt(limit),
-        sort: [
-          { _score: 'desc' },
-          { created_at: 'desc' }
-        ]
+        sort: sortOrder
       }
     });
 

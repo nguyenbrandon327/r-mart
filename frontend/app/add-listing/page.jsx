@@ -145,8 +145,28 @@ export default function AddListingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-100" data-theme="light">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-base-100 relative" data-theme="light">
+      {/* Logo at top left */}
+      <div className="absolute top-4 left-4 z-10">
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <div className="flex items-center gap-2">
+            <img 
+              src="/logo-pic.png" 
+              alt="R'mart Logo" 
+              className="size-12 object-contain"
+            />
+            <span
+              className="font-black font-gt-america-expanded tracking-tighter text-2xl 
+                bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
+            >
+              r'mart
+            </span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Main content */}
+      <div className="max-w-4xl mx-auto px-4 py-8 pt-20">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Add New Listing</h1>
@@ -228,6 +248,7 @@ export default function AddListingPage() {
                       <option value="vehicles">Vehicles</option>
                       <option value="housing">Housing</option>
                       <option value="rides">Rides</option>
+                      <option value="renting">Renting</option>
                       <option value="merch">Merch</option>
                       <option value="other">Other</option>
                       <option value="in-searching-for">I'm searching for</option>

@@ -409,7 +409,7 @@ export default function ProductPage({ params }) {
               ) : (
                 <MessageSquareTextIcon className="h-5 w-5 mr-1" />
               )}
-              {isContactingSeller ? 'Creating Chat...' : 'Contact Seller'}
+              {isContactingSeller ? 'Creating Chat...' : 'Talk to Seller'}
             </button>
           </div>
         </div>

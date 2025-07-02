@@ -50,7 +50,7 @@ export const getRecentlyViewedProducts = async (req, res) => {
       FROM recently_seen_products r
       JOIN products p ON r.product_id = p.id
       LEFT JOIN users u ON p.user_id = u.id
-      WHERE r.user_id = ${userId}
+      WHERE r.user_id = ${userId} AND p.user_id != ${userId}
       ORDER BY r.viewed_at DESC
       LIMIT ${limit}
     `;

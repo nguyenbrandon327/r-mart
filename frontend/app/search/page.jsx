@@ -9,16 +9,40 @@ import { Filter as FilterIcon, X as XIcon } from 'lucide-react';
 
 const categories = [
   'All',
-  'Automotive',
-  'Electronics',
-  'Fashion',
-  'Home & Garden',
-  'Sports & Outdoors',
-  'Toys & Games',
-  'Books & Media',
-  'Health & Beauty',
-  'Other'
+  'clothes',
+  'tech',
+  'textbooks',
+  'furniture',
+  'kitchen',
+  'food',
+  'vehicles',
+  'housing',
+  'rides',
+  'renting',
+  'merch',
+  'other',
+  'in-searching-for'
 ];
+
+const getCategoryLabel = (category) => {
+  const categoryLabels = {
+    'clothes': 'Clothes',
+    'tech': 'Tech',
+    'textbooks': 'Textbooks',
+    'furniture': 'Furniture',
+    'kitchen': 'Kitchen',
+    'food': 'Food',
+    'vehicles': 'Vehicles',
+    'housing': 'Housing',
+    'rides': 'Rides',
+    'renting': 'Renting',
+    'merch': 'Merch',
+    'other': 'Other',
+    'in-searching-for': 'I\'m searching for'
+  };
+  
+  return categoryLabels[category] || category;
+};
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -39,7 +63,8 @@ export default function SearchPage() {
   const [localFilters, setLocalFilters] = useState({
     category: '',
     minPrice: '',
-    maxPrice: ''
+    maxPrice: '',
+    sort: 'best_match'
   });
 
   useEffect(() => {
@@ -50,7 +75,16 @@ export default function SearchPage() {
         offset: 0 
       }));
     }
-  }, [query, dispatch]);
+  }, [query, filters, dispatch]);
+
+  useEffect(() => {
+    setLocalFilters({
+      category: filters.category || '',
+      minPrice: filters.minPrice || '',
+      maxPrice: filters.maxPrice || '',
+      sort: filters.sort || 'best_match'
+    });
+  }, [filters]);
 
   const handleFilterChange = (filterType, value) => {
     setLocalFilters(prev => ({
@@ -73,11 +107,13 @@ export default function SearchPage() {
     setLocalFilters({
       category: '',
       minPrice: '',
-      maxPrice: ''
+      maxPrice: '',
+      sort: 'best_match'
     });
     dispatch(clearFilters());
     dispatch(searchProducts({ 
       query,
+      sort: 'best_match',
       offset: 0 
     }));
   };
@@ -90,7 +126,7 @@ export default function SearchPage() {
     }));
   };
 
-  const hasActiveFilters = filters.category || filters.minPrice || filters.maxPrice;
+  const hasActiveFilters = filters.category || filters.minPrice || filters.maxPrice || (filters.sort && filters.sort !== 'best_match');
 
   return (
     <div className="min-h-screen">
@@ -130,7 +166,7 @@ export default function SearchPage() {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Category Filter */}
               <div>
                 <label className="label">
@@ -143,8 +179,25 @@ export default function SearchPage() {
                 >
                   <option value="">All Categories</option>
                   {categories.slice(1).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
                   ))}
+                </select>
+              </div>
+
+              {/* Sort Filter */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Sort by</span>
+                </label>
+                <select
+                  value={localFilters.sort}
+                  onChange={(e) => handleFilterChange('sort', e.target.value)}
+                  className="select select-bordered w-full"
+                >
+                  <option value="best_match">Best match</option>
+                  <option value="recent_first">Recent first</option>
+                  <option value="price_low_high">Price: Low to high</option>
+                  <option value="price_high_low">Price: High to low</option>
                 </select>
               </div>
 
@@ -198,11 +251,27 @@ export default function SearchPage() {
           <div className="flex flex-wrap gap-2 mb-4">
             {filters.category && (
               <div className="badge badge-primary gap-2">
-                Category: {filters.category}
+                Category: {getCategoryLabel(filters.category)}
                 <button
                   onClick={() => {
                     dispatch(setFilters({ category: '' }));
                     dispatch(searchProducts({ query, ...filters, category: '', offset: 0 }));
+                  }}
+                  className="btn btn-ghost btn-xs btn-circle"
+                >
+                  <XIcon className="size-3" />
+                </button>
+              </div>
+            )}
+            {filters.sort && filters.sort !== 'best_match' && (
+              <div className="badge badge-primary gap-2">
+                Sort: {filters.sort === 'recent_first' ? 'Recent first' : 
+                       filters.sort === 'price_low_high' ? 'Price: Low to high' :
+                       filters.sort === 'price_high_low' ? 'Price: High to low' : filters.sort}
+                <button
+                  onClick={() => {
+                    dispatch(setFilters({ sort: 'best_match' }));
+                    dispatch(searchProducts({ query, ...filters, sort: 'best_match', offset: 0 }));
                   }}
                   className="btn btn-ghost btn-xs btn-circle"
                 >

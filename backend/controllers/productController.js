@@ -285,17 +285,53 @@ export const deleteProduct = async (req, res) => {
 
 export const getProductsByCategory = async (req, res) => {
     const { category } = req.params;
+    const { sort = 'best_match' } = req.query; // Default to best_match
     
     try {
-        const products = await sql`
-            SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
-            FROM products p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.category=${category}
-            ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
-        `;
+        let products;
         
-        console.log(`Fetched ${products.length} products for category: ${category} (randomized order)`);
+        switch (sort) {
+            case 'recent_first':
+                products = await sql`
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    FROM products p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.category=${category}
+                    ORDER BY p.created_at DESC
+                `;
+                break;
+            case 'price_low_high':
+                products = await sql`
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    FROM products p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.category=${category}
+                    ORDER BY p.price ASC
+                `;
+                break;
+            case 'price_high_low':
+                products = await sql`
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    FROM products p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.category=${category}
+                    ORDER BY p.price DESC
+                `;
+                break;
+            case 'best_match':
+            default:
+                // For category pages, "best match" means newest with some randomization
+                products = await sql`
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    FROM products p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.category=${category}
+                    ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
+                `;
+                break;
+        }
+        
+        console.log(`Fetched ${products.length} products for category: ${category} with sort: ${sort}`);
         res.status(200).json({success: true, data: products});
     } catch (error) {
         console.log("Error in getProductsByCategory", error);

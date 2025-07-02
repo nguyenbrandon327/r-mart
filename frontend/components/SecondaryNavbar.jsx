@@ -13,6 +13,7 @@ const categories = [
   { value: 'vehicles', label: 'Vehicles' },
   { value: 'housing', label: 'Housing' },
   { value: 'rides', label: 'Rides' },
+  { value: 'renting', label: 'Renting' },
   { value: 'merch', label: 'Merch' },
   { value: 'other', label: 'Other' },
   { value: 'in-searching-for', label: 'I\'m searching for' }
@@ -26,9 +27,9 @@ function SecondaryNavbar() {
       <div className="container mx-auto flex justify-center">
         <div className="flex items-center overflow-x-auto hide-scrollbar max-w-full">
           <Link 
-            href="/"
+            href="/all-products"
             className={`flex items-center whitespace-nowrap px-3 py-1.5 mx-1 rounded-md font-medium text-sm transition-colors ${
-              pathname === '/' ? 'bg-primary text-primary-content' : 'hover:bg-base-300'
+              pathname === '/all-products' ? 'text-[#003DA5] font-bold' : 'hover:bg-base-300'
             }`}
           >
             All Products
@@ -39,7 +40,7 @@ function SecondaryNavbar() {
               key={category.value}
               href={`/category/${category.value}`}
               className={`whitespace-nowrap px-3 py-1.5 mx-1 rounded-md font-medium text-sm transition-colors ${
-                pathname === `/category/${category.value}` ? 'bg-primary text-primary-content' : 'hover:bg-base-300'
+                pathname === `/category/${category.value}` ? 'text-[#003DA5] font-bold' : 'hover:bg-base-300'
               }`}
             >
               {category.label}

@@ -87,7 +87,7 @@ function SearchBar() {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && dispatch(setShowSuggestions(true))}
-          placeholder="Search for products..."
+          placeholder="Search for anything"
           className="input input-bordered w-full pl-10 pr-10 h-10 rounded-full"
         />
         <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-base-content/50" />

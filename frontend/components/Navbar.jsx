@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserIcon, UserPlusIcon, LogOutIcon, PlusCircleIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon } from "lucide-react";
+import { UserIcon, LogOutIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import SearchBar from './SearchBar';
@@ -79,7 +79,7 @@ function Navbar() {
               ) : (
                 <>
                   <Link href="/add-listing" className="btn btn-primary btn-sm rounded-none">
-                    <PlusCircleIcon className="size-4 mr-1" />
+                    <PlusIcon className="size-4" />
                     Add a Listing
                   </Link>
                   

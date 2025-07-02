@@ -14,6 +14,7 @@ function SearchProductCard({ product }) {
       'vehicles': 'Vehicles',
       'housing': 'Housing',
       'rides': 'Rides',
+      'renting': 'Renting',
       'merch': 'Merch',
       'other': 'Other',
       'in-searching-for': 'I\'m searching for'

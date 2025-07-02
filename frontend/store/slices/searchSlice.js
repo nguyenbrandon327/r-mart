@@ -6,13 +6,14 @@ import axios from 'axios';
 // Async thunks
 export const searchProducts = createAsyncThunk(
   'search/searchProducts',
-  async ({ query, category, minPrice, maxPrice, limit = 20, offset = 0 }, { rejectWithValue }) => {
+  async ({ query, category, minPrice, maxPrice, sort = 'best_match', limit = 20, offset = 0 }, { rejectWithValue }) => {
     try {
       const params = new URLSearchParams({
         q: query,
         ...(category && { category }),
         ...(minPrice && { minPrice }),
         ...(maxPrice && { maxPrice }),
+        sort,
         limit,
         offset
       });
@@ -51,7 +52,8 @@ const initialState = {
   filters: {
     category: '',
     minPrice: '',
-    maxPrice: ''
+    maxPrice: '',
+    sort: 'best_match'
   },
   showSuggestions: false
 };
