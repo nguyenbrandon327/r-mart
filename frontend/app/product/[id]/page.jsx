@@ -203,8 +203,67 @@ export default function ProductPage({ params }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen" data-theme="light">
-        <div className="loading loading-spinner loading-lg"></div>
+      <div className="max-w-7xl mx-auto px-4 py-0" data-theme="light">
+        {/* Back button shimmer */}
+        <div className="mb-2 -mt-2">
+          <div className="h-10 w-24 shimmer rounded-lg"></div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Product Images Shimmer */}
+          <div className="md:w-3/5">
+            <div className="flex gap-4">
+              {/* Thumbnail gallery shimmer */}
+              <div className="flex flex-col gap-2 w-20">
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="aspect-square shimmer rounded-md"></div>
+                ))}
+              </div>
+              
+              {/* Main image shimmer */}
+              <div className="flex-1">
+                <div className="aspect-square shimmer rounded-lg"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Product Details Shimmer */}
+          <div className="md:w-2/5">
+            {/* Title shimmer */}
+            <div className="h-8 shimmer rounded-lg mb-4"></div>
+            
+            {/* Price shimmer */}
+            <div className="h-6 w-24 shimmer rounded-lg mb-4"></div>
+            
+            {/* Divider */}
+            <div className="h-px bg-gray-200 my-4"></div>
+            
+            {/* Description header shimmer */}
+            <div className="h-6 w-20 shimmer rounded-lg mb-2"></div>
+            
+            {/* Description content shimmer */}
+            <div className="space-y-2 mb-4">
+              <div className="h-4 shimmer rounded"></div>
+              <div className="h-4 shimmer rounded w-3/4"></div>
+              <div className="h-4 shimmer rounded w-1/2"></div>
+            </div>
+            
+            {/* Seller info shimmer */}
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 shimmer rounded-full"></div>
+                <div className="h-4 w-32 shimmer rounded"></div>
+              </div>
+              <div className="h-3 w-40 shimmer rounded"></div>
+            </div>
+            
+            {/* Action buttons shimmer */}
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              <div className="h-10 shimmer rounded-lg"></div>
+              <div className="h-10 shimmer rounded-lg"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
