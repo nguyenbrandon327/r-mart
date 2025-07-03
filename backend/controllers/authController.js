@@ -119,7 +119,8 @@ export const verifyEmail = async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                isVerified: true
+                isVerified: true,
+                isOnboarded: user.isonboarded || false
             }
         });
             
@@ -171,6 +172,7 @@ export const login = async (req, res) => {
                 profile_pic: user[0].profile_pic,
                 description: user[0].description,
                 isVerified: user[0].isverified,
+                isOnboarded: user[0].isonboarded || false,
                 lastLogin: user[0].lastlogin,
                 created_at: user[0].created_at
             }
@@ -311,10 +313,17 @@ export const resetPassword = async (req, res) => {
 export const checkAuth = async (req, res) => {
     try {
         // The protectRoute middleware already added the user to req
-        // Just return the user information
+        // Format the user response properly
         res.status(200).json({
             success: true,
-            user: req.user
+            user: {
+                id: req.user.id,
+                name: req.user.name,
+                email: req.user.email,
+                profile_pic: req.user.profile_pic,
+                description: req.user.description,
+                isOnboarded: req.user.isonboarded || false
+            }
         });
     } catch (error) {
         console.log("Error in checkAuth", error);

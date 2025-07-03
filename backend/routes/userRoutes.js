@@ -6,7 +6,10 @@ import {
   updateUserProfile,
   uploadProfilePic,
   deleteProfilePic,
-  getUserByUsername
+  getUserByUsername,
+  updateOnboardingStep1,
+  completeOnboarding,
+  completeOnboardingAll
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -25,5 +28,10 @@ router.post("/profile-pic", protectRoute, upload.single('profilePic'), uploadPro
 
 // Delete profile picture
 router.delete("/profile-pic", protectRoute, deleteProfilePic);
+
+// Onboarding routes
+router.put("/onboarding/step1", protectRoute, updateOnboardingStep1);
+router.put("/onboarding/complete", protectRoute, completeOnboarding);
+router.put("/onboarding", protectRoute, completeOnboardingAll);
 
 export default router; 

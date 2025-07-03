@@ -169,6 +169,12 @@ export default function ProfilePage() {
                   ) : null}
                   
                   <div className="space-y-3 text-sm text-gray-500">
+                    {viewedUserProfile.year && (
+                      <div className="flex items-center justify-start gap-2">
+                        <span>🎓</span>
+                        <span>{viewedUserProfile.year} - {viewedUserProfile.major}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-start gap-2">
                       <span>📅</span>
                       <span>Joined {formatDate(viewedUserProfile.created_at)}</span>

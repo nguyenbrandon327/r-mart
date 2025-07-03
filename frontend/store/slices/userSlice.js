@@ -142,7 +142,11 @@ const userSlice = createSlice({
         state.currentUserProfile = action.payload.user;
         // Also update viewedUserProfile if it's the same user
         if (state.viewedUserProfile && state.viewedUserProfile.id === action.payload.user.id) {
-          state.viewedUserProfile = action.payload.user;
+          state.viewedUserProfile = {
+            ...action.payload.user,
+            year: action.payload.user.year,
+            major: action.payload.user.major
+          };
         }
         state.message = action.payload.message;
       })

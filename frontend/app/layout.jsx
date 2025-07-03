@@ -2,6 +2,7 @@ import './globals.css';
 import { Providers } from '../store/provider';
 import { Toaster } from 'react-hot-toast';
 import NavigationWrapper from '../components/NavigationWrapper';
+import OnboardingGuard from '../components/OnboardingGuard';
 
 export const metadata = {
   title: 'R\'Mart',
@@ -23,9 +24,11 @@ export default function RootLayout({ children }) {
       </head>
       <body className="font-gt-america">
         <Providers>
-          <NavigationWrapper>
-            {children}
-          </NavigationWrapper>
+          <OnboardingGuard>
+            <NavigationWrapper>
+              {children}
+            </NavigationWrapper>
+          </OnboardingGuard>
           <Toaster />
         </Providers>
       </body>

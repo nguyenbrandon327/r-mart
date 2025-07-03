@@ -17,7 +17,7 @@ export const checkAuth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from the token
-    const user = await sql`SELECT id, name, email FROM users WHERE id=${decoded.userId}`;
+    const user = await sql`SELECT id, name, email, isOnboarded FROM users WHERE id=${decoded.userId}`;
     
     if (user && user.length > 0) {
       // Add user to request object

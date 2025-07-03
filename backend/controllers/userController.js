@@ -7,7 +7,7 @@ export const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     
     const [user] = await sql`
-      SELECT id, name, email, profile_pic, description, created_at, isVerified
+      SELECT id, name, email, profile_pic, description, year, major, created_at, isVerified
       FROM users 
       WHERE id = ${userId}
     `;
@@ -40,7 +40,7 @@ export const getUserByUsername = async (req, res) => {
     
     // Find user by email pattern (username@domain)
     const users = await sql`
-      SELECT id, name, email, profile_pic, description, created_at
+      SELECT id, name, email, profile_pic, description, year, major, created_at
       FROM users 
       WHERE email LIKE ${username + '@%'}
       LIMIT 1
@@ -218,6 +218,155 @@ export const deleteProfilePic = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error deleting profile picture",
+      error: error.message
+    });
+  }
+};
+
+// Update user onboarding step 1 (year and major)
+export const updateOnboardingStep1 = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { year, major } = req.body;
+    
+    // Validate input
+    const validYears = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Grad Student'];
+    if (!year || !validYears.includes(year)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid year"
+      });
+    }
+    
+    if (!major || major.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Major is required"
+      });
+    }
+    
+    // Update user with year and major
+    const [updatedUser] = await sql`
+      UPDATE users 
+      SET 
+        year = ${year},
+        major = ${major.trim()}
+      WHERE id = ${userId}
+      RETURNING id, name, email, year, major, profile_pic, description, isOnboarded
+    `;
+    
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: "Onboarding step 1 completed",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("Error updating onboarding step 1:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating onboarding information",
+      error: error.message
+    });
+  }
+};
+
+// Complete onboarding (after profile pic and description are set)
+export const completeOnboarding = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Check if user has completed all required fields
+    const [user] = await sql`
+      SELECT year, major FROM users WHERE id = ${userId}
+    `;
+    
+    if (!user || !user.year || !user.major) {
+      return res.status(400).json({
+        success: false,
+        message: "Please complete all onboarding steps"
+      });
+    }
+    
+    // Mark onboarding as complete
+    const [updatedUser] = await sql`
+      UPDATE users 
+      SET isOnboarded = true
+      WHERE id = ${userId}
+      RETURNING id, name, email, profile_pic, description, year, major, isOnboarded, created_at, isVerified
+    `;
+    
+    res.status(200).json({
+      success: true,
+      message: "Onboarding completed successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error completing onboarding",
+      error: error.message
+    });
+  }
+};
+
+// Complete all onboarding in one step
+export const completeOnboardingAll = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { year, major } = req.body;
+    
+    // Validate required fields
+    const validYears = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Grad Student'];
+    if (!year || !validYears.includes(year)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid year"
+      });
+    }
+    
+    if (!major || major.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Major is required"
+      });
+    }
+    
+    // Update user with year, major and mark as onboarded
+    const [updatedUser] = await sql`
+      UPDATE users 
+      SET 
+        year = ${year},
+        major = ${major.trim()},
+        isOnboarded = true
+      WHERE id = ${userId}
+      RETURNING id, name, email, profile_pic, description, year, major, isOnboarded, created_at, isVerified
+    `;
+    
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: "Onboarding completed successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error completing onboarding",
       error: error.message
     });
   }

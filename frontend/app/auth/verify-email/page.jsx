@@ -11,9 +11,17 @@ const EmailVerificationPage = () => {
 	const inputRefs = useRef([]);
 	const router = useRouter();
 
-	const { error, isLoading, verifyEmail } = useAuthStore();
+	const { isLoading, verifyEmail, clearError } = useAuthStore();
+
+	// Clear any existing errors when component mounts
+	useEffect(() => {
+		clearError();
+	}, [clearError]);
 
 	const handleChange = (index, value) => {
+		// Clear errors when user starts typing
+		clearError();
+		
 		const newCode = [...code];
 
 		// Handle pasted content
@@ -49,10 +57,15 @@ const EmailVerificationPage = () => {
 		e.preventDefault();
 		const verificationCode = code.join("");
 		try {
-			await verifyEmail(verificationCode);
-			router.push("/");
+			const response = await verifyEmail(verificationCode);
+			if (response.user && !response.user.isOnboarded) {
+				router.push("/auth/onboarding");
+			} else {
+				router.push("/");
+			}
 			toast.success("Email verified successfully");
 		} catch (error) {
+			// Don't show the error message, just keep the form as is
 			console.log(error);
 		}
 	};
@@ -92,7 +105,6 @@ const EmailVerificationPage = () => {
 							/>
 						))}
 					</div>
-					{error && <p className='text-error font-semibold mt-2'>{error}</p>}
 					<motion.button
 						whileHover={{ scale: 1.05 }}
 						whileTap={{ scale: 0.95 }}
