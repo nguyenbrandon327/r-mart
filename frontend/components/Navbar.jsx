@@ -78,9 +78,9 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/add-listing" className="btn btn-primary btn-sm rounded-none">
+                  <Link href="/add-listing" className="btn btn-primary rounded-none !h-10 !min-h-0 text-white">
                     <PlusIcon className="size-4" />
-                    Add a Listing
+                    Create a Listing
                   </Link>
                   
                   <Link href="/saved" className="btn btn-ghost btn-sm btn-circle">

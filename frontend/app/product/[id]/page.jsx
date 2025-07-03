@@ -240,10 +240,10 @@ export default function ProductPage({ params }) {
   const images = getProductImages();
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8" data-theme="light">
+    <div className="max-w-7xl mx-auto px-4 py-0" data-theme="light">
       <EditProductModal />
 
-      <div className="mb-6">
+      <div className="mb-2 -mt-2">
         <button 
           onClick={() => {
             if (window.history.length > 1) {
@@ -254,55 +254,19 @@ export default function ProductPage({ params }) {
           }} 
           className="btn btn-ghost"
         >
-          <ArrowLeftIcon className="size-4 mr-2" />
+          <ArrowLeftIcon className="size-4 mr-0" />
           Go Back
         </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Product Images */}
-        <div className="md:w-1/2">
+        <div className="md:w-3/5">
           {images.length > 0 ? (
-            <div className="space-y-4">
-              {/* Main image */}
-              <div 
-                className="relative rounded-lg overflow-hidden cursor-zoom-in aspect-square bg-gray-100"
-                onClick={() => openGallery(activeImage)}
-              >
-                <img
-                  src={images[activeImage]}
-                  alt={currentProduct.name}
-                  className="w-full h-full object-contain"
-                />
-                
-                {/* Navigation arrows - only show if there are multiple images */}
-                {images.length > 1 && (
-                  <>
-                    <button 
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent opening gallery
-                        prevImage();
-                      }}
-                    >
-                      <ChevronLeftIcon size={20} />
-                    </button>
-                    <button 
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent opening gallery
-                        nextImage();
-                      }}
-                    >
-                      <ChevronRightIcon size={20} />
-                    </button>
-                  </>
-                )}
-              </div>
-              
-              {/* Thumbnail gallery */}
+            <div className="flex gap-4">
+              {/* Thumbnail gallery on the left */}
               {images.length > 1 && (
-                <div className="grid grid-cols-5 gap-2">
+                <div className="flex flex-col gap-2 w-20">
                   {images.map((img, index) => (
                     <div 
                       key={index}
@@ -318,6 +282,44 @@ export default function ProductPage({ params }) {
                   ))}
                 </div>
               )}
+              
+              {/* Main image on the right */}
+              <div className="flex-1">
+                <div 
+                  className="relative rounded-lg overflow-hidden cursor-zoom-in aspect-square bg-gray-100"
+                  onClick={() => openGallery(activeImage)}
+                >
+                  <img
+                    src={images[activeImage]}
+                    alt={currentProduct.name}
+                    className="w-full h-full object-contain"
+                  />
+                  
+                  {/* Navigation arrows - only show if there are multiple images */}
+                  {images.length > 1 && (
+                    <>
+                      <button 
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent opening gallery
+                          prevImage();
+                        }}
+                      >
+                        <ChevronLeftIcon size={20} />
+                      </button>
+                      <button 
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent opening gallery
+                          nextImage();
+                        }}
+                      >
+                        <ChevronRightIcon size={20} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="bg-base-200 rounded-lg flex justify-center items-center w-full h-96">
@@ -327,7 +329,7 @@ export default function ProductPage({ params }) {
         </div>
 
         {/* Product Details */}
-        <div className="md:w-1/2">
+        <div className="md:w-2/5">
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold">{currentProduct.name}</h1>
             {isProductOwner && (
