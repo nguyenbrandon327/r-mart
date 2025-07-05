@@ -1,6 +1,6 @@
 # R-Mart
 
-In development!
+An online marketplace exclusive to UCR students! (In development)
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ The frontend development server will start on http://localhost:3001.
 ## Technologies Used
 
 - **Frontend**: Next.js, React, Redux Toolkit, TailwindCSS, DaisyUI
-- **Backend**: Express.js, PostgreSQL (via Neon), Node.js
+- **Backend**: Node.js, Express.js, PostgreSQL (via Neon)
 
 ## Deployment
 
