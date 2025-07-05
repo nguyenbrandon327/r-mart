@@ -1,8 +1,9 @@
 {
-  "/inbox/page": "app/inbox/page.js",
+  "/inbox/[chatId]/page": "app/inbox/[chatId]/page.js",
   "/profile/[username]/page": "app/profile/[username]/page.js",
-  "/auth/signup/page": "app/auth/signup/page.js",
-  "/auth/verify-email/page": "app/auth/verify-email/page.js",
-  "/auth/onboarding/page": "app/auth/onboarding/page.js",
-  "/auth/onboarding/welcome/page": "app/auth/onboarding/welcome/page.js"
+  "/page": "app/page.js",
+  "/inbox/page": "app/inbox/page.js",
+  "/category/[category]/page": "app/category/[category]/page.js",
+  "/all-products/page": "app/all-products/page.js",
+  "/auth/login/page": "app/auth/login/page.js"
 }

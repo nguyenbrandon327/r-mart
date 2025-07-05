@@ -114,14 +114,14 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="py-8">
+    <div>
       <EditProfileModal />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-8">
           {/* Left Column - User Information */}
           <div className="lg:col-span-1 lg:border-r lg:border-gray-200 lg:pr-8">
-            <div className="bg-white rounded-lg p-6 sticky top-8">
+            <div className="bg-white rounded-lg p-6 sticky top-16 self-start">
               <div className="relative">
                 {/* Edit button for own profile */}
                 {isOwnProfile && (
@@ -154,9 +154,6 @@ export default function ProfilePage() {
                   <h1 className="text-2xl font-bold text-gray-900 mb-2">
                     {viewedUserProfile.name}
                   </h1>
-                  <p className="text-lg text-gray-600 mb-4">
-                    @{getUsername(viewedUserProfile.email)}
-                  </p>
                   
                   {viewedUserProfile.description ? (
                     <p className="text-gray-700 mb-6 text-sm leading-relaxed">
@@ -170,10 +167,18 @@ export default function ProfilePage() {
                   
                   <div className="space-y-3 text-sm text-gray-500">
                     {viewedUserProfile.year && (
-                      <div className="flex items-center justify-start gap-2">
-                        <span>🎓</span>
-                        <span>{viewedUserProfile.year} - {viewedUserProfile.major}</span>
-                      </div>
+                      <>
+                        <div className="flex items-center justify-start gap-2">
+                          <span>🎓</span>
+                          <span>{viewedUserProfile.year}</span>
+                        </div>
+                        {viewedUserProfile.major && (
+                          <div className="flex items-center justify-start gap-2">
+                            <span>📚</span>
+                            <span>{viewedUserProfile.major}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div className="flex items-center justify-start gap-2">
                       <span>📅</span>
@@ -192,10 +197,6 @@ export default function ProfilePage() {
           {/* Right Column - Listings */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Listings by {viewedUserProfile.name}
-              </h2>
-              
               {userProducts.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl text-gray-400 mb-4">📦</div>

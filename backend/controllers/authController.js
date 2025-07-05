@@ -86,7 +86,6 @@ export const signup = async (req, res) => {
 };
 
 export const verifyEmail = async (req, res) => {
-    // 1 2 3 4 5 6
     const {code} = req.body;
     try {
         const users = await sql`
