@@ -17,7 +17,8 @@ export default function InboxPage() {
     subscribeToOnlineUsers,
     unsubscribeFromOnlineUsers,
     deleteChat,
-    updateChatLastMessage
+    updateChatLastMessage,
+    resetUnreadCount
   } = useChatStore();
 
   const { user: currentUser, socket, isAuthenticated } = useAuthStore();
@@ -25,8 +26,7 @@ export default function InboxPage() {
   const [deletingChatId, setDeletingChatId] = useState(null);
   const [timeUpdateTrigger, setTimeUpdateTrigger] = useState(0);
 
-  // Initialize socket connection
-  useSocket();
+  // Socket connection is now handled globally in NavigationWrapper
 
   // Check authentication
   useEffect(() => {
@@ -47,6 +47,9 @@ export default function InboxPage() {
     
     // Subscribe to online users
     subscribeToOnlineUsers();
+
+    // Reset unread count when user visits inbox
+    resetUnreadCount();
 
     return () => {
       unsubscribeFromOnlineUsers();

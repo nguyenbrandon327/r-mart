@@ -19,6 +19,7 @@ import {
   getMessages as getMessagesAction,
   sendMessage as sendMessageAction,
   markMessagesAsSeen as markMessagesAsSeenAction,
+  getUnreadCount as getUnreadCountAction,
   setSelectedChat,
   addMessage,
   setOnlineUsers,
@@ -27,7 +28,11 @@ import {
   clearError as clearChatError,
   clearMessages,
   clearTypingUsers,
-  updateChatLastMessage
+  updateChatLastMessage,
+  incrementUnreadCount,
+  decrementUnreadCount,
+  setUnreadCount,
+  resetUnreadCount
 } from './slices/chatSlice';
 
 export const useAuthStore = () => {
@@ -122,6 +127,7 @@ export const useChatStore = () => {
     error: chat.error,
     onlineUsers: chat.onlineUsers,
     typingUsers: chat.typingUsers,
+    unreadCount: chat.unreadCount,
 
     // Actions
     createChat: async (otherUserId, productId) => {
@@ -172,6 +178,14 @@ export const useChatStore = () => {
     markMessagesAsSeen: async (chatId) => {
       try {
         await dispatch(markMessagesAsSeenAction(chatId)).unwrap();
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    getUnreadCount: async () => {
+      try {
+        await dispatch(getUnreadCountAction()).unwrap();
       } catch (error) {
         throw error;
       }
@@ -295,6 +309,10 @@ export const useChatStore = () => {
     clearError: () => dispatch(clearChatError()),
     clearMessages: () => dispatch(clearMessages()),
     clearTypingUsers: () => dispatch(clearTypingUsers()),
-    updateChatLastMessage: (chatId, message, timestamp) => dispatch(updateChatLastMessage({ chatId, message, timestamp }))
+    updateChatLastMessage: (chatId, message, timestamp) => dispatch(updateChatLastMessage({ chatId, message, timestamp })),
+    incrementUnreadCount: () => dispatch(incrementUnreadCount()),
+    decrementUnreadCount: (count) => dispatch(decrementUnreadCount({ count })),
+    setUnreadCount: (count) => dispatch(setUnreadCount(count)),
+    resetUnreadCount: () => dispatch(resetUnreadCount())
   };
 }; 

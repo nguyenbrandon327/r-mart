@@ -6,7 +6,8 @@ import {
     deleteChat, 
     getMessages, 
     sendMessage,
-    markMessagesAsSeen
+    markMessagesAsSeen,
+    getUnreadCount
 } from '../controllers/messageController.js';
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 // Chat management routes
 router.post("/create", protectRoute, createChat);
 router.get("/chats", protectRoute, getChats);
+router.get("/unread-count", protectRoute, getUnreadCount);
 router.delete("/chat/:id", protectRoute, deleteChat);
 
 // Message routes (now work with chat IDs)

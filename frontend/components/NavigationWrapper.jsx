@@ -2,10 +2,12 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from '../store/slices/authSlice';
 import Navbar from './Navbar';
 import SecondaryNavbar from './SecondaryNavbar';
+import { useSocket } from '../lib/socket';
+import { useChatStore } from '../store/hooks';
 
 export default function NavigationWrapper({ children }) {
   const pathname = usePathname();
@@ -17,11 +19,23 @@ export default function NavigationWrapper({ children }) {
   const isInboxPage = pathname?.startsWith('/inbox');
   const isChatPage = pathname?.match(/^\/inbox\/\d+$/); // Matches /inbox/[chatId]
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { getUnreadCount } = useChatStore();
+
+  // Initialize socket connection globally
+  useSocket();
 
   useEffect(() => {
     // Check authentication status when the app loads
     dispatch(checkAuth());
   }, [dispatch]);
+
+  // Fetch unread count when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      getUnreadCount();
+    }
+  }, [isAuthenticated, getUnreadCount]);
 
   return (
     <>

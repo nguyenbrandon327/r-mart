@@ -13,6 +13,7 @@ function Navbar() {
   const dispatch = useDispatch();
   const isHomePage = pathname === "/";
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { unreadCount } = useSelector((state) => state.chat);
   
   const handleLogout = async () => {
     try {
@@ -87,8 +88,13 @@ function Navbar() {
                     <HeartIcon className="size-4" />
                   </Link>
                   
-                  <Link href="/inbox" className="btn btn-ghost btn-sm btn-circle">
+                  <Link href="/inbox" className="btn btn-ghost btn-sm btn-circle relative">
                     <MessageSquareTextIcon className="size-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-error text-error-content text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   
                   {/* Profile Picture Dropdown */}

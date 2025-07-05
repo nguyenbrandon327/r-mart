@@ -290,6 +290,33 @@ export const markMessagesAsSeen = async (req, res) => {
 const handleFileUpload = upload.single('image');
 
 // Send a message to a specific chat
+// Get unread messages count for the current user
+export const getUnreadCount = async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        
+        // Count unread messages where current user is not the sender
+        const unreadCount = await sql`
+            SELECT COUNT(*) as count FROM messages m
+            INNER JOIN chats c ON m.chat_id = c.id
+            WHERE (c.user1_id = ${currentUserId} OR c.user2_id = ${currentUserId})
+            AND m.sender_id != ${currentUserId}
+            AND m.seen_at IS NULL
+        `;
+
+        res.status(200).json({
+            success: true,
+            data: { unreadCount: parseInt(unreadCount[0].count) }
+        });
+    } catch (error) {
+        console.log("Error in getUnreadCount", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get unread count"
+        });
+    }
+};
+
 export const sendMessage = async (req, res) => {
     try {
         const { id: chatId } = req.params;

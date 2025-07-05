@@ -288,7 +288,7 @@ export default function Onboarding() {
       >
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Hey, {user?.name || 'there'}!</h1>
-          <p className="text-gray-600">Let's set up your profile really quick</p>
+          <p className="text-gray-600">Let's set up your profile</p>
           
           {/* Progress indicator */}
           <div className="flex justify-center mt-6">

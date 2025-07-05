@@ -16,7 +16,8 @@ const initialState = {
   isMessagesLoading: false,
   error: null,
   onlineUsers: [],
-  typingUsers: {} // { chatId: [userId1, userId2] }
+  typingUsers: {}, // { chatId: [userId1, userId2] }
+  unreadCount: 0 // Total unread messages count
 };
 
 // Async thunks
@@ -110,6 +111,19 @@ export const markMessagesAsSeen = createAsyncThunk(
   }
 );
 
+export const getUnreadCount = createAsyncThunk(
+  'chat/getUnreadCount',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/unread-count`);
+      return response.data.data.unreadCount;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to get unread count";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
@@ -178,6 +192,19 @@ const chatSlice = createSlice({
         state.chats.splice(chatIndex, 1);
         state.chats.unshift(updatedChat);
       }
+    },
+    incrementUnreadCount: (state) => {
+      state.unreadCount += 1;
+    },
+    decrementUnreadCount: (state, action) => {
+      const { count = 1 } = action.payload || {};
+      state.unreadCount = Math.max(0, state.unreadCount - count);
+    },
+    setUnreadCount: (state, action) => {
+      state.unreadCount = action.payload;
+    },
+    resetUnreadCount: (state) => {
+      state.unreadCount = 0;
     }
   },
   extraReducers: (builder) => {
@@ -264,6 +291,11 @@ const chatSlice = createSlice({
           }
           return message;
         });
+      })
+
+      // Get Unread Count
+      .addCase(getUnreadCount.fulfilled, (state, action) => {
+        state.unreadCount = action.payload;
       });
   }
 });
@@ -277,7 +309,11 @@ export const {
   clearError, 
   clearMessages,
   clearTypingUsers,
-  updateChatLastMessage 
+  updateChatLastMessage,
+  incrementUnreadCount,
+  decrementUnreadCount,
+  setUnreadCount,
+  resetUnreadCount
 } = chatSlice.actions;
 
 export default chatSlice.reducer; 

@@ -17,6 +17,7 @@ export default function ChatPage({ params }) {
     selectedChat,
     isMessagesLoading,
     typingUsers,
+    unreadCount,
     getChats,
     getMessages,
     sendMessage,
@@ -45,8 +46,7 @@ export default function ChatPage({ params }) {
   const [isTyping, setIsTyping] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
 
-  // Initialize socket connection
-  useSocket();
+  // Socket connection is now handled globally in NavigationWrapper
 
   // Check authentication
   useEffect(() => {
@@ -262,8 +262,20 @@ export default function ChatPage({ params }) {
     }
   };
 
-  const formatMessageTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
+  const formatMessageTime = (timestamp, showDate = false) => {
+    const date = new Date(timestamp);
+    
+    if (showDate) {
+      return date.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -277,9 +289,24 @@ export default function ChatPage({ params }) {
     const currentTime = new Date(currentMessage.created_at);
     const previousTime = new Date(previousMessage.created_at);
     
-    // Show timestamp if more than 5 minutes have passed
+    // Check if it's a different day
+    const isDifferentDay = currentTime.toDateString() !== previousTime.toDateString();
+    
+    // Show timestamp if more than 5 minutes have passed OR it's a different day
     const timeDifference = (currentTime - previousTime) / (1000 * 60); // in minutes
-    return timeDifference > 5;
+    return timeDifference > 5 || isDifferentDay;
+  };
+
+  // Check if we should show date with timestamp
+  const shouldShowDate = (currentMessage, index) => {
+    if (index === 0) return true; // Always show date for first message
+    
+    const previousMessage = messages[index - 1];
+    const currentTime = new Date(currentMessage.created_at);
+    const previousTime = new Date(previousMessage.created_at);
+    
+    // Show date if it's a different day
+    return currentTime.toDateString() !== previousTime.toDateString();
   };
 
   // Get typing users for current chat (excluding current user)
@@ -448,7 +475,7 @@ export default function ChatPage({ params }) {
                       {shouldShowTimestamp(message, index) && (
                         <div className="flex justify-center mb-2">
                           <span className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full">
-                            {formatMessageTime(message.created_at)}
+                            {formatMessageTime(message.created_at, shouldShowDate(message, index))}
                           </span>
                         </div>
                       )}
