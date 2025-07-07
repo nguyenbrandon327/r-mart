@@ -35,7 +35,9 @@ export default function NavigationWrapper({ children }) {
     if (isAuthenticated) {
       getUnreadCount();
     }
-  }, [isAuthenticated, getUnreadCount]);
+  }, [isAuthenticated]); // Removed getUnreadCount to prevent infinite loop
+
+
 
   return (
     <>

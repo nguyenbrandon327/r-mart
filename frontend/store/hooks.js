@@ -1,6 +1,8 @@
 'use client';
 
 import { useSelector, useDispatch } from 'react-redux';
+import { useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { 
   signup as signupAction,
   login as loginAction,
@@ -140,13 +142,13 @@ export const useChatStore = () => {
       }
     },
 
-    getChats: async () => {
+    getChats: useCallback(async () => {
       try {
         await dispatch(getChatsAction()).unwrap();
       } catch (error) {
         throw error;
       }
-    },
+    }, [dispatch]),
 
     deleteChat: async (chatId) => {
       try {
@@ -156,13 +158,13 @@ export const useChatStore = () => {
       }
     },
 
-    getMessages: async (chatId) => {
+    getMessages: useCallback(async (chatId) => {
       try {
         await dispatch(getMessagesAction(chatId)).unwrap();
       } catch (error) {
         throw error;
       }
-    },
+    }, [dispatch]),
 
     sendMessage: async (messageData, chatId) => {
       if (!chatId) {
@@ -176,13 +178,13 @@ export const useChatStore = () => {
       }
     },
 
-    markMessagesAsSeen: async (chatId) => {
+    markMessagesAsSeen: useCallback(async (chatId) => {
       try {
         await dispatch(markMessagesAsSeenAction(chatId)).unwrap();
       } catch (error) {
         throw error;
       }
-    },
+    }, [dispatch]),
 
     getUnreadCount: async () => {
       try {
@@ -223,41 +225,17 @@ export const useChatStore = () => {
     },
 
     subscribeToMessages: () => {
-      if (!chat.selectedChat) {
-        console.log('No selected chat for subscription');
-        return;
-      }
-
       const socket = auth.socket;
       if (!socket || !socket.connected) {
         console.log('Socket not available or not connected for subscription');
         return;
       }
 
-      // Always remove ALL existing listeners first to prevent duplicates
-      socket.removeAllListeners("newMessage");
+      // Only remove typing and messagesSeen listeners to avoid conflicts with global newMessage handler
       socket.removeAllListeners("userTyping");
       socket.removeAllListeners("messagesSeen");
 
-      console.log('Subscribing to messages for chat:', chat.selectedChat.id);
-
-      // Handle new messages
-      const messageHandler = (newMessage) => {
-        console.log('Received new message:', newMessage);
-        const currentSelectedChat = chat.selectedChat;
-        if (!currentSelectedChat) {
-          console.log('No selected chat when message received, ignoring');
-          return;
-        }
-        
-        const isMessageForSelectedChat = newMessage.chat_id === currentSelectedChat.id;
-        if (isMessageForSelectedChat) {
-          console.log('Adding message for selected chat');
-          dispatch(addMessage(newMessage));
-        } else {
-          console.log('Message not for selected chat, ignoring');
-        }
-      };
+      console.log('📱 LOCAL: Setting up typing and seen handlers for chat:', chat.selectedChat?.id || 'none');
 
       // Handle typing indicators
       const typingHandler = ({ userId, isTyping, chatId }) => {
@@ -272,7 +250,7 @@ export const useChatStore = () => {
         dispatch(markMessagesAsSeenLocal({ messageIds }));
       };
 
-      socket.on("newMessage", messageHandler);
+      // Only set up typing and messagesSeen handlers - newMessage is handled globally
       socket.on("userTyping", typingHandler);
       socket.on("messagesSeen", messagesSeenHandler);
     },
@@ -284,8 +262,8 @@ export const useChatStore = () => {
         return;
       }
       
-      console.log('Unsubscribing from messages - removing all listeners');
-      socket.removeAllListeners("newMessage");
+      console.log('📱 LOCAL: Unsubscribing from typing and seen handlers');
+      // Only remove the listeners we set up locally - don't touch global newMessage handler
       socket.removeAllListeners("userTyping");
       socket.removeAllListeners("messagesSeen");
     },
@@ -306,13 +284,13 @@ export const useChatStore = () => {
       socket.off("getOnlineUsers");
     },
 
-    setSelectedChat: (chat) => dispatch(setSelectedChat(chat)),
+    setSelectedChat: useCallback((chat) => dispatch(setSelectedChat(chat)), [dispatch]),
     clearError: () => dispatch(clearChatError()),
     clearMessages: () => dispatch(clearMessages()),
     clearTypingUsers: () => dispatch(clearTypingUsers()),
     updateChatLastMessage: (chatId, message, timestamp) => dispatch(updateChatLastMessage({ chatId, message, timestamp })),
     addChatToUnread: (chatId) => dispatch(addChatToUnread({ chatId })),
-    removeChatFromUnread: (chatId) => dispatch(removeChatFromUnread({ chatId })),
+    removeChatFromUnread: useCallback((chatId) => dispatch(removeChatFromUnread({ chatId })), [dispatch]),
     setUnreadCount: (count) => dispatch(setUnreadCount(count)),
     setChatsWithUnreadMessages: (chatIds) => dispatch(setChatsWithUnreadMessages(chatIds)),
     resetUnreadCount: () => dispatch(resetUnreadCount())

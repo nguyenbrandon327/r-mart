@@ -130,15 +130,10 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     setSelectedChat: (state, action) => {
-      console.log('Redux setSelectedChat - Previous chat:', state.selectedChat?.id);
-      console.log('Redux setSelectedChat - New chat:', action.payload?.id);
       state.selectedChat = action.payload;
     },
     addMessage: (state, action) => {
-      console.log('Redux addMessage - Current messages count:', state.messages.length);
-      console.log('Redux addMessage - Adding message:', action.payload);
       state.messages.push(action.payload);
-      console.log('Redux addMessage - New messages count:', state.messages.length);
     },
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
@@ -176,7 +171,6 @@ const chatSlice = createSlice({
       state.error = null;
     },
     clearMessages: (state) => {
-      console.log('Redux clearMessages - Clearing', state.messages.length, 'messages');
       state.messages = [];
     },
     clearTypingUsers: (state) => {
@@ -196,27 +190,41 @@ const chatSlice = createSlice({
     },
     addChatToUnread: (state, action) => {
       const { chatId } = action.payload;
+      console.log('🔴 REDUX: addChatToUnread called for chat:', chatId);
+      console.log('🔴 REDUX: Current unread chats before:', [...state.chatsWithUnreadMessages]);
       if (!state.chatsWithUnreadMessages.includes(chatId)) {
         state.chatsWithUnreadMessages.push(chatId);
         state.unreadCount = state.chatsWithUnreadMessages.length;
+        console.log('🔴 REDUX: Added to unread. New count:', state.unreadCount);
+        console.log('🔴 REDUX: New unread chats:', [...state.chatsWithUnreadMessages]);
+      } else {
+        console.log('🔴 REDUX: Chat already in unread list, no change');
       }
     },
     removeChatFromUnread: (state, action) => {
       const { chatId } = action.payload;
+      console.log('🟢 REDUX: removeChatFromUnread called for chat:', chatId);
+      console.log('🟢 REDUX: Current unread chats before:', [...state.chatsWithUnreadMessages]);
       const index = state.chatsWithUnreadMessages.indexOf(chatId);
       if (index !== -1) {
         state.chatsWithUnreadMessages.splice(index, 1);
         state.unreadCount = state.chatsWithUnreadMessages.length;
+        console.log('🟢 REDUX: Removed from unread. New count:', state.unreadCount);
+        console.log('🟢 REDUX: New unread chats:', [...state.chatsWithUnreadMessages]);
+      } else {
+        console.log('🟢 REDUX: Chat not found in unread list, no change');
       }
     },
     setUnreadCount: (state, action) => {
       state.unreadCount = action.payload;
     },
     setChatsWithUnreadMessages: (state, action) => {
+      console.log('🟡 REDUX: setChatsWithUnreadMessages called with:', action.payload);
       state.chatsWithUnreadMessages = action.payload;
       state.unreadCount = action.payload.length;
     },
     resetUnreadCount: (state) => {
+      console.log('🔵 REDUX: resetUnreadCount called');
       state.unreadCount = 0;
       state.chatsWithUnreadMessages = [];
     }
@@ -309,6 +317,7 @@ const chatSlice = createSlice({
 
       // Get Unread Count
       .addCase(getUnreadCount.fulfilled, (state, action) => {
+        console.log('🟠 REDUX: getUnreadCount.fulfilled called with:', action.payload);
         state.unreadCount = action.payload.unreadCount;
         state.chatsWithUnreadMessages = action.payload.chatsWithUnreadMessages;
       });

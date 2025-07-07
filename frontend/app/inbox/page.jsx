@@ -48,34 +48,32 @@ export default function InboxPage() {
     // Subscribe to online users
     subscribeToOnlineUsers();
 
-    // Reset unread count when user visits inbox
-    resetUnreadCount();
-
     return () => {
       unsubscribeFromOnlineUsers();
     };
   }, []);
 
   // Real-time updates for new messages
-  useEffect(() => {
-    if (socket?.connected && currentUser) {
-      const handleNewMessage = (newMessage) => {
-        console.log('Inbox received new message:', newMessage);
-        // Update the chat list locally with the new message
-        updateChatLastMessage(
-          newMessage.chat_id, 
-          newMessage.text || (newMessage.image ? 'Image' : 'Message'), 
-          newMessage.created_at
-        );
-      };
+  // DISABLED - Global handler in socket.js now handles all newMessage events
+  // useEffect(() => {
+  //   if (socket?.connected && currentUser) {
+  //     const handleNewMessage = (newMessage) => {
+  //       console.log('Inbox received new message:', newMessage);
+  //       // Update the chat list locally with the new message
+  //       updateChatLastMessage(
+  //         newMessage.chat_id, 
+  //         newMessage.text || (newMessage.image ? 'Image' : 'Message'), 
+  //         newMessage.created_at
+  //       );
+  //     };
 
-      socket.on("newMessage", handleNewMessage);
+  //     socket.on("newMessage", handleNewMessage);
 
-      return () => {
-        socket.off("newMessage", handleNewMessage);
-      };
-    }
-  }, [socket?.connected, currentUser, updateChatLastMessage]);
+  //     return () => {
+  //       socket.off("newMessage", handleNewMessage);
+  //     };
+  //   }
+  // }, [socket?.connected, currentUser, updateChatLastMessage]);
 
   // Update time display every minute
   useEffect(() => {

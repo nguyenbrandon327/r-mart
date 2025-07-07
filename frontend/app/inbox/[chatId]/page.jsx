@@ -72,19 +72,27 @@ export default function ChatPage({ params }) {
     if (chats.length > 0 && chatId) {
       const foundChat = chats.find(chat => chat.id === parseInt(chatId));
       if (foundChat) {
+        console.log('🔄 CHAT SELECTION: Found chat data:', foundChat.id);
         setChatData(foundChat);
-        setSelectedChat(foundChat);
+        // Only set selected chat if it's different from current
+        if (!selectedChat || selectedChat.id !== foundChat.id) {
+          console.log('🔄 CHAT SELECTION: Setting selected chat to:', foundChat.id, 'from previous:', selectedChat?.id);
+          setSelectedChat(foundChat);
+        } else {
+          console.log('🔄 CHAT SELECTION: Chat already selected, no change needed');
+        }
       } else {
         // Chat not found, redirect to inbox
+        console.log('🔄 CHAT SELECTION: Chat not found, redirecting to inbox');
         router.push('/inbox');
       }
     }
-  }, [chats, chatId, setSelectedChat, router]);
+  }, [chats, chatId, selectedChat?.id, router]); // Removed setSelectedChat, use selectedChat.id instead
 
   // Load messages when chat is selected and join chat room
   useEffect(() => {
     if (selectedChat && selectedChat.id === parseInt(chatId)) {
-      console.log('Loading messages for chat:', selectedChat.id);
+      console.log('📂 CHAT LOAD: Loading messages for chat:', selectedChat.id);
       clearMessages();
       getMessages(selectedChat.id);
       
@@ -92,15 +100,18 @@ export default function ChatPage({ params }) {
       joinChatRoom(selectedChat.id);
       
       // Mark messages as seen when entering the chat
+      console.log('📂 CHAT LOAD: Marking messages as seen on chat enter');
       markMessagesAsSeen(selectedChat.id);
       
       // Remove this chat from unread list since user is viewing it
+      console.log('📂 CHAT LOAD: Removing chat from unread on enter');
       removeChatFromUnread(selectedChat.id);
     }
 
     // Cleanup: leave chat room when component unmounts or chat changes
     return () => {
       if (selectedChat) {
+        console.log('📂 CHAT CLEANUP: Leaving chat room:', selectedChat.id);
         leaveChatRoom(selectedChat.id);
         // Stop typing when leaving chat
         if (isTyping) {
@@ -114,14 +125,17 @@ export default function ChatPage({ params }) {
   // Auto-mark messages as seen when new messages arrive
   useEffect(() => {
     if (messages.length > 0 && selectedChat && isTabVisible) {
-      // Mark messages as seen after a short delay to ensure they're visible
-      const timer = setTimeout(() => {
-        markMessagesAsSeen(selectedChat.id);
-        // Remove from unread list when messages are seen
-        removeChatFromUnread(selectedChat.id);
-      }, 1000);
-
-      return () => clearTimeout(timer);
+      console.log('👁️ CHAT PAGE: Auto-marking messages as seen:', {
+        messagesCount: messages.length,
+        chatId: selectedChat.id,
+        isTabVisible,
+        lastMessage: messages[messages.length - 1]
+      });
+      // Mark messages as seen immediately if user is actively viewing the chat
+      markMessagesAsSeen(selectedChat.id);
+      // Remove from unread list when messages are seen
+      removeChatFromUnread(selectedChat.id);
+      console.log('➖ CHAT PAGE: Removed chat from unread:', selectedChat.id);
     }
   }, [messages.length, selectedChat?.id, isTabVisible]);
 
@@ -133,7 +147,7 @@ export default function ChatPage({ params }) {
     };
   }, []);
 
-  // Handle socket subscription
+  // Handle socket subscription - now always subscribe when socket is ready
   useEffect(() => {
     console.log('Socket/Chat subscription check:', {
       socketExists: !!socket,
@@ -142,8 +156,8 @@ export default function ChatPage({ params }) {
       hasCurrentUser: !!currentUser
     });
     
-    if (selectedChat && socket?.connected && currentUser) {
-      console.log('All conditions met - subscribing to messages for chat:', selectedChat.id);
+    if (socket?.connected && currentUser) {
+      console.log('Socket ready - subscribing to messages globally');
       
       const timer = setTimeout(() => {
         subscribeToMessages();
@@ -154,7 +168,7 @@ export default function ChatPage({ params }) {
         clearTimeout(timer);
       };
     }
-  }, [socket?.connected, selectedChat, currentUser]);
+  }, [socket?.connected, currentUser]); // Removed selectedChat dependency
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -359,10 +373,12 @@ export default function ChatPage({ params }) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       const isVisible = document.visibilityState === 'visible';
+      console.log('👀 TAB VISIBILITY: Changed to', isVisible ? 'visible' : 'hidden');
       setIsTabVisible(isVisible);
       
       // Mark messages as seen when user returns to the tab
       if (isVisible && selectedChat && messages.length > 0) {
+        console.log('👀 TAB VISIBILITY: Marking messages as seen on return to tab');
         markMessagesAsSeen(selectedChat.id);
         // Remove from unread list when messages are seen
         removeChatFromUnread(selectedChat.id);
@@ -370,7 +386,9 @@ export default function ChatPage({ params }) {
     };
 
     // Set initial visibility state
-    setIsTabVisible(document.visibilityState === 'visible');
+    const initialVisibility = document.visibilityState === 'visible';
+    console.log('👀 TAB VISIBILITY: Initial state:', initialVisibility ? 'visible' : 'hidden');
+    setIsTabVisible(initialVisibility);
     
     // Add event listener
     document.addEventListener('visibilitychange', handleVisibilityChange);
