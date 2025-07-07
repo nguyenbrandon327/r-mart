@@ -295,18 +295,24 @@ export const getUnreadCount = async (req, res) => {
     try {
         const currentUserId = req.user.id;
         
-        // Count unread messages where current user is not the sender
-        const unreadCount = await sql`
-            SELECT COUNT(*) as count FROM messages m
+        // Get distinct chats with unread messages where current user is not the sender
+        const chatsWithUnread = await sql`
+            SELECT DISTINCT m.chat_id FROM messages m
             INNER JOIN chats c ON m.chat_id = c.id
             WHERE (c.user1_id = ${currentUserId} OR c.user2_id = ${currentUserId})
             AND m.sender_id != ${currentUserId}
             AND m.seen_at IS NULL
         `;
 
+        const chatIds = chatsWithUnread.map(row => row.chat_id);
+        const unreadCount = chatIds.length;
+
         res.status(200).json({
             success: true,
-            data: { unreadCount: parseInt(unreadCount[0].count) }
+            data: { 
+                unreadCount: unreadCount,
+                chatsWithUnreadMessages: chatIds
+            }
         });
     } catch (error) {
         console.log("Error in getUnreadCount", error);

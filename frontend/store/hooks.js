@@ -29,9 +29,10 @@ import {
   clearMessages,
   clearTypingUsers,
   updateChatLastMessage,
-  incrementUnreadCount,
-  decrementUnreadCount,
+  addChatToUnread,
+  removeChatFromUnread,
   setUnreadCount,
+  setChatsWithUnreadMessages,
   resetUnreadCount
 } from './slices/chatSlice';
 
@@ -310,9 +311,10 @@ export const useChatStore = () => {
     clearMessages: () => dispatch(clearMessages()),
     clearTypingUsers: () => dispatch(clearTypingUsers()),
     updateChatLastMessage: (chatId, message, timestamp) => dispatch(updateChatLastMessage({ chatId, message, timestamp })),
-    incrementUnreadCount: () => dispatch(incrementUnreadCount()),
-    decrementUnreadCount: (count) => dispatch(decrementUnreadCount({ count })),
+    addChatToUnread: (chatId) => dispatch(addChatToUnread({ chatId })),
+    removeChatFromUnread: (chatId) => dispatch(removeChatFromUnread({ chatId })),
     setUnreadCount: (count) => dispatch(setUnreadCount(count)),
+    setChatsWithUnreadMessages: (chatIds) => dispatch(setChatsWithUnreadMessages(chatIds)),
     resetUnreadCount: () => dispatch(resetUnreadCount())
   };
 }; 

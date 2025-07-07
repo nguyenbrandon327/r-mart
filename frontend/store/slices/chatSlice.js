@@ -17,7 +17,8 @@ const initialState = {
   error: null,
   onlineUsers: [],
   typingUsers: {}, // { chatId: [userId1, userId2] }
-  unreadCount: 0 // Total unread messages count
+  unreadCount: 0, // Total number of chats with unread messages
+  chatsWithUnreadMessages: [] // Array of chat IDs that have unread messages
 };
 
 // Async thunks
@@ -116,7 +117,7 @@ export const getUnreadCount = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_URL}/unread-count`);
-      return response.data.data.unreadCount;
+      return response.data.data; // Returns { unreadCount, chatsWithUnreadMessages }
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to get unread count";
       return rejectWithValue(errorMessage);
@@ -193,18 +194,31 @@ const chatSlice = createSlice({
         state.chats.unshift(updatedChat);
       }
     },
-    incrementUnreadCount: (state) => {
-      state.unreadCount += 1;
+    addChatToUnread: (state, action) => {
+      const { chatId } = action.payload;
+      if (!state.chatsWithUnreadMessages.includes(chatId)) {
+        state.chatsWithUnreadMessages.push(chatId);
+        state.unreadCount = state.chatsWithUnreadMessages.length;
+      }
     },
-    decrementUnreadCount: (state, action) => {
-      const { count = 1 } = action.payload || {};
-      state.unreadCount = Math.max(0, state.unreadCount - count);
+    removeChatFromUnread: (state, action) => {
+      const { chatId } = action.payload;
+      const index = state.chatsWithUnreadMessages.indexOf(chatId);
+      if (index !== -1) {
+        state.chatsWithUnreadMessages.splice(index, 1);
+        state.unreadCount = state.chatsWithUnreadMessages.length;
+      }
     },
     setUnreadCount: (state, action) => {
       state.unreadCount = action.payload;
     },
+    setChatsWithUnreadMessages: (state, action) => {
+      state.chatsWithUnreadMessages = action.payload;
+      state.unreadCount = action.payload.length;
+    },
     resetUnreadCount: (state) => {
       state.unreadCount = 0;
+      state.chatsWithUnreadMessages = [];
     }
   },
   extraReducers: (builder) => {
@@ -295,7 +309,8 @@ const chatSlice = createSlice({
 
       // Get Unread Count
       .addCase(getUnreadCount.fulfilled, (state, action) => {
-        state.unreadCount = action.payload;
+        state.unreadCount = action.payload.unreadCount;
+        state.chatsWithUnreadMessages = action.payload.chatsWithUnreadMessages;
       });
   }
 });
@@ -310,9 +325,10 @@ export const {
   clearMessages,
   clearTypingUsers,
   updateChatLastMessage,
-  incrementUnreadCount,
-  decrementUnreadCount,
+  addChatToUnread,
+  removeChatFromUnread,
   setUnreadCount,
+  setChatsWithUnreadMessages,
   resetUnreadCount
 } = chatSlice.actions;
 

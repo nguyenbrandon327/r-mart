@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSocket } from '../store/slices/authSlice';
-import { addMessage, updateChatLastMessage, setOnlineUsers, setUserTyping, incrementUnreadCount } from '../store/slices/chatSlice';
+import { addMessage, updateChatLastMessage, setOnlineUsers, setUserTyping, addChatToUnread } from '../store/slices/chatSlice';
 import toast from 'react-hot-toast';
 
 export const useSocket = () => {
@@ -51,12 +51,12 @@ export const useSocket = () => {
         // Add to messages if user is in the specific chat
         dispatch(addMessage(newMessage));
 
-        // Show toast notification and increment unread count if user is not in chat
+        // Show toast notification and add chat to unread if user is not in chat
         const currentPath = window.location.pathname;
         const isInChat = currentPath.includes(`/inbox/${newMessage.chat_id}`);
         
         if (!isInChat) {
-          dispatch(incrementUnreadCount());
+          dispatch(addChatToUnread({ chatId: newMessage.chat_id }));
           toast.success('New message received!', {
             icon: '💬',
             duration: 3000,

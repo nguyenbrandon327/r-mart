@@ -31,7 +31,8 @@ export default function ChatPage({ params }) {
     deleteChat,
     emitTyping,
     joinChatRoom,
-    leaveChatRoom
+    leaveChatRoom,
+    removeChatFromUnread
   } = useChatStore();
 
   const { user: currentUser, socket, isAuthenticated } = useAuthStore();
@@ -92,6 +93,9 @@ export default function ChatPage({ params }) {
       
       // Mark messages as seen when entering the chat
       markMessagesAsSeen(selectedChat.id);
+      
+      // Remove this chat from unread list since user is viewing it
+      removeChatFromUnread(selectedChat.id);
     }
 
     // Cleanup: leave chat room when component unmounts or chat changes
@@ -113,6 +117,8 @@ export default function ChatPage({ params }) {
       // Mark messages as seen after a short delay to ensure they're visible
       const timer = setTimeout(() => {
         markMessagesAsSeen(selectedChat.id);
+        // Remove from unread list when messages are seen
+        removeChatFromUnread(selectedChat.id);
       }, 1000);
 
       return () => clearTimeout(timer);
@@ -358,6 +364,8 @@ export default function ChatPage({ params }) {
       // Mark messages as seen when user returns to the tab
       if (isVisible && selectedChat && messages.length > 0) {
         markMessagesAsSeen(selectedChat.id);
+        // Remove from unread list when messages are seen
+        removeChatFromUnread(selectedChat.id);
       }
     };
 
