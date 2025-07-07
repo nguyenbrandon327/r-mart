@@ -177,11 +177,22 @@ const chatSlice = createSlice({
       state.typingUsers = {};
     },
     updateChatLastMessage: (state, action) => {
-      const { chatId, message, timestamp } = action.payload;
+      const { chatId, message, timestamp, isFromCurrentUser = false } = action.payload;
       const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
       if (chatIndex !== -1) {
         state.chats[chatIndex].last_message = message;
         state.chats[chatIndex].last_message_at = timestamp;
+        
+        // If message is not from current user, increment unread count
+        if (!isFromCurrentUser) {
+          state.chats[chatIndex].unread_count = parseInt(state.chats[chatIndex].unread_count || 0) + 1;
+          // Add to unread chats if not already there
+          if (!state.chatsWithUnreadMessages.includes(chatId)) {
+            state.chatsWithUnreadMessages.push(chatId);
+            state.unreadCount = state.chatsWithUnreadMessages.length;
+          }
+        }
+        
         // Move chat to top of list
         const updatedChat = state.chats[chatIndex];
         state.chats.splice(chatIndex, 1);
@@ -213,6 +224,12 @@ const chatSlice = createSlice({
         console.log('🟢 REDUX: New unread chats:', [...state.chatsWithUnreadMessages]);
       } else {
         console.log('🟢 REDUX: Chat not found in unread list, no change');
+      }
+      
+      // Also reset unread count for the specific chat
+      const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+      if (chatIndex !== -1) {
+        state.chats[chatIndex].unread_count = 0;
       }
     },
     setUnreadCount: (state, action) => {
@@ -255,7 +272,17 @@ const chatSlice = createSlice({
       })
       .addCase(getChats.fulfilled, (state, action) => {
         state.isChatsLoading = false;
-        state.chats = action.payload;
+        // Ensure unread_count is a number for all chats
+        state.chats = action.payload.map(chat => ({
+          ...chat,
+          unread_count: parseInt(chat.unread_count || 0)
+        }));
+        // Update unread state based on chats data
+        const chatsWithUnread = state.chats
+          .filter(chat => chat.unread_count > 0)
+          .map(chat => chat.id);
+        state.chatsWithUnreadMessages = chatsWithUnread;
+        state.unreadCount = chatsWithUnread.length;
       })
       .addCase(getChats.rejected, (state, action) => {
         state.isChatsLoading = false;
@@ -313,6 +340,22 @@ const chatSlice = createSlice({
           }
           return message;
         });
+        
+        // If we're in a chat and messages were seen, remove from unread
+        if (state.selectedChat && action.payload.length > 0) {
+          const chatId = state.selectedChat.id;
+          const index = state.chatsWithUnreadMessages.indexOf(chatId);
+          if (index !== -1) {
+            state.chatsWithUnreadMessages.splice(index, 1);
+            state.unreadCount = state.chatsWithUnreadMessages.length;
+          }
+          
+          // Reset unread count for the specific chat
+          const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+          if (chatIndex !== -1) {
+            state.chats[chatIndex].unread_count = 0;
+          }
+        }
       })
 
       // Get Unread Count

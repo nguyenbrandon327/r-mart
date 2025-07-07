@@ -1,10 +1,8 @@
 {
   "/page": "app/page.js",
   "/inbox/[chatId]/page": "app/inbox/[chatId]/page.js",
-  "/profile/[username]/page": "app/profile/[username]/page.js",
   "/inbox/page": "app/inbox/page.js",
-  "/product/[id]/page": "app/product/[id]/page.js",
+  "/category/[category]/page": "app/category/[category]/page.js",
   "/auth/login/page": "app/auth/login/page.js",
-  "/auth/forgot-password/page": "app/auth/forgot-password/page.js",
   "/auth/reset-password/page": "app/auth/reset-password/page.js"
 }

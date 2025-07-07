@@ -67,7 +67,8 @@ export const useSocket = () => {
         dispatch(updateChatLastMessage({
           chatId: newMessage.chat_id,
           message: newMessage.text || (newMessage.image ? 'Image' : 'Message'),
-          timestamp: newMessage.created_at
+          timestamp: newMessage.created_at,
+          isFromCurrentUser: newMessage.sender_id === user.id
         }));
 
         // Check if user is actively viewing the specific chat this message is for

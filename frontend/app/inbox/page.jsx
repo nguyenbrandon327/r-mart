@@ -251,7 +251,11 @@ export default function InboxPage() {
                       {/* Last Message */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <p className="text-sm text-base-content/60 truncate">
+                          <p className={`text-sm truncate ${
+                            chat.unread_count > 0 
+                              ? 'text-base-content font-semibold' 
+                              : 'text-base-content/60'
+                          }`}>
                             {chat.last_message 
                               ? truncateMessage(chat.last_message)
                               : 'No messages yet'
@@ -259,9 +263,9 @@ export default function InboxPage() {
                           </p>
                           {/* Seen indicator would go here - needs backend support for proper implementation */}
                         </div>
-                        {chat.message_count > 0 && (
+                        {chat.unread_count > 0 && (
                           <span className="badge badge-primary badge-sm ml-2">
-                            {chat.message_count}
+                            {chat.unread_count}
                           </span>
                         )}
                       </div>
