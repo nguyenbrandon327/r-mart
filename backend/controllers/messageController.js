@@ -210,16 +210,25 @@ export const getMessages = async (req, res) => {
             SELECT 
                 m.*,
                 u.name as sender_name,
-                u.profile_pic as sender_profile_pic
+                u.profile_pic as sender_profile_pic,
+                m.created_at AT TIME ZONE 'UTC' as created_at_utc,
+                m.seen_at AT TIME ZONE 'UTC' as seen_at_utc
             FROM messages m
             LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.chat_id = ${chatId}
             ORDER BY m.created_at ASC
         `;
 
+        // Convert timestamps to proper UTC format for frontend
+        const formattedMessages = messages.map(message => ({
+            ...message,
+            created_at: message.created_at_utc ? new Date(message.created_at_utc).toISOString() : message.created_at,
+            seen_at: message.seen_at_utc ? new Date(message.seen_at_utc).toISOString() : message.seen_at
+        }));
+
         res.status(200).json({
             success: true, 
-            data: messages
+            data: formattedMessages
         });
     } catch (error) {
         console.log("Error in getMessages", error);
@@ -253,7 +262,7 @@ export const markMessagesAsSeen = async (req, res) => {
         // Mark all unseen messages from other users as seen
         const updatedMessages = await sql`
             UPDATE messages 
-            SET seen_at = CURRENT_TIMESTAMP 
+            SET seen_at = NOW() AT TIME ZONE 'UTC'
             WHERE chat_id = ${chatId} 
             AND sender_id != ${currentUserId} 
             AND seen_at IS NULL
@@ -374,27 +383,47 @@ export const sendMessage = async (req, res) => {
             }
     
             const newMessage = await sql`
-                INSERT INTO messages (chat_id, sender_id, text, image)
-                VALUES (${chatId}, ${senderId}, ${text}, ${imageURL})
+                INSERT INTO messages (chat_id, sender_id, text, image, created_at)
+                VALUES (${chatId}, ${senderId}, ${text}, ${imageURL}, NOW() AT TIME ZONE 'UTC')
                 RETURNING *
+            `;
+
+            // Get the complete message with sender info and proper timezone formatting (consistent with getMessages)
+            const completeMessage = await sql`
+                SELECT 
+                    m.*,
+                    u.name as sender_name,
+                    u.profile_pic as sender_profile_pic,
+                    m.created_at AT TIME ZONE 'UTC' as created_at_utc,
+                    m.seen_at AT TIME ZONE 'UTC' as seen_at_utc
+                FROM messages m
+                LEFT JOIN users u ON m.sender_id = u.id
+                WHERE m.id = ${newMessage[0].id}
             `;
 
             // Update the chat's last_message_at timestamp
             await sql`
                 UPDATE chats 
-                SET last_message_at = CURRENT_TIMESTAMP 
+                SET last_message_at = NOW() AT TIME ZONE 'UTC'
                 WHERE id = ${chatId}
             `;
+
+            // Format the timestamp for the response (consistent with getMessages)
+            const formattedMessage = {
+                ...completeMessage[0],
+                created_at: completeMessage[0].created_at_utc ? new Date(completeMessage[0].created_at_utc).toISOString() : completeMessage[0].created_at,
+                seen_at: completeMessage[0].seen_at_utc ? new Date(completeMessage[0].seen_at_utc).toISOString() : completeMessage[0].seen_at
+            };
 
             // Real-time functionality with socket.io
             const receiverSocketId = getReceiverSocketId(receiverId);
             if (receiverSocketId) {
-                io.to(receiverSocketId).emit("newMessage", newMessage[0]);
+                io.to(receiverSocketId).emit("newMessage", formattedMessage);
             }
     
             res.status(201).json({
                 success: true, 
-                data: newMessage[0]
+                data: formattedMessage
             });
         });
     } catch (error) {

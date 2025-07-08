@@ -86,21 +86,29 @@ export const useSocket = () => {
           isActivelyViewingThisChat
         });
         
-        // Always add message to the messages array for real-time updates
-        dispatch(addMessage(newMessage));
+        // Only add message to the messages array if it's NOT from the current user
+        // (Current user's messages are added via sendMessage.fulfilled to avoid duplicates)
+        if (newMessage.sender_id !== user.id) {
+          console.log('🔔 GLOBAL: Adding message from other user to messages array');
+          dispatch(addMessage(newMessage));
+        } else {
+          console.log('🔔 GLOBAL: Skipping message from current user (will be added via sendMessage.fulfilled)');
+        }
         
         if (isActivelyViewingThisChat) {
           console.log('🔔 GLOBAL: User is actively viewing this chat - NOT adding to unread');
           return; // Don't add to unread count
         }
 
-        // User is not actively viewing this chat, add to unread
-        console.log('🔔 GLOBAL: User not viewing this chat, adding to unread');
-        dispatch(addChatToUnread({ chatId: newMessage.chat_id }));
-        toast.success('New message received!', {
-          icon: '💬',
-          duration: 3000,
-        });
+        // User is not actively viewing this chat, add to unread (only for messages from others)
+        if (newMessage.sender_id !== user.id) {
+          console.log('🔔 GLOBAL: User not viewing this chat, adding to unread');
+          dispatch(addChatToUnread({ chatId: newMessage.chat_id }));
+          toast.success('New message received!', {
+            icon: '💬',
+            duration: 3000,
+          });
+        }
       });
 
       // Online users updates

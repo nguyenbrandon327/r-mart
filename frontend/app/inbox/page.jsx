@@ -122,7 +122,9 @@ export default function InboxPage() {
       const days = Math.floor(diffInDays);
       return `${days} day${days !== 1 ? 's' : ''} ago`;
     } else {
+      // For older messages, show the date in PST
       return date.toLocaleDateString('en-US', {
+        timeZone: 'America/Los_Angeles',
         month: 'short',
         day: 'numeric'
       });

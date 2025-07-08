@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useChatStore, useAuthStore } from '../../../store/hooks';
 import { useSocket } from '../../../lib/socket';
 import { useRouter } from 'next/navigation';
-import { UserCircleIcon, SendIcon, ImageIcon, XIcon, ArrowLeftIcon, Trash2Icon, CheckIcon, Check } from 'lucide-react';
+import { UserCircleIcon, SendIcon, ImageIcon, XIcon, ArrowLeftIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -18,6 +18,7 @@ export default function ChatPage({ params }) {
     isMessagesLoading,
     typingUsers,
     unreadCount,
+    onlineUsers,
     getChats,
     getMessages,
     sendMessage,
@@ -43,7 +44,6 @@ export default function ChatPage({ params }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [chatData, setChatData] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
 
@@ -268,37 +268,31 @@ export default function ChatPage({ params }) {
     }
   };
 
-  const handleDeleteChat = async () => {
-    if (confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
-      setIsDeleting(true);
-      try {
-        await deleteChat(chatData.id);
-        router.push('/inbox');
-      } catch (error) {
-        console.error('Failed to delete chat:', error);
-      } finally {
-        setIsDeleting(false);
-      }
-    }
-  };
+
 
   const formatMessageTime = (timestamp, showDate = false) => {
     const date = new Date(timestamp);
     
+    // Convert to PST timezone
+    const pstOptions = {
+      timeZone: 'America/Los_Angeles', // PST/PDT timezone
+      hour: 'numeric',
+      minute: '2-digit'
+    };
+    
     if (showDate) {
-      return date.toLocaleString('en-US', {
+      const pstDateOptions = {
+        timeZone: 'America/Los_Angeles',
         weekday: 'long',
         month: 'short',
         day: 'numeric',
-        hour: '2-digit',
+        hour: 'numeric',
         minute: '2-digit'
-      });
+      };
+      return date.toLocaleString('en-US', pstDateOptions);
     }
     
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return date.toLocaleString('en-US', pstOptions);
   };
 
   // Check if we should show timestamp before this message
@@ -309,8 +303,11 @@ export default function ChatPage({ params }) {
     const currentTime = new Date(currentMessage.created_at);
     const previousTime = new Date(previousMessage.created_at);
     
-    // Check if it's a different day
-    const isDifferentDay = currentTime.toDateString() !== previousTime.toDateString();
+    // Check if it's a different day in PST
+    const pstDateOptions = { timeZone: 'America/Los_Angeles' };
+    const currentDatePST = currentTime.toLocaleDateString('en-US', pstDateOptions);
+    const previousDatePST = previousTime.toLocaleDateString('en-US', pstDateOptions);
+    const isDifferentDay = currentDatePST !== previousDatePST;
     
     // Show timestamp if more than 5 minutes have passed OR it's a different day
     const timeDifference = (currentTime - previousTime) / (1000 * 60); // in minutes
@@ -325,8 +322,12 @@ export default function ChatPage({ params }) {
     const currentTime = new Date(currentMessage.created_at);
     const previousTime = new Date(previousMessage.created_at);
     
-    // Show date if it's a different day
-    return currentTime.toDateString() !== previousTime.toDateString();
+    // Show date if it's a different day in PST
+    const pstDateOptions = { timeZone: 'America/Los_Angeles' };
+    const currentDatePST = currentTime.toLocaleDateString('en-US', pstDateOptions);
+    const previousDatePST = previousTime.toLocaleDateString('en-US', pstDateOptions);
+    
+    return currentDatePST !== previousDatePST;
   };
 
   // Get typing users for current chat (excluding current user)
@@ -367,6 +368,11 @@ export default function ChatPage({ params }) {
     }
     
     return null;
+  };
+
+  // Check if a user is online
+  const isOnline = (userId) => {
+    return onlineUsers.includes(userId.toString());
   };
 
   // Handle tab visibility changes
@@ -438,6 +444,10 @@ export default function ChatPage({ params }) {
                       )}
                     </div>
                   </div>
+                  {/* Online Status Indicator */}
+                  {isOnline(chatData.other_user_id) && (
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-base-100"></div>
+                  )}
                 </div>
                 
                 <div className="flex-1">
@@ -448,24 +458,11 @@ export default function ChatPage({ params }) {
                     </p>
                   ) : (
                     <p className="text-sm text-base-content/60">
-                      Online
+                      {isOnline(chatData.other_user_id) ? 'Online' : 'Offline'}
                     </p>
                   )}
                 </div>
               </div>
-
-              <button
-                onClick={handleDeleteChat}
-                disabled={isDeleting}
-                className="btn btn-ghost btn-circle btn-sm text-error"
-                title="Delete chat"
-              >
-                {isDeleting ? (
-                  <span className="loading loading-spinner loading-sm"></span>
-                ) : (
-                  <Trash2Icon className="w-4 h-4" />
-                )}
-              </button>
             </div>
           </div>
 
@@ -641,29 +638,29 @@ export default function ChatPage({ params }) {
               {chatData.product_images && chatData.product_images.length > 0 ? (
                 <div className="space-y-3 mb-4">
                   {chatData.product_images.map((image, index) => (
-                    <div key={index} className="relative">
+                    <div key={index} className="relative aspect-square">
                       <Image
                         src={image}
                         alt={`${chatData.product_name} - Image ${index + 1}`}
                         width={300}
                         height={300}
-                        className="rounded-lg object-cover w-full"
+                        className="rounded-lg object-cover w-full h-full"
                       />
                     </div>
                   ))}
                 </div>
               ) : chatData.product_image ? (
-                <div className="mb-4">
+                <div className="mb-4 aspect-square">
                   <Image
                     src={chatData.product_image}
                     alt={chatData.product_name}
                     width={300}
                     height={300}
-                    className="rounded-lg object-cover w-full"
+                    className="rounded-lg object-cover w-full h-full"
                   />
                 </div>
               ) : (
-                <div className="mb-4 bg-base-200 rounded-lg h-48 flex items-center justify-center">
+                <div className="mb-4 bg-base-200 rounded-lg aspect-square flex items-center justify-center">
                   <p className="text-base-content/40">No image available</p>
                 </div>
               )}
@@ -709,6 +706,18 @@ export default function ChatPage({ params }) {
                   </div>
                 )}
               </div>
+              
+              {/* View Full Details Button */}
+              {chatData.product_id && (
+                <div className="mt-6 pt-4 border-t border-base-content/10">
+                  <Link 
+                    href={`/product/${chatData.product_id}`}
+                    className="btn btn-outline btn-primary btn-sm w-full bg-white"
+                  >
+                    View Full Details
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-6 text-center">
