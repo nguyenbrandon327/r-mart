@@ -17,7 +17,7 @@ export const getProducts = async (req, res) => {
                 SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id
-                WHERE p.id NOT IN (
+                WHERE p.is_sold = false AND p.id NOT IN (
                     SELECT DISTINCT product_id 
                     FROM recently_seen_products 
                     WHERE user_id = ${userId}
@@ -25,11 +25,12 @@ export const getProducts = async (req, res) => {
                 ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
             `;
         } else {
-            // Default behavior - show all products with randomized date-emphasized ordering
+            // Default behavior - show all unsold products with randomized date-emphasized ordering
             products = await sql`
                 SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.is_sold = false
                 ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
             `;
         }
@@ -296,7 +297,7 @@ export const getProductsByCategory = async (req, res) => {
                     SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
-                    WHERE p.category=${category}
+                    WHERE p.category=${category} AND p.is_sold = false
                     ORDER BY p.created_at DESC
                 `;
                 break;
@@ -305,7 +306,7 @@ export const getProductsByCategory = async (req, res) => {
                     SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
-                    WHERE p.category=${category}
+                    WHERE p.category=${category} AND p.is_sold = false
                     ORDER BY p.price ASC
                 `;
                 break;
@@ -314,7 +315,7 @@ export const getProductsByCategory = async (req, res) => {
                     SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
-                    WHERE p.category=${category}
+                    WHERE p.category=${category} AND p.is_sold = false
                     ORDER BY p.price DESC
                 `;
                 break;
@@ -325,7 +326,7 @@ export const getProductsByCategory = async (req, res) => {
                     SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
-                    WHERE p.category=${category}
+                    WHERE p.category=${category} AND p.is_sold = false
                     ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
                 `;
                 break;
@@ -418,7 +419,7 @@ export const getSellerOtherProducts = async (req, res) => {
             SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
             FROM products p
             LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.user_id = ${userId} AND p.id != ${excludeProductId}
+            WHERE p.user_id = ${userId} AND p.id != ${excludeProductId} AND p.is_sold = false
             ORDER BY p.created_at DESC
             LIMIT 10
         `;
@@ -428,6 +429,118 @@ export const getSellerOtherProducts = async (req, res) => {
     } catch (error) {
         console.log("Error in getSellerOtherProducts", error);
         res.status(500).json({success: false, message: "Failed to fetch seller's other products"});
+    }
+};
+
+// Mark product as sold
+export const markProductAsSold = async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        // First verify the product exists and belongs to this user
+        const existingProduct = await sql`
+            SELECT * FROM products WHERE id=${id}
+        `;
+        
+        if (existingProduct.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+        
+        // Check if the user is the owner of the product
+        if (existingProduct[0].user_id !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: "Not authorized to update this product"
+            });
+        }
+        
+        // Check if product is already sold
+        if (existingProduct[0].is_sold) {
+            return res.status(400).json({
+                success: false,
+                message: "Product is already marked as sold"
+            });
+        }
+        
+        // Mark product as sold
+        const updatedProduct = await sql`
+            UPDATE products 
+            SET is_sold = true 
+            WHERE id=${id}
+            RETURNING *
+        `;
+        
+        console.log(`Product ${id} marked as sold by user ${req.user.id}`);
+        res.status(200).json({
+            success: true,
+            message: "Product marked as sold successfully",
+            data: updatedProduct[0]
+        });
+    } catch (error) {
+        console.log("Error in markProductAsSold", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to mark product as sold"
+        });
+    }
+};
+
+// Mark product as available (unsold)
+export const markProductAsAvailable = async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        // First verify the product exists and belongs to this user
+        const existingProduct = await sql`
+            SELECT * FROM products WHERE id=${id}
+        `;
+        
+        if (existingProduct.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+        
+        // Check if the user is the owner of the product
+        if (existingProduct[0].user_id !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: "Not authorized to update this product"
+            });
+        }
+        
+        // Check if product is already available
+        if (!existingProduct[0].is_sold) {
+            return res.status(400).json({
+                success: false,
+                message: "Product is already marked as available"
+            });
+        }
+        
+        // Mark product as available
+        const updatedProduct = await sql`
+            UPDATE products 
+            SET is_sold = false 
+            WHERE id=${id}
+            RETURNING *
+        `;
+        
+        console.log(`Product ${id} marked as available by user ${req.user.id}`);
+        res.status(200).json({
+            success: true,
+            message: "Product marked as available successfully",
+            data: updatedProduct[0]
+        });
+    } catch (error) {
+        console.log("Error in markProductAsAvailable", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to mark product as available"
+        });
     }
 };
 

@@ -39,8 +39,14 @@ function ProductCard({ product }) {
           <img
             src={getCoverImage()}
             alt={product.name}
-            className="absolute top-0 left-0 w-full h-full object-cover rounded-md"
+            className={`absolute top-0 left-0 w-full h-full object-cover rounded-md ${product.is_sold ? 'opacity-60' : ''}`}
           />
+          {/* SOLD RIBBON */}
+          {product.is_sold && (
+            <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 text-sm font-bold rounded-md shadow-lg transform rotate-12 z-10">
+              SOLD
+            </div>
+          )}
         </figure>
 
         <div className="px-0">

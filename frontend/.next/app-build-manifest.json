@@ -11,30 +11,15 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/category/[category]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/category/[category]/page.js"
-    ],
     "/all-products/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/all-products/page.js"
     ],
-    "/inbox/page": [
+    "/category/[category]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/inbox/page.js"
-    ],
-    "/inbox/[chatId]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/inbox/[chatId]/page.js"
-    ],
-    "/product/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/product/[id]/page.js"
+      "static/chunks/app/category/[category]/page.js"
     ],
     "/auth/login/page": [
       "static/chunks/webpack.js",
@@ -46,20 +31,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/auth/layout.js"
     ],
+    "/add-listing/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/add-listing/page.js"
+    ],
     "/profile/[username]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/profile/[username]/page.js"
     ],
-    "/saved/page": [
+    "/product/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/saved/page.js"
+      "static/chunks/app/product/[id]/page.js"
     ],
-    "/add-listing/page": [
+    "/inbox/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/add-listing/page.js"
+      "static/chunks/app/inbox/page.js"
     ]
   }
 }

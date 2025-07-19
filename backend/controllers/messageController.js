@@ -126,18 +126,25 @@ export const getChats = async (req, res) => {
                 p.price as product_price,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id) as message_count,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id AND sender_id != ${currentUserId} AND seen_at IS NULL) as unread_count,
-                (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
+                (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+                (SELECT created_at AT TIME ZONE 'UTC' FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_at
             FROM chats c
             LEFT JOIN users u1 ON c.user1_id = u1.id
             LEFT JOIN users u2 ON c.user2_id = u2.id
             LEFT JOIN products p ON c.product_id = p.id
             WHERE c.user1_id = ${currentUserId} OR c.user2_id = ${currentUserId}
-            ORDER BY c.last_message_at DESC
+            ORDER BY COALESCE((SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1), c.created_at) DESC
         `;
+
+        // Format timestamps to ensure consistency
+        const formattedChats = chats.map(chat => ({
+            ...chat,
+            last_message_at: chat.last_message_at ? new Date(chat.last_message_at).toISOString() : null
+        }));
 
         res.status(200).json({
             success: true, 
-            data: chats
+            data: formattedChats
         });
     } catch (error) {
         console.log("Error in getChats", error);

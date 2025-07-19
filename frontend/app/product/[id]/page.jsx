@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData, fetchSellerOtherProducts } from "../../../store/slices/productSlice";
+import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData, fetchSellerOtherProducts, markProductAsSold, markProductAsAvailable } from "../../../store/slices/productSlice";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
 import UserLink from "../../../components/UserLink";
@@ -130,6 +130,18 @@ export default function ProductPage({ params }) {
   const handleDeleteImage = async (imageUrl) => {
     if (confirm("Are you sure you want to delete this image?")) {
       await dispatch(deleteProductImage({ productId: id, imageUrl }));
+    }
+  };
+
+  const handleMarkAsSold = async () => {
+    if (confirm("Are you sure you want to mark this product as sold?")) {
+      await dispatch(markProductAsSold(id));
+    }
+  };
+
+  const handleMarkAsAvailable = async () => {
+    if (confirm("Are you sure you want to mark this product as available?")) {
+      await dispatch(markProductAsAvailable(id));
     }
   };
 
@@ -389,23 +401,12 @@ export default function ProductPage({ params }) {
 
         {/* Product Details */}
         <div className="md:w-2/5">
-          <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{currentProduct.name}</h1>
-            {isProductOwner && (
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-circle btn-outline btn-sm"
-                  onClick={handleEdit}
-                >
-                  <EditIcon className="size-4" />
-                </button>
-                <button
-                  className="btn btn-circle btn-outline btn-error btn-sm"
-                  onClick={handleDelete}
-                >
-                  <Trash2Icon className="size-4" />
-                </button>
-              </div>
+            {currentProduct.is_sold && (
+              <span className="badge badge-error text-white px-3 py-2 text-sm font-bold">
+                SOLD
+              </span>
             )}
           </div>
 
@@ -451,27 +452,81 @@ export default function ProductPage({ params }) {
             </div>
           )}
 
-          <div className="mt-6 grid grid-cols-2 gap-2">
-            {isAuthenticated && !isProductOwner ? (
-              <SaveButton productId={currentProduct.id} />
+          <div className="mt-6 space-y-2">
+            {isProductOwner ? (
+              // Product owner buttons
+              <div className="grid grid-cols-1 gap-2">
+                {currentProduct.is_sold ? (
+                  <button 
+                    className="btn btn-success"
+                    onClick={handleMarkAsAvailable}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="loading loading-spinner loading-sm mr-1"></span>
+                    ) : (
+                      <HeartIcon className="h-5 w-5 mr-1" />
+                    )}
+                    {loading ? 'Updating...' : 'Mark as Available'}
+                  </button>
+                ) : (
+                  <button 
+                    className="btn btn-outline hover:bg-[#003DA5] hover:!text-white hover:border-[#003DA5]"
+                    style={{ 
+                      borderColor: '#003DA5', 
+                      color: '#003DA5' 
+                    }}
+                    onClick={handleMarkAsSold}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="loading loading-spinner loading-sm mr-1"></span>
+                    ) : (
+                      <CheckIcon className="h-5 w-5 mr-1" />
+                    )}
+                    {loading ? 'Updating...' : 'Mark as Sold'}
+                  </button>
+                )}
+                <button
+                  className="btn btn-outline"
+                  onClick={handleEdit}
+                >
+                  <EditIcon className="size-4 mr-2" />
+                  Edit Product
+                </button>
+                <button
+                  className="btn btn-outline btn-error"
+                  onClick={handleDelete}
+                >
+                  <Trash2Icon className="size-4 mr-2" />
+                  Delete Product
+                </button>
+              </div>
             ) : (
-              <button className="btn btn-primary" disabled={!isAuthenticated || isProductOwner}>
-                <HeartIcon className="h-5 w-5 mr-1" />
-                {isProductOwner ? "Your Product" : "Save"}
-              </button>
+              // Non-owner buttons
+              <div className="grid grid-cols-2 gap-2">
+                {isAuthenticated ? (
+                  <SaveButton productId={currentProduct.id} />
+                ) : (
+                  <button className="btn btn-primary" disabled>
+                    <HeartIcon className="h-5 w-5 mr-1" />
+                    Save
+                  </button>
+                )}
+                <button 
+                  className="btn btn-outline"
+                  onClick={handleContactSeller}
+                  disabled={isContactingSeller || !isAuthenticated || currentProduct.is_sold}
+                >
+                  {isContactingSeller ? (
+                    <span className="loading loading-spinner loading-sm mr-1"></span>
+                  ) : (
+                    <MessageSquareTextIcon className="h-5 w-5 mr-1" />
+                  )}
+                  {currentProduct.is_sold ? 'Item Sold' : (isContactingSeller ? 'Creating Chat...' : 'Talk to Seller')}
+                </button>
+              </div>
             )}
-            <button 
-              className="btn btn-outline"
-              onClick={handleContactSeller}
-              disabled={isContactingSeller || !isAuthenticated || isProductOwner}
-            >
-              {isContactingSeller ? (
-                <span className="loading loading-spinner loading-sm mr-1"></span>
-              ) : (
-                <MessageSquareTextIcon className="h-5 w-5 mr-1" />
-              )}
-              {isContactingSeller ? 'Creating Chat...' : 'Talk to Seller'}
-            </button>
           </div>
         </div>
       </div>

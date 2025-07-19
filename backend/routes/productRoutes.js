@@ -7,7 +7,9 @@ import {
     deleteProduct, 
     getProductsByCategory,
     deleteProductImage,
-    getSellerOtherProducts
+    getSellerOtherProducts,
+    markProductAsSold,
+    markProductAsAvailable
 } from "../controllers/productController.js";
 import { protectRoute } from "../utils/protectRoute.js";
 import { checkAuth } from "../utils/checkAuth.js";
@@ -26,5 +28,9 @@ router.delete("/:id", protectRoute, deleteProduct);
 
 // Route to delete a single image from a product
 router.delete("/:id/image", protectRoute, deleteProductImage);
+
+// Routes to mark product as sold/available
+router.patch("/:id/sold", protectRoute, markProductAsSold);
+router.patch("/:id/available", protectRoute, markProductAsAvailable);
 
 export default router;

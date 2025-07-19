@@ -101,6 +101,7 @@ async function initDB() {
         category VARCHAR(255) NOT NULL,
         description TEXT,
         user_id INTEGER REFERENCES users(id),
+        is_sold BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
@@ -108,6 +109,16 @@ async function initDB() {
     console.log("Products table initialized successfully");
   } catch (error) {
     console.log("Error initializing products table", error);
+  }
+  
+  // Add is_sold column to existing products table (migration)
+  try {
+    await sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS is_sold BOOLEAN DEFAULT FALSE
+    `;
+    console.log("Products table migration (is_sold column) applied successfully");
+  } catch (error) {
+    console.log("Error applying products table migration", error);
   }
   // Initialize users
   try {

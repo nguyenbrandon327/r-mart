@@ -55,12 +55,12 @@ export const getUserByUsername = async (req, res) => {
     
     const user = users[0];
     
-    // Get user's products
+    // Get user's products (unsold first, then sold)
     const products = await sql`
-      SELECT id, name, images, price, category, description, created_at
+      SELECT id, name, images, price, category, description, is_sold, created_at
       FROM products 
       WHERE user_id = ${user.id}
-      ORDER BY created_at DESC
+      ORDER BY is_sold ASC, created_at DESC
     `;
     
     res.status(200).json({

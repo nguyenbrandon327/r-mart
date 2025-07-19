@@ -124,6 +124,34 @@ export const fetchSellerOtherProducts = createAsyncThunk(
   }
 );
 
+export const markProductAsSold = createAsyncThunk(
+  'products/markProductAsSold',
+  async (productId, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`/api/products/${productId}/sold`);
+      toast.success("Product marked as sold");
+      return response.data.data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to mark product as sold");
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const markProductAsAvailable = createAsyncThunk(
+  'products/markProductAsAvailable',
+  async (productId, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`/api/products/${productId}/available`);
+      toast.success("Product marked as available");
+      return response.data.data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to mark product as available");
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
   products: [],
   loading: false,
@@ -294,6 +322,50 @@ const productSlice = createSlice({
         state.sellerOtherProductsLoading = false;
         state.error = action.payload;
         state.sellerOtherProducts = [];
+      })
+      // Mark Product as Sold
+      .addCase(markProductAsSold.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(markProductAsSold.fulfilled, (state, action) => {
+        state.loading = false;
+        const updatedProduct = action.payload;
+        
+        // Update the current product if it's the one being modified
+        if (state.currentProduct && state.currentProduct.id === updatedProduct.id) {
+          state.currentProduct.is_sold = updatedProduct.is_sold;
+        }
+        
+        // Update the product in the products list if it exists there
+        const productIndex = state.products.findIndex(p => p.id === updatedProduct.id);
+        if (productIndex !== -1) {
+          state.products[productIndex].is_sold = updatedProduct.is_sold;
+        }
+      })
+      .addCase(markProductAsSold.rejected, (state) => {
+        state.loading = false;
+      })
+      // Mark Product as Available
+      .addCase(markProductAsAvailable.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(markProductAsAvailable.fulfilled, (state, action) => {
+        state.loading = false;
+        const updatedProduct = action.payload;
+        
+        // Update the current product if it's the one being modified
+        if (state.currentProduct && state.currentProduct.id === updatedProduct.id) {
+          state.currentProduct.is_sold = updatedProduct.is_sold;
+        }
+        
+        // Update the product in the products list if it exists there
+        const productIndex = state.products.findIndex(p => p.id === updatedProduct.id);
+        if (productIndex !== -1) {
+          state.products[productIndex].is_sold = updatedProduct.is_sold;
+        }
+      })
+      .addCase(markProductAsAvailable.rejected, (state) => {
+        state.loading = false;
       });
   },
 });
