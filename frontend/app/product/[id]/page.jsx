@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData, fetchSellerOtherProducts, markProductAsSold, markProductAsAvailable } from "../../../store/slices/productSlice";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import SellerOtherProductsCarousel from "../../../components/SellerOtherProducts
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
 import { useChatStore } from "../../../store/hooks";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 // Save button component for product page
 function SaveButton({ productId }) {
@@ -78,10 +79,21 @@ export default function ProductPage({ params }) {
   const [activeImage, setActiveImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
+  const viewRecordedRef = useRef(null); // Track which product we've recorded a view for
 
   useEffect(() => {
     dispatch(fetchProduct(id));
   }, [dispatch, id]);
+
+  // Record product view when page loads
+  useEffect(() => {
+    // Only record view if we haven't already recorded it for this product
+    if (viewRecordedRef.current !== id) {
+      viewRecordedRef.current = id;
+      // fire-and-forget – ignore failures
+      axios.post(`/api/products/${id}/view`, {}, { withCredentials: true }).catch(() => {});
+    }
+  }, [id]);
 
   // Fetch seller's other products when current product loads
   useEffect(() => {

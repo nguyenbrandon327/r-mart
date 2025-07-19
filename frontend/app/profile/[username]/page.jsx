@@ -60,24 +60,6 @@ export default function ProfilePage() {
     return null;
   }
 
-  // Show loading while checking auth
-  if (isCheckingAuth) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  // Show loading while fetching profile
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
   // Show error if user not found
   if (error) {
     return (
@@ -98,11 +80,7 @@ export default function ProfilePage() {
 
   // Show profile if user found
   if (!viewedUserProfile) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
+    return null;
   }
 
   const formatDate = (dateString) => {

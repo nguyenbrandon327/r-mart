@@ -46,9 +46,9 @@ export const getUserByUsername = createAsyncThunk(
 // Update user profile
 export const updateUserProfile = createAsyncThunk(
   'user/updateUserProfile',
-  async ({ name, description }, { rejectWithValue }) => {
+  async ({ name, description, major }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${API_URL}/profile`, { name, description });
+      const response = await axios.put(`${API_URL}/profile`, { name, description, major });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Error updating profile");

@@ -1,10 +1,7 @@
 {
-  "/all-products/page": "app/all-products/page.js",
-  "/add-listing/page": "app/add-listing/page.js",
-  "/profile/[username]/page": "app/profile/[username]/page.js",
   "/product/[id]/page": "app/product/[id]/page.js",
+  "/profile/[username]/page": "app/profile/[username]/page.js",
+  "/all-products/page": "app/all-products/page.js",
   "/page": "app/page.js",
-  "/category/[category]/page": "app/category/[category]/page.js",
-  "/inbox/page": "app/inbox/page.js",
-  "/auth/login/page": "app/auth/login/page.js"
+  "/category/[category]/page": "app/category/[category]/page.js"
 }

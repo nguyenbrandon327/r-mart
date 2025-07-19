@@ -9,7 +9,8 @@ import {
     deleteProductImage,
     getSellerOtherProducts,
     markProductAsSold,
-    markProductAsAvailable
+    markProductAsAvailable,
+    recordView
 } from "../controllers/productController.js";
 import { protectRoute } from "../utils/protectRoute.js";
 import { checkAuth } from "../utils/checkAuth.js";
@@ -21,6 +22,9 @@ router.get("/", checkAuth, getProducts);
 router.get("/category/:category", getProductsByCategory);
 router.get("/:id", checkAuth, getProduct);
 router.get("/seller/:userId/other/:excludeProductId", getSellerOtherProducts);
+
+// Record product view (public route with optional auth)
+router.post("/:id/view", checkAuth, recordView);
 
 router.post("/", protectRoute, upload.array('productImages', 5), createProduct);
 router.put("/:id", protectRoute, upload.array('productImages', 5), updateProduct);

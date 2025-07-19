@@ -2,6 +2,7 @@ import { sql } from "../config/db.js";
 import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
 import { recordProductView } from "./recentlySeenController.js";
 import { indexProduct, updateProductIndex, deleteProductIndex } from "./searchController.js";
+import crypto from "crypto";
 
 // CRUD operations
 export const getProducts = async (req, res) => {
@@ -542,5 +543,31 @@ export const markProductAsAvailable = async (req, res) => {
             message: "Failed to mark product as available"
         });
     }
+};
+
+// ────────────────────────
+// Record a product view
+// Method: POST /api/products/:id/view
+// Public route (user may be unauthenticated)
+// ────────────────────────
+export const recordView = async (req, res) => {
+  const { id: productId } = req.params;
+  const userId = req.user?.id;                 // may be undefined
+  const ipHash = req.ip ? crypto.createHash("sha256").update(req.ip).digest("hex") : null;
+
+  try {
+    await sql`
+      INSERT INTO product_views (product_id, user_id, ip_hash)
+      VALUES (${productId}, ${userId}, ${ipHash})
+    `;
+
+    // keep the existing "recently-seen" UX for logged-in users
+    if (userId) await recordProductView(userId, productId);
+
+    return res.sendStatus(204);
+  } catch (e) {
+    console.error("recordView error", e);
+    return res.status(500).json({ error: "failed to record view" });
+  }
 };
 

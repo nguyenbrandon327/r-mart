@@ -82,7 +82,7 @@ export const getUserByUsername = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, description } = req.body;
+    const { name, description, major } = req.body;
     
     // Validate input
     if (!name || name.trim().length === 0) {
@@ -97,9 +97,10 @@ export const updateUserProfile = async (req, res) => {
       UPDATE users 
       SET 
         name = ${name.trim()},
-        description = ${description ? description.trim() : null}
+        description = ${description ? description.trim() : null},
+        major = ${major ? major.trim() : null}
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, created_at, isVerified
+      RETURNING id, name, email, profile_pic, description, major, year, created_at, isVerified
     `;
     
     if (!updatedUser) {
@@ -156,7 +157,7 @@ export const uploadProfilePic = async (req, res) => {
       UPDATE users 
       SET profile_pic = ${profilePicUrl}
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, created_at, isVerified
+      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified
     `;
     
     res.status(200).json({
@@ -205,7 +206,7 @@ export const deleteProfilePic = async (req, res) => {
       UPDATE users 
       SET profile_pic = NULL
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, created_at, isVerified
+      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified
     `;
     
     res.status(200).json({
