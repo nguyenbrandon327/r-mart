@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { HistoryIcon, ChevronsRightIcon, ChevronsLeftIcon, XCircleIcon } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 import { fetchRecentlyViewedProducts, clearRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
+import HotAtUCRSection from '../components/HotAtUCRSection';
 
 export default function HomePage() {
   const dispatch = useDispatch();
@@ -255,6 +256,9 @@ export default function HomePage() {
           </button>
         </div>
       </div>
+
+      {/* 🔥 Hot listings */}
+      <HotAtUCRSection />
 
       {/* Recently Viewed Products */}
       {renderRecentlyViewed()}

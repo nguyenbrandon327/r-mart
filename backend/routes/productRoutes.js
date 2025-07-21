@@ -10,7 +10,8 @@ import {
     getSellerOtherProducts,
     markProductAsSold,
     markProductAsAvailable,
-    recordView
+    recordView,
+    getHotProducts
 } from "../controllers/productController.js";
 import { protectRoute } from "../utils/protectRoute.js";
 import { checkAuth } from "../utils/checkAuth.js";
@@ -20,6 +21,7 @@ const router = express.Router();
 
 router.get("/", checkAuth, getProducts);
 router.get("/category/:category", getProductsByCategory);
+router.get("/hot", getHotProducts);
 router.get("/:id", checkAuth, getProduct);
 router.get("/seller/:userId/other/:excludeProductId", getSellerOtherProducts);
 

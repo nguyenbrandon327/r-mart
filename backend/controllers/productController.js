@@ -571,3 +571,30 @@ export const recordView = async (req, res) => {
   }
 };
 
+// 🔥  Get hot products (last-7-day view count) -----------------------------
+export const getHotProducts = async (req, res) => {
+  try {
+    const { limit = 20, offset = 0 } = req.query;
+
+    const hotProducts = await sql`
+      SELECT
+        p.*,
+        COALESCE(COUNT(pv.id), 0) AS views_7d
+      FROM products p
+      LEFT JOIN product_views pv
+        ON pv.product_id = p.id
+        AND pv.viewed_at > NOW() - INTERVAL '7 days'
+      WHERE p.is_sold = FALSE
+      GROUP BY p.id
+      ORDER BY views_7d DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    return res.status(200).json({ success: true, data: hotProducts });
+  } catch (err) {
+    console.error("getHotProducts error", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch hot products" });
+  }
+};
+// -------------------------------------------------------------------------
+
