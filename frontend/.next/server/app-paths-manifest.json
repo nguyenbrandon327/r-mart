@@ -1,8 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
+  "/all-products/page": "app/all-products/page.js",
   "/page": "app/page.js",
-  "/inbox/page": "app/inbox/page.js",
-  "/inbox/[chatId]/page": "app/inbox/[chatId]/page.js",
-  "/product/[id]/page": "app/product/[id]/page.js",
-  "/all-products/page": "app/all-products/page.js"
+  "/category/[category]/page": "app/category/[category]/page.js"
 }

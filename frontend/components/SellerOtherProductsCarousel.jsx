@@ -71,7 +71,7 @@ export default function SellerOtherProductsCarousel({
           
           <div 
             ref={carouselRef} 
-            className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide hover:scrollbar-default"
+            className="flex overflow-x-auto gap-6 pb-4 scrollbar-optimized"
           >
             {products.map((product) => (
               <div 

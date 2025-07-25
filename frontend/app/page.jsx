@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import { HistoryIcon, ChevronsRightIcon, ChevronsLeftIcon, XCircleIcon } from "lucide-react";
 import Link from 'next/link';
-import ProductCard from "../components/ProductCard";
-import { fetchRecentlyViewedProducts, clearRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
-import HotAtUCRSection from '../components/HotAtUCRSection';
+import axios from 'axios';
+import ProductCarousel from "../components/ProductCarousel";
+import { fetchRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
 
 export default function HomePage() {
   const dispatch = useDispatch();
   const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
   const { products: recentlyViewedProducts, loading: recentlyViewedLoading } = useSelector((state) => state.recentlyViewed);
-  const carouselRef = useRef(null);
+  
+  // Hot products state
+  const [hotProducts, setHotProducts] = useState([]);
+  const [hotProductsLoading, setHotProductsLoading] = useState(true);
 
   useEffect(() => {
     // Only fetch recently viewed products for authenticated users when auth check is complete
@@ -21,75 +23,20 @@ export default function HomePage() {
     }
   }, [dispatch, isAuthenticated, isCheckingAuth]);
 
-  const scrollLeft = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({
-        left: -300,
-        behavior: 'smooth'
+  useEffect(() => {
+    // Fetch hot products
+    setHotProductsLoading(true);
+    axios
+      .get('/api/products/hot?limit=10', { withCredentials: true })
+      .then(res => {
+        setHotProducts(res.data.data ?? []);
+        setHotProductsLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setHotProductsLoading(false);
       });
-    }
-  };
-
-  const scrollRight = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({
-        left: 300,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const handleClearHistory = () => {
-    dispatch(clearRecentlyViewedProducts());
-  };
-
-  const renderRecentlyViewed = () => {
-    if (!isAuthenticated || recentlyViewedProducts.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center mb-2">
-              <HistoryIcon className="size-6 mr-2" />
-              Recently Viewed
-            </h2>
-          </div>
-          <button 
-            onClick={handleClearHistory}
-            className="btn btn-sm btn-outline"
-          >
-            <XCircleIcon className="size-4 mr-1" />
-            Clear History
-          </button>
-        </div>
-
-        {recentlyViewedLoading ? (
-          <div className="flex justify-center py-8">
-            <span className="loading loading-spinner loading-md"></span>
-          </div>
-        ) : (
-          <div>
-            <div 
-              ref={carouselRef} 
-              className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide hover:scrollbar-default"
-            >
-              {recentlyViewedProducts.map((product) => (
-                <div 
-                  key={product.id} 
-                  className="flex-none w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 max-w-[calc(100%/5-1.2rem)]"
-                >
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  }, []);
 
   return (
     <div>
@@ -125,10 +72,22 @@ export default function HomePage() {
       </div>
 
       {/* 🔥 Hot listings */}
-      <HotAtUCRSection />
+      <ProductCarousel
+        title="Hot at UCR"
+        icon="🔥"
+        products={hotProducts}
+        loading={hotProductsLoading}
+      />
 
       {/* Recently Viewed Products */}
-      {renderRecentlyViewed()}
+      {isAuthenticated && (
+        <ProductCarousel
+          title="Recently Viewed"
+          icon="👁️"
+          products={recentlyViewedProducts}
+          loading={recentlyViewedLoading}
+        />
+      )}
     </div>
   );
 } 

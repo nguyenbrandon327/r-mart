@@ -3497,6 +3497,9 @@ input.tab:checked + .tab-content,
 .z-10 {
   z-index: 10;
 }
+.z-20 {
+  z-index: 20;
+}
 .z-30 {
   z-index: 30;
 }
@@ -3520,10 +3523,6 @@ input.tab:checked + .tab-content,
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
-}
-.my-12 {
-  margin-top: 3rem;
-  margin-bottom: 3rem;
 }
 .my-4 {
   margin-top: 1rem;
@@ -3890,6 +3889,9 @@ input.tab:checked + .tab-content,
 .max-w-\[calc\(100\%\/5-1\.2rem\)\] {
   max-width: calc(100% / 5 - 1.2rem);
 }
+.max-w-\[calc\(100\%\/5\.3-1\.2rem\)\] {
+  max-width: calc(100% / 5.3 - 1.2rem);
+}
 .max-w-full {
   max-width: 100%;
 }
@@ -3998,6 +4000,9 @@ input.tab:checked + .tab-content,
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+.cursor-default {
+  cursor: default;
+}
 .cursor-move {
   cursor: move;
 }
@@ -4009,6 +4014,9 @@ input.tab:checked + .tab-content,
 }
 .resize-none {
   resize: none;
+}
+.resize {
+  resize: both;
 }
 .grid-flow-col {
   grid-auto-flow: column;
@@ -4207,6 +4215,12 @@ input.tab:checked + .tab-content,
   --tw-border-opacity: 1;
   border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
 }
+.border-gray-200\/20 {
+  border-color: rgb(229 231 235 / 0.2);
+}
+.border-gray-200\/50 {
+  border-color: rgb(229 231 235 / 0.5);
+}
 .border-gray-300 {
   --tw-border-opacity: 1;
   border-color: rgb(209 213 219 / var(--tw-border-opacity, 1));
@@ -4271,6 +4285,9 @@ input.tab:checked + .tab-content,
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
 }
+.bg-gray-100\/25 {
+  background-color: rgb(243 244 246 / 0.25);
+}
 .bg-gray-200 {
   --tw-bg-opacity: 1;
   background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1));
@@ -4324,6 +4341,9 @@ input.tab:checked + .tab-content,
 .bg-white\/50 {
   background-color: rgb(255 255 255 / 0.5);
 }
+.bg-white\/85 {
+  background-color: rgb(255 255 255 / 0.85);
+}
 .bg-yellow-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(250 204 21 / var(--tw-bg-opacity, 1));
@@ -4341,11 +4361,11 @@ input.tab:checked + .tab-content,
 .bg-opacity-60 {
   --tw-bg-opacity: 0.6;
 }
-.bg-opacity-90 {
-  --tw-bg-opacity: 0.9;
-}
 .bg-opacity-75 {
   --tw-bg-opacity: 0.75;
+}
+.bg-opacity-90 {
+  --tw-bg-opacity: 0.9;
 }
 .bg-gradient-to-br {
   background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
@@ -4396,6 +4416,9 @@ input.tab:checked + .tab-content,
 }
 .p-1 {
   padding: 0.25rem;
+}
+.p-1\.5 {
+  padding: 0.375rem;
 }
 .p-10 {
   padding: 2.5rem;
@@ -4490,9 +4513,6 @@ input.tab:checked + .tab-content,
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
-.pb-2 {
-  padding-bottom: 0.5rem;
-}
 .pb-4 {
   padding-bottom: 1rem;
 }
@@ -4516,6 +4536,9 @@ input.tab:checked + .tab-content,
 }
 .pr-8 {
   padding-right: 2rem;
+}
+.pt-2 {
+  padding-top: 0.5rem;
 }
 .pt-20 {
   padding-top: 5rem;
@@ -4787,6 +4810,11 @@ input.tab:checked + .tab-content,
   -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
+.backdrop-blur-sm {
+  --tw-backdrop-blur: blur(4px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
 .backdrop-blur-xl {
   --tw-backdrop-blur: blur(24px);
   -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
@@ -4840,12 +4868,50 @@ input.tab:checked + .tab-content,
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* Hide scrollbar completely */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
 .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+/* Optimized scrollbar with smooth fade-in effect */
+.scrollbar-optimized {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 150ms ease-out;
+  }
+.scrollbar-optimized::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+.scrollbar-optimized::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+    will-change: background;
+    -webkit-transition: background 150ms ease-out;
+    transition: background 150ms ease-out;
+  }
+.scrollbar-optimized::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    will-change: background;
+    -webkit-transition: background 150ms ease-out;
+    transition: background 150ms ease-out;
+  }
+/* Smooth fade-in on hover */
+.scrollbar-optimized:hover {
+    scrollbar-color: rgba(156, 163, 175, 0.6) rgba(243, 244, 246, 0.2);
+  }
+.scrollbar-optimized:hover::-webkit-scrollbar-track {
+    background: rgba(243, 244, 246, 0.2);
+  }
+.scrollbar-optimized:hover::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.6);
+  }
+.scrollbar-optimized:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.8);
   }
 /* Shimmer animation */
 .shimmer {
@@ -4983,16 +5049,20 @@ input.tab:checked + .tab-content,
   background-color: rgb(255 255 255 / 0.7);
 }
 
+.hover\:bg-white\/95:hover {
+  background-color: rgb(255 255 255 / 0.95);
+}
+
 .hover\:bg-opacity-70:hover {
   --tw-bg-opacity: 0.7;
 }
 
-.hover\:bg-opacity-80:hover {
-  --tw-bg-opacity: 0.8;
-}
-
 .hover\:bg-opacity-75:hover {
   --tw-bg-opacity: 0.75;
+}
+
+.hover\:bg-opacity-80:hover {
+  --tw-bg-opacity: 0.8;
 }
 
 .hover\:\!text-white:hover {

@@ -13,6 +13,7 @@
 }
 
 @layer utilities {
+  /* Hide scrollbar completely */
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -20,6 +21,49 @@
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Optimized scrollbar with smooth fade-in effect */
+  .scrollbar-optimized {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 150ms ease-out;
+  }
+
+  .scrollbar-optimized::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .scrollbar-optimized::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+    will-change: background;
+    transition: background 150ms ease-out;
+  }
+
+  .scrollbar-optimized::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    will-change: background;
+    transition: background 150ms ease-out;
+  }
+
+  /* Smooth fade-in on hover */
+  .scrollbar-optimized:hover {
+    scrollbar-color: rgba(156, 163, 175, 0.6) rgba(243, 244, 246, 0.2);
+  }
+
+  .scrollbar-optimized:hover::-webkit-scrollbar-track {
+    background: rgba(243, 244, 246, 0.2);
+  }
+
+  .scrollbar-optimized:hover::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.6);
+  }
+
+  .scrollbar-optimized:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.8);
   }
   
   /* Shimmer animation */
