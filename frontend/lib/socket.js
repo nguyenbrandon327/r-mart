@@ -10,7 +10,6 @@ import toast from 'react-hot-toast';
 export const useSocket = () => {
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const { selectedChat } = useSelector((state) => state.chat);
   const socketRef = useRef(null);
   const isConnectingRef = useRef(false);
 
@@ -19,7 +18,7 @@ export const useSocket = () => {
     if (isAuthenticated && user?.id && !socketRef.current && !isConnectingRef.current) {
       isConnectingRef.current = true;
       
-      console.log('Initializing socket connection for user:', user.id);
+      console.log('🔌 SOCKET: Initializing socket connection for user:', user.id);
       
       const socket = io(
         process.env.NODE_ENV === "development" ? "http://localhost:3000" : "/",
@@ -34,76 +33,56 @@ export const useSocket = () => {
       );
 
       socket.on('connect', () => {
-        console.log('Socket connected:', socket.id);
+        console.log('🟢 SOCKET: Connected successfully:', socket.id);
         isConnectingRef.current = false;
+        // Test the connection
+        console.log('🔌 SOCKET: Connection test - socket.connected:', socket.connected);
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
+        console.log('🔴 SOCKET: Disconnected:', reason);
         // Only log as error if it's an unexpected disconnect
         if (reason !== 'io client disconnect') {
-          console.log('Unexpected disconnect reason:', reason);
+          console.log('🔴 SOCKET: Unexpected disconnect reason:', reason);
         }
       });
 
       socket.on('reconnect', (attemptNumber) => {
-        console.log('Socket reconnected after', attemptNumber, 'attempts');
+        console.log('🟡 SOCKET: Reconnected after', attemptNumber, 'attempts');
       });
 
       socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
+        console.error('🔴 SOCKET: Connection error:', error);
         isConnectingRef.current = false;
       });
 
-      // Remove any existing newMessage listeners to prevent duplicates
+      // Remove any existing listeners to prevent duplicates
       socket.removeAllListeners('newMessage');
+      socket.removeAllListeners('getOnlineUsers');
+      socket.removeAllListeners('userTyping');
+      socket.removeAllListeners('messagesSeen');
       
-      // Global message listener for when not on chat pages
+      // Optimized global message listener
       socket.on('newMessage', (newMessage) => {
-        console.log('🔔 GLOBAL: New message received:', newMessage);
-        console.log('🔔 GLOBAL: Handler call count check - if you see this multiple times for the same message, there are duplicate handlers');
+        const messageChatId = parseInt(newMessage.chat_id);
+        const isFromCurrentUser = newMessage.sender_id == user.id;
+        const currentPath = window.location.pathname;
+        const isViewingThisChat = currentPath === `/inbox/${messageChatId}`;
         
         // Always update chat list with new message
         dispatch(updateChatLastMessage({
-          chatId: newMessage.chat_id,
+          chatId: messageChatId,
           message: newMessage.text || (newMessage.image ? 'Image' : 'Message'),
           timestamp: newMessage.created_at,
-          isFromCurrentUser: newMessage.sender_id === user.id
+          isFromCurrentUser
         }));
 
-        // Check if user is actively viewing the specific chat this message is for
-        const currentPath = window.location.pathname;
-        const isInSpecificChat = currentPath === `/inbox/${newMessage.chat_id}`;
-        const isInChatByState = selectedChat?.id === newMessage.chat_id;
-        const isActivelyViewingThisChat = isInSpecificChat || isInChatByState;
+        // Add message to messages array (backend now prevents duplicates)
+        dispatch(addMessage(newMessage));
         
-        console.log('🔔 GLOBAL: Active chat check:', {
-          currentPath,
-          messageChatId: newMessage.chat_id,
-          selectedChatId: selectedChat?.id,
-          isInSpecificChat,
-          isInChatByState,
-          isActivelyViewingThisChat
-        });
-        
-        // Only add message to the messages array if it's NOT from the current user
-        // (Current user's messages are added via sendMessage.fulfilled to avoid duplicates)
-        if (newMessage.sender_id !== user.id) {
-          console.log('🔔 GLOBAL: Adding message from other user to messages array');
-          dispatch(addMessage(newMessage));
-        } else {
-          console.log('🔔 GLOBAL: Skipping message from current user (will be added via sendMessage.fulfilled)');
-        }
-        
-        if (isActivelyViewingThisChat) {
-          console.log('🔔 GLOBAL: User is actively viewing this chat - NOT adding to unread');
-          return; // Don't add to unread count
-        }
-
-        // User is not actively viewing this chat, add to unread (only for messages from others)
-        if (newMessage.sender_id !== user.id) {
-          console.log('🔔 GLOBAL: User not viewing this chat, adding to unread');
-          dispatch(addChatToUnread({ chatId: newMessage.chat_id }));
+        // Handle unread count and notifications for messages from others
+        if (!isFromCurrentUser && !isViewingThisChat) {
+          dispatch(addChatToUnread({ chatId: messageChatId }));
           toast.success('New message received!', {
             icon: '💬',
             duration: 3000,
@@ -113,27 +92,32 @@ export const useSocket = () => {
 
       // Online users updates
       socket.on('getOnlineUsers', (users) => {
+        console.log('🟢 SOCKET: Online users updated:', users);
         dispatch(setOnlineUsers(users));
       });
 
       // Typing indicators
       socket.on('userTyping', ({ userId, isTyping, chatId }) => {
-        dispatch(setUserTyping({ userId, chatId, isTyping }));
+        console.log('⌨️ SOCKET: User typing event:', { userId, isTyping, chatId });
+        dispatch(setUserTyping({ userId: userId.toString(), chatId, isTyping }));
       });
 
       // Messages seen updates
       socket.on('messagesSeen', ({ chatId, seenBy, messageIds }) => {
-        // Handle message seen updates
-        console.log('Messages seen:', { chatId, seenBy, messageIds });
+        console.log('👁️ SOCKET: Messages seen:', { chatId, seenBy, messageIds });
+        // Handle message seen updates if needed
       });
 
       socketRef.current = socket;
       dispatch(setSocket(socket));
+      
+      // Log socket setup completion
+      console.log('🔌 SOCKET: Setup completed, socket stored in ref and Redux');
     }
 
     // Handle cleanup when user logs out
     if (!isAuthenticated && socketRef.current) {
-      console.log('User logged out, cleaning up socket connection');
+      console.log('🔴 SOCKET: User logged out, cleaning up socket connection');
       socketRef.current.close();
       socketRef.current = null;
       isConnectingRef.current = false;
@@ -144,20 +128,20 @@ export const useSocket = () => {
     return () => {
       // Only cleanup if component is actually unmounting, not just re-rendering
       if (!isAuthenticated && socketRef.current) {
-        console.log('Cleaning up socket connection');
+        console.log('🔴 SOCKET: Cleaning up socket connection');
         socketRef.current.close();
         socketRef.current = null;
         isConnectingRef.current = false;
         dispatch(setSocket(null));
       }
     };
-  }, [isAuthenticated, user?.id, dispatch]); // Only depend on user.id, not the entire user object
+  }, [isAuthenticated, user?.id, dispatch]); // Only depend on essential values
 
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
       if (socketRef.current) {
-        console.log('Component unmounting, closing socket');
+        console.log('🔴 SOCKET: Component unmounting, closing socket');
         socketRef.current.close();
         socketRef.current = null;
         isConnectingRef.current = false;

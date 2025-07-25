@@ -1,18 +1,70 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
+import { useSelector } from 'react-redux';
 import { useChatStore, useAuthStore } from '../../../store/hooks';
+import { selectMessagesForChat } from '../../../store/slices/chatSlice';
 import { useSocket } from '../../../lib/socket';
 import { useRouter } from 'next/navigation';
 import { UserCircleIcon, SendIcon, ImageIcon, XIcon, ArrowLeftIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import AuthGuard from '../../../components/AuthGuard';
+
+// Optimized message content component with memoization
+const MessageContent = memo(({ message, isCurrentUser, onImageClick }) => {
+  const isImageOnly = message.image && !message.text;
+  
+  // Image-only message without bubble
+  if (isImageOnly) {
+    return (
+      <div className="max-w-xs lg:max-w-md">
+        <Image
+          src={message.image}
+          alt="Message attachment"
+          width={200}
+          height={200}
+          className="rounded-2xl object-cover max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onImageClick(message.image)}
+        />
+      </div>
+    );
+  }
+  
+  // Regular message with bubble
+  return (
+    <div
+      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+        isCurrentUser
+          ? 'bg-primary text-primary-content'
+          : 'bg-base-200 text-base-content'
+      }`}
+    >
+      {message.text && (
+        <p className="break-words">{message.text}</p>
+      )}
+      {message.image && (
+        <div className={message.text ? 'mt-2' : ''}>
+          <Image
+            src={message.image}
+            alt="Message attachment"
+            width={200}
+            height={200}
+            className="rounded-lg object-cover max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => onImageClick(message.image)}
+          />
+        </div>
+      )}
+    </div>
+  );
+});
+
+MessageContent.displayName = 'MessageContent';
 
 export default function ChatPage({ params }) {
   const { chatId } = params;
   const router = useRouter();
   const {
-    messages,
     chats,
     selectedChat,
     isMessagesLoading,
@@ -36,7 +88,10 @@ export default function ChatPage({ params }) {
     removeChatFromUnread
   } = useChatStore();
 
-  const { user: currentUser, socket, isAuthenticated } = useAuthStore();
+  // Get messages for the current chat using selector
+  const messages = useSelector(state => selectMessagesForChat(state, parseInt(chatId)));
+
+  const { user: currentUser, socket } = useAuthStore();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -46,21 +101,9 @@ export default function ChatPage({ params }) {
   const [chatData, setChatData] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
+  const [enlargedImage, setEnlargedImage] = useState(null);
 
   // Socket connection is now handled globally in NavigationWrapper
-
-  // Check authentication
-  useEffect(() => {
-    if (isAuthenticated === false) {
-      router.push('/auth/login');
-      return;
-    }
-  }, [isAuthenticated, router]);
-
-  // Don't render anything if not authenticated
-  if (isAuthenticated === false) {
-    return null;
-  }
 
   // Load chats and find the current chat
   useEffect(() => {
@@ -405,16 +448,42 @@ export default function ChatPage({ params }) {
     };
   }, [selectedChat, messages.length, markMessagesAsSeen]);
 
+  // Handle image enlargement
+  const handleImageClick = useCallback((imageSrc) => {
+    setEnlargedImage(imageSrc);
+  }, []);
+
+  const handleCloseEnlargedImage = useCallback(() => {
+    setEnlargedImage(null);
+  }, []);
+
+  // Handle clicking outside the enlarged image to close it
+  useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' && enlargedImage) {
+        handleCloseEnlargedImage();
+      }
+    };
+
+    if (enlargedImage) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => document.removeEventListener('keydown', handleEscapeKey);
+    }
+  }, [enlargedImage, handleCloseEnlargedImage]);
+
   if (!chatData) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
+      <AuthGuard>
+        <div className="min-h-screen bg-base-200 flex items-center justify-center">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      </AuthGuard>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-4.25rem)] bg-white overflow-hidden">
+    <AuthGuard>
+      <div className="h-[calc(100vh-4.25rem)] bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto h-[calc(100vh-4.25rem)] flex bg-white">
         {/* LEFT COLUMN - Chat */}
         <div className="flex-1 flex flex-col border-r border-base-content/10">
@@ -504,28 +573,11 @@ export default function ChatPage({ params }) {
                       )}
                       
                       <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                            isCurrentUser
-                              ? 'bg-primary text-primary-content'
-                              : 'bg-base-200 text-base-content'
-                          }`}
-                        >
-                          {message.text && (
-                            <p className="break-words">{message.text}</p>
-                          )}
-                          {message.image && (
-                            <div className={message.text ? 'mt-2' : ''}>
-                              <Image
-                                src={message.image}
-                                alt="Message attachment"
-                                width={200}
-                                height={200}
-                                className="rounded-lg object-cover max-w-full h-auto"
-                              />
-                            </div>
-                          )}
-                        </div>
+                        <MessageContent 
+                          message={message} 
+                          isCurrentUser={isCurrentUser}
+                          onImageClick={handleImageClick}
+                        />
                       </div>
                       
                       {/* Show status after appropriate user messages */}
@@ -728,5 +780,31 @@ export default function ChatPage({ params }) {
         </div>
       </div>
     </div>
+
+    {/* Image Enlargement Overlay */}
+    {enlargedImage && (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+        onClick={handleCloseEnlargedImage}
+      >
+        <div className="relative max-w-full max-h-full animate-in zoom-in-95 duration-200">
+          <Image
+            src={enlargedImage}
+            alt="Enlarged view"
+            width={800}
+            height={600}
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on image
+          />
+          <button
+            onClick={handleCloseEnlargedImage}
+            className="absolute top-4 right-4 btn btn-circle btn-sm bg-black bg-opacity-50 border-none text-white hover:bg-opacity-75 transition-all duration-200"
+          >
+            <XIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    )}
+    </AuthGuard>
   );
 } 

@@ -8,13 +8,14 @@ import ProductCard from '../../../components/ProductCard';
 import EditProfileModal from '../../../components/EditProfileModal';
 import { EditIcon } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
+import AuthGuard from '../../../components/AuthGuard';
 
 export default function ProfilePage() {
   const { username } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
   
-  const { isAuthenticated, isCheckingAuth, user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const { viewedUserProfile, userProducts, isLoading, error, currentUserProfile } = useSelector((state) => state.user);
 
   // Helper function to extract username from email
@@ -25,16 +26,10 @@ export default function ProfilePage() {
   // Check if the current user is viewing their own profile
   const isOwnProfile = user && viewedUserProfile && getUsername(user.email) === username;
 
-  // First useEffect - handle authentication and fetch user profile
+  // First useEffect - fetch user profile
   useEffect(() => {
-    // Redirect to login if not authenticated (but only after auth check is complete)
-    if (isAuthenticated === false && !isCheckingAuth) {
-      router.push('/auth/login');
-      return;
-    }
-
-    // Fetch user profile if authenticated
-    if (isAuthenticated && username) {
+    // Fetch user profile
+    if (username) {
       dispatch(getUserByUsername(username));
     }
 
@@ -42,7 +37,7 @@ export default function ProfilePage() {
     return () => {
       dispatch(clearViewedUserProfile());
     };
-  }, [username, isAuthenticated, isCheckingAuth, dispatch, router]);
+  }, [username, dispatch]);
 
   // Second useEffect - fetch current user profile if viewing own profile
   useEffect(() => {
@@ -54,11 +49,6 @@ export default function ProfilePage() {
   const handleEditProfile = () => {
     document.getElementById("edit_profile_modal").showModal();
   };
-
-  // Don't render anything if not authenticated (but only after auth check is complete)
-  if (isAuthenticated === false && !isCheckingAuth) {
-    return null;
-  }
 
   // Show error if user not found
   if (error) {
@@ -92,9 +82,10 @@ export default function ProfilePage() {
   };
 
   return (
-    <div>
-      <EditProfileModal />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <AuthGuard>
+      <div>
+        <EditProfileModal />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-8">
           {/* Left Column - User Information */}
@@ -196,5 +187,6 @@ export default function ProfilePage() {
       </div>
       <Toaster />
     </div>
+    </AuthGuard>
   );
 } 

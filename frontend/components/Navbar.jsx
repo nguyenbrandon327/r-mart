@@ -6,6 +6,7 @@ import { UserIcon, LogOutIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon,
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import SearchBar from './SearchBar';
+import { useEffect } from 'react';
 
 function Navbar() {
   const pathname = usePathname();
@@ -14,6 +15,11 @@ function Navbar() {
   const isHomePage = pathname === "/";
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.chat);
+  
+  // Debug logging to track unread count changes
+  useEffect(() => {
+    console.log('🔵 NAVBAR: Unread count changed to:', unreadCount);
+  }, [unreadCount]);
   
   const handleLogout = async () => {
     try {

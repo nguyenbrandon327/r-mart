@@ -16,11 +16,18 @@ export function getReceiverSocketId(userId) {
   return userSocketMap[userId];
 }
 
+export function isUserInChatRoom(userId, chatId) {
+  return activeChatUsers[chatId] && activeChatUsers[chatId].has(userId.toString());
+}
+
 // used to store online users
 const userSocketMap = {}; // {userId: socketId}
 
 // Store typing users per chat: {chatId: {userId: socketId}}
 const typingUsers = {};
+
+// Store users currently in chat rooms: {chatId: Set(userIds)}
+const activeChatUsers = {};
 
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
@@ -63,6 +70,13 @@ io.on("connection", (socket) => {
   socket.on("joinChat", (chatId) => {
     if (chatId) {
       socket.join(`chat_${chatId}`);
+      
+      // Track user as active in this chat
+      if (!activeChatUsers[chatId]) {
+        activeChatUsers[chatId] = new Set();
+      }
+      activeChatUsers[chatId].add(userId);
+      
       console.log(`User ${userId} joined chat room: chat_${chatId}`);
     }
   });
@@ -71,6 +85,15 @@ io.on("connection", (socket) => {
   socket.on("leaveChat", (chatId) => {
     if (chatId) {
       socket.leave(`chat_${chatId}`);
+      
+      // Remove user from active chat tracking
+      if (activeChatUsers[chatId]) {
+        activeChatUsers[chatId].delete(userId);
+        if (activeChatUsers[chatId].size === 0) {
+          delete activeChatUsers[chatId];
+        }
+      }
+      
       console.log(`User ${userId} left chat room: chat_${chatId}`);
       
       // Remove from typing users when leaving chat
@@ -91,6 +114,16 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("A user disconnected", socket.id);
     delete userSocketMap[userId];
+    
+    // Clean up active chat users
+    for (const chatId in activeChatUsers) {
+      if (activeChatUsers[chatId].has(userId)) {
+        activeChatUsers[chatId].delete(userId);
+        if (activeChatUsers[chatId].size === 0) {
+          delete activeChatUsers[chatId];
+        }
+      }
+    }
     
     // Clean up typing users
     for (const chatId in typingUsers) {

@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { BookmarkIcon } from 'lucide-react';
 import { fetchSavedProducts } from '../../store/slices/savedProductsSlice';
 import SavedProductGroup from '../../components/SavedProductGroup';
+import AuthGuard from '../../components/AuthGuard';
 
 export default function SavedPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   
   const { items: savedProducts, loading, error } = useSelector((state) => state.savedProducts);
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Group products by user
   const groupedProducts = savedProducts.reduce((groups, product) => {
@@ -36,23 +36,13 @@ export default function SavedPage() {
   const groupedProductsArray = Object.values(groupedProducts);
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (isAuthenticated === false) {
-      router.push('/auth/login');
-      return;
-    }
-    
-    // Fetch saved products
+    // Fetch saved products when component mounts
     dispatch(fetchSavedProducts());
-  }, [dispatch, isAuthenticated, router]);
-
-  // Don't render anything if not authenticated
-  if (isAuthenticated === false) {
-    return null;
-  }
+  }, [dispatch]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AuthGuard>
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center mb-2">
           <BookmarkIcon className="w-7 h-7 mr-2" />
@@ -103,5 +93,6 @@ export default function SavedPage() {
         </div>
       )}
     </div>
+    </AuthGuard>
   );
 }

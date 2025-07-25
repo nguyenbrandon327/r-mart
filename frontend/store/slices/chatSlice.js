@@ -9,7 +9,7 @@ const API_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/
 axios.defaults.withCredentials = true;
 
 const initialState = {
-  messages: [],
+  messages: {}, // Change to object: { chatId: [messages] }
   chats: [],
   selectedChat: null,
   isChatsLoading: false,
@@ -133,7 +133,12 @@ const chatSlice = createSlice({
       state.selectedChat = action.payload;
     },
     addMessage: (state, action) => {
-      state.messages.push(action.payload);
+      const message = action.payload;
+      const chatId = message.chat_id;
+      if (!state.messages[chatId]) {
+        state.messages[chatId] = [];
+      }
+      state.messages[chatId].push(message);
     },
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
@@ -159,58 +164,72 @@ const chatSlice = createSlice({
       }
     },
     markMessagesAsSeenLocal: (state, action) => {
-      const { messageIds } = action.payload;
-      state.messages = state.messages.map(message => {
-        if (messageIds.includes(message.id)) {
-          return { ...message, seen_at: new Date().toISOString() };
-        }
-        return message;
-      });
+      const { messageIds, chatId } = action.payload;
+      if (state.messages[chatId]) {
+        state.messages[chatId] = state.messages[chatId].map(message => {
+          if (messageIds.includes(message.id)) {
+            return { ...message, seen_at: new Date().toISOString() };
+          }
+          return message;
+        });
+      }
     },
     clearError: (state) => {
       state.error = null;
     },
     clearMessages: (state) => {
-      state.messages = [];
+      state.messages = {};
     },
     clearTypingUsers: (state) => {
       state.typingUsers = {};
     },
     updateChatLastMessage: (state, action) => {
       const { chatId, message, timestamp, isFromCurrentUser = false } = action.payload;
+      console.log('💬 REDUX: updateChatLastMessage called:', { chatId, message, timestamp, isFromCurrentUser });
+      console.log('💬 REDUX: Current chats before update:', state.chats.length);
+      
       const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
       if (chatIndex !== -1) {
+        console.log('💬 REDUX: Found chat at index:', chatIndex);
         state.chats[chatIndex].last_message = message;
         state.chats[chatIndex].last_message_at = timestamp;
-        
-        // If message is not from current user, increment unread count
-        if (!isFromCurrentUser) {
-          state.chats[chatIndex].unread_count = parseInt(state.chats[chatIndex].unread_count || 0) + 1;
-          // Add to unread chats if not already there
-          if (!state.chatsWithUnreadMessages.includes(chatId)) {
-            state.chatsWithUnreadMessages.push(chatId);
-            state.unreadCount = state.chatsWithUnreadMessages.length;
-          }
-        }
         
         // Move chat to top of list
         const updatedChat = state.chats[chatIndex];
         state.chats.splice(chatIndex, 1);
         state.chats.unshift(updatedChat);
+        console.log('💬 REDUX: Moved chat to top, new order:', state.chats.map(c => c.id));
+      } else {
+        console.log('💬 REDUX: Chat not found with ID:', chatId);
       }
     },
     addChatToUnread: (state, action) => {
       const { chatId } = action.payload;
       console.log('🔴 REDUX: addChatToUnread called for chat:', chatId);
       console.log('🔴 REDUX: Current unread chats before:', [...state.chatsWithUnreadMessages]);
+      console.log('🔴 REDUX: Current unread count before:', state.unreadCount);
+      
+      // Find the chat and increment its unread count
+      const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+      if (chatIndex !== -1) {
+        const oldCount = state.chats[chatIndex].unread_count;
+        state.chats[chatIndex].unread_count = parseInt(state.chats[chatIndex].unread_count || 0) + 1;
+        console.log('🔴 REDUX: Updated chat unread count from', oldCount, 'to', state.chats[chatIndex].unread_count);
+      } else {
+        console.log('🔴 REDUX: Chat not found for unread update:', chatId);
+      }
+      
+      // Add to global unread list if not already there
       if (!state.chatsWithUnreadMessages.includes(chatId)) {
         state.chatsWithUnreadMessages.push(chatId);
         state.unreadCount = state.chatsWithUnreadMessages.length;
         console.log('🔴 REDUX: Added to unread. New count:', state.unreadCount);
         console.log('🔴 REDUX: New unread chats:', [...state.chatsWithUnreadMessages]);
       } else {
-        console.log('🔴 REDUX: Chat already in unread list, no change');
+        console.log('🔴 REDUX: Chat already in unread list, but incremented individual count');
       }
+      
+      console.log('🔴 REDUX: Final state - unreadCount:', state.unreadCount, 'chatsWithUnreadMessages:', [...state.chatsWithUnreadMessages]);
     },
     removeChatFromUnread: (state, action) => {
       const { chatId } = action.payload;
@@ -297,7 +316,7 @@ const chatSlice = createSlice({
         state.chats = state.chats.filter(chat => chat.id !== action.payload.chatId);
         if (state.selectedChat?.id === action.payload.chatId) {
           state.selectedChat = null;
-          state.messages = [];
+          state.messages = {}; // Clear messages for the deleted chat
         }
         toast.success(action.payload.message);
       })
@@ -312,7 +331,10 @@ const chatSlice = createSlice({
       })
       .addCase(getMessages.fulfilled, (state, action) => {
         state.isMessagesLoading = false;
-        state.messages = action.payload;
+        // Store messages for the current chat
+        if (state.selectedChat) {
+          state.messages[state.selectedChat.id] = action.payload;
+        }
       })
       .addCase(getMessages.rejected, (state, action) => {
         state.isMessagesLoading = false;
@@ -324,7 +346,8 @@ const chatSlice = createSlice({
         state.error = null;
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
-        state.messages.push(action.payload);
+        // Message will be added via socket event (newMessage -> addMessage)
+        // This prevents duplicate messages in the UI
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.error = action.payload;
@@ -334,12 +357,14 @@ const chatSlice = createSlice({
       .addCase(markMessagesAsSeen.fulfilled, (state, action) => {
         // Update local state to mark messages as seen
         const seenMessageIds = action.payload.map(msg => msg.id);
-        state.messages = state.messages.map(message => {
-          if (seenMessageIds.includes(message.id)) {
-            return { ...message, seen_at: new Date().toISOString() };
-          }
-          return message;
-        });
+        if (state.selectedChat && state.messages[state.selectedChat.id]) {
+          state.messages[state.selectedChat.id] = state.messages[state.selectedChat.id].map(message => {
+            if (seenMessageIds.includes(message.id)) {
+              return { ...message, seen_at: new Date().toISOString() };
+            }
+            return message;
+          });
+        }
         
         // If we're in a chat and messages were seen, remove from unread
         if (state.selectedChat && action.payload.length > 0) {
@@ -383,5 +408,10 @@ export const {
   setChatsWithUnreadMessages,
   resetUnreadCount
 } = chatSlice.actions;
+
+// Selector to get messages for a specific chat
+export const selectMessagesForChat = (state, chatId) => {
+  return state.chat.messages[chatId] || [];
+};
 
 export default chatSlice.reducer; 

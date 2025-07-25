@@ -121,8 +121,7 @@ export const useChatStore = () => {
   const auth = useSelector((state) => state.auth);
 
   return {
-    // State
-    messages: chat.messages,
+    // State (messages removed - now accessed via selector)
     chats: chat.chats,
     selectedChat: chat.selectedChat,
     isChatsLoading: chat.isChatsLoading,
@@ -231,27 +230,17 @@ export const useChatStore = () => {
         return;
       }
 
-      // Only remove typing and messagesSeen listeners to avoid conflicts with global newMessage handler
-      socket.removeAllListeners("userTyping");
+      // Only remove messagesSeen listeners to avoid conflicts with global handlers
       socket.removeAllListeners("messagesSeen");
 
-      console.log('📱 LOCAL: Setting up typing and seen handlers for chat:', chat.selectedChat?.id || 'none');
-
-      // Handle typing indicators
-      const typingHandler = ({ userId, isTyping, chatId }) => {
-        const currentSelectedChat = chat.selectedChat;
-        if (currentSelectedChat && chatId === currentSelectedChat.id) {
-          dispatch(setUserTyping({ userId: userId.toString(), chatId, isTyping }));
-        }
-      };
+      console.log('📱 LOCAL: Setting up seen handlers for chat:', chat.selectedChat?.id || 'none');
 
       // Handle messages seen
-      const messagesSeenHandler = ({ messageIds }) => {
-        dispatch(markMessagesAsSeenLocal({ messageIds }));
+      const messagesSeenHandler = ({ messageIds, chatId }) => {
+        dispatch(markMessagesAsSeenLocal({ messageIds, chatId }));
       };
 
-      // Only set up typing and messagesSeen handlers - newMessage is handled globally
-      socket.on("userTyping", typingHandler);
+      // Only set up messagesSeen handler - newMessage and userTyping are handled globally
       socket.on("messagesSeen", messagesSeenHandler);
     },
 
@@ -262,9 +251,8 @@ export const useChatStore = () => {
         return;
       }
       
-      console.log('📱 LOCAL: Unsubscribing from typing and seen handlers');
-      // Only remove the listeners we set up locally - don't touch global newMessage handler
-      socket.removeAllListeners("userTyping");
+      console.log('📱 LOCAL: Unsubscribing from seen handlers');
+      // Only remove the messagesSeen listener we set up locally - don't touch global handlers
       socket.removeAllListeners("messagesSeen");
     },
 

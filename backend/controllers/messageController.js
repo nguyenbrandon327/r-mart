@@ -1,6 +1,6 @@
 import { sql } from "../config/db.js";
 import { upload } from "../utils/s3.js";
-import { getReceiverSocketId, io } from "../socket/socket.js";
+import { getReceiverSocketId, isUserInChatRoom, io } from "../socket/socket.js";
 
 // Create a new chat between two users (optionally about a product)
 export const createChat = async (req, res) => {
@@ -276,17 +276,13 @@ export const markMessagesAsSeen = async (req, res) => {
             RETURNING *
         `;
 
-        // Notify other users that messages have been seen via socket
+        // Notify other users in the chat room that messages have been seen via socket
         if (updatedMessages.length > 0) {
-            const receiverId = chat[0].user1_id === currentUserId ? chat[0].user2_id : chat[0].user1_id;
-            const receiverSocketId = getReceiverSocketId(receiverId);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("messagesSeen", {
-                    chatId: parseInt(chatId),
-                    seenBy: currentUserId,
-                    messageIds: updatedMessages.map(msg => msg.id)
-                });
-            }
+            io.to(`chat_${chatId}`).emit("messagesSeen", {
+                chatId: parseInt(chatId),
+                seenBy: currentUserId,
+                messageIds: updatedMessages.map(msg => msg.id)
+            });
         }
 
         res.status(200).json({
@@ -389,30 +385,27 @@ export const sendMessage = async (req, res) => {
                 });
             }
     
-            const newMessage = await sql`
-                INSERT INTO messages (chat_id, sender_id, text, image, created_at)
-                VALUES (${chatId}, ${senderId}, ${text}, ${imageURL}, NOW() AT TIME ZONE 'UTC')
-                RETURNING *
-            `;
-
-            // Get the complete message with sender info and proper timezone formatting (consistent with getMessages)
+            // Optimized: Single query to insert message and get complete data with user info
             const completeMessage = await sql`
+                WITH new_message AS (
+                    INSERT INTO messages (chat_id, sender_id, text, image, created_at)
+                    VALUES (${chatId}, ${senderId}, ${text}, ${imageURL}, NOW() AT TIME ZONE 'UTC')
+                    RETURNING *
+                ),
+                updated_chat AS (
+                    UPDATE chats 
+                    SET last_message_at = NOW() AT TIME ZONE 'UTC'
+                    WHERE id = ${chatId}
+                    RETURNING id
+                )
                 SELECT 
                     m.*,
                     u.name as sender_name,
                     u.profile_pic as sender_profile_pic,
                     m.created_at AT TIME ZONE 'UTC' as created_at_utc,
                     m.seen_at AT TIME ZONE 'UTC' as seen_at_utc
-                FROM messages m
+                FROM new_message m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.id = ${newMessage[0].id}
-            `;
-
-            // Update the chat's last_message_at timestamp
-            await sql`
-                UPDATE chats 
-                SET last_message_at = NOW() AT TIME ZONE 'UTC'
-                WHERE id = ${chatId}
             `;
 
             // Format the timestamp for the response (consistent with getMessages)
@@ -422,10 +415,36 @@ export const sendMessage = async (req, res) => {
                 seen_at: completeMessage[0].seen_at_utc ? new Date(completeMessage[0].seen_at_utc).toISOString() : completeMessage[0].seen_at
             };
 
-            // Real-time functionality with socket.io
-            const receiverSocketId = getReceiverSocketId(receiverId);
-            if (receiverSocketId) {
-                io.to(receiverSocketId).emit("newMessage", formattedMessage);
+            // Optimized real-time functionality with socket.io
+            // Send message to the chat room for users actively viewing the chat
+            io.to(`chat_${chatId}`).emit("newMessage", formattedMessage);
+            
+            // Send individual notifications ONLY to users NOT actively in the chat room
+            const user1Id = chat[0].user1_id;
+            const user2Id = chat[0].user2_id;
+            const user1SocketId = getReceiverSocketId(user1Id.toString());
+            const user2SocketId = getReceiverSocketId(user2Id.toString());
+            
+            console.log(`Optimized message emission for chat ${chatId}:`, {
+                user1Id,
+                user1InRoom: isUserInChatRoom(user1Id, chatId),
+                user1SocketId,
+                user2Id,
+                user2InRoom: isUserInChatRoom(user2Id, chatId),
+                user2SocketId,
+                senderId
+            });
+            
+            // Send to user1 if: online, not sender, and NOT actively in chat room
+            if (user1SocketId && user1Id !== senderId && !isUserInChatRoom(user1Id, chatId)) {
+                io.to(user1SocketId).emit("newMessage", formattedMessage);
+                console.log(`Sent notification to user1 (${user1Id}) - not in room`);
+            }
+            
+            // Send to user2 if: online, not sender, and NOT actively in chat room  
+            if (user2SocketId && user2Id !== senderId && !isUserInChatRoom(user2Id, chatId)) {
+                io.to(user2SocketId).emit("newMessage", formattedMessage);
+                console.log(`Sent notification to user2 (${user2Id}) - not in room`);
             }
     
             res.status(201).json({

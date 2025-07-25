@@ -6,40 +6,23 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addProduct, setFormData, resetForm } from '../../store/slices/productSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AuthGuard from '../../components/AuthGuard';
 
 export default function AddListingPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { formData, loading } = useSelector((state) => state.products);
-  const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
-  
-  // Authentication check - redirect to login if not authenticated
-  useEffect(() => {
-    if (isAuthenticated === false) {
-      router.push('/auth/login');
-      return;
-    }
-  }, [isAuthenticated, router]);
-
-  // Don't render anything if not authenticated or still checking auth
-  if (isAuthenticated === false || isCheckingAuth) {
-    return (
-      <div className="flex justify-center items-center h-screen" data-theme="light">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
-
-  // Reset form data when component mounts to ensure clean slate for new product
-  useEffect(() => {
-    dispatch(resetForm());
-  }, [dispatch]);
   
   // Image management for new products only
   const [images, setImages] = useState([]);
   const [draggedImage, setDraggedImage] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Reset form data when component mounts to ensure clean slate for new product
+  useEffect(() => {
+    dispatch(resetForm());
+  }, [dispatch]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -145,7 +128,8 @@ export default function AddListingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-100 relative" data-theme="light">
+    <AuthGuard>
+      <div className="min-h-screen bg-base-100 relative" data-theme="light">
       {/* Logo at top left */}
       <div className="absolute top-4 left-4 z-10">
         <Link href="/" className="hover:opacity-80 transition-opacity">
@@ -374,5 +358,6 @@ export default function AddListingPage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { UserCircleIcon, MessageSquareIcon, Trash2Icon, ShoppingBagIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import AuthGuard from '../../components/AuthGuard';
 
 export default function InboxPage() {
   const {
@@ -21,25 +22,18 @@ export default function InboxPage() {
     resetUnreadCount
   } = useChatStore();
 
-  const { user: currentUser, socket, isAuthenticated } = useAuthStore();
+  const { user: currentUser, socket } = useAuthStore();
   const router = useRouter();
   const [deletingChatId, setDeletingChatId] = useState(null);
   const [timeUpdateTrigger, setTimeUpdateTrigger] = useState(0);
 
-  // Socket connection is now handled globally in NavigationWrapper
-
-  // Check authentication
+  // Debug logging to track chat updates
   useEffect(() => {
-    if (isAuthenticated === false) {
-      router.push('/auth/login');
-      return;
-    }
-  }, [isAuthenticated, router]);
+    console.log('📬 INBOX: Chats updated:', chats.length, 'chats');
+    console.log('📬 INBOX: Chats with unread:', chats.filter(chat => chat.unread_count > 0).length);
+  }, [chats]);
 
-  // Don't render anything if not authenticated
-  if (isAuthenticated === false) {
-    return null;
-  }
+  // Socket connection is now handled globally in NavigationWrapper
 
   useEffect(() => {
     // Load chats when component mounts
@@ -150,8 +144,9 @@ export default function InboxPage() {
   };
 
   return (
-    <div>
-      <div className="max-w-4xl mx-auto p-4">
+    <AuthGuard>
+      <div>
+        <div className="max-w-4xl mx-auto p-4">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-base-content">Messages</h1>
@@ -293,5 +288,6 @@ export default function InboxPage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }
