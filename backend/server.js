@@ -213,8 +213,8 @@ async function initDB() {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS show_location_in_profile BOOLEAN DEFAULT FALSE`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS campus_location_name VARCHAR(255)`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_address TEXT`;
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_latitude DECIMAL(10, 8)`;
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_longitude DECIMAL(11, 8)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_latitude TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_longitude TEXT`;
 
     // Set default location to UCR Main Campus for existing users who don't have location set
     await sql`

@@ -1,4 +1,5 @@
 // Utility functions for calculating distances between coordinates
+import { decryptLocationData } from "./crypto.js";
 
 // Haversine formula to calculate distance between two points on Earth
 // Returns distance in miles
@@ -44,10 +45,23 @@ export const getUserCoordinates = (user) => {
   if (!user) return null;
   
   if (user.location_type === 'off_campus' && user.custom_latitude && user.custom_longitude) {
-    return {
-      latitude: parseFloat(user.custom_latitude),
-      longitude: parseFloat(user.custom_longitude)
-    };
+    try {
+      // Decrypt the coordinates if they're encrypted
+      const decryptedLocation = decryptLocationData({
+        custom_latitude: user.custom_latitude,
+        custom_longitude: user.custom_longitude
+      });
+      
+      if (decryptedLocation.custom_latitude && decryptedLocation.custom_longitude) {
+        return {
+          latitude: decryptedLocation.custom_latitude,
+          longitude: decryptedLocation.custom_longitude
+        };
+      }
+    } catch (decryptError) {
+      console.error("Error decrypting user coordinates:", decryptError);
+      return null;
+    }
   } else if (user.location_type === 'on_campus' && user.campus_location_name) {
     return getCampusLocationCoordinates(user.campus_location_name);
   }

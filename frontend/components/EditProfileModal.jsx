@@ -115,7 +115,9 @@ function EditProfileModal() {
     showLocationInProfile: false,
     locationType: '',
     campusLocationName: '',
-    customAddress: ''
+    customAddress: '',
+    customCity: '',
+    customState: ''
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [modalKey, setModalKey] = useState(0); // Key to force re-initialization
@@ -142,11 +144,29 @@ function EditProfileModal() {
                          currentUserProfile.campus_location_name?.includes('UCR Main Campus') &&
                          !currentUserProfile.show_location_in_profile;
       
+      // Parse existing custom address into separate fields
+      let parsedAddress = { address: '', city: '', state: '' };
+      if (currentUserProfile.custom_address) {
+        const addressParts = currentUserProfile.custom_address.split(',').map(part => part.trim());
+        if (addressParts.length >= 3) {
+          parsedAddress.address = addressParts[0];
+          parsedAddress.city = addressParts[1];
+          parsedAddress.state = addressParts[2];
+        } else if (addressParts.length === 2) {
+          parsedAddress.address = addressParts[0];
+          parsedAddress.city = addressParts[1];
+        } else if (addressParts.length === 1) {
+          parsedAddress.address = addressParts[0];
+        }
+      }
+      
       setLocationData({
         showLocationInProfile: currentUserProfile.show_location_in_profile || false,
         locationType: isDontShare ? 'dont_share' : (currentUserProfile.location_type || ''),
         campusLocationName: currentUserProfile.campus_location_name || '',
-        customAddress: currentUserProfile.custom_address || ''
+        customAddress: parsedAddress.address,
+        customCity: parsedAddress.city,
+        customState: parsedAddress.state
       });
 
       // Reset other modal state
@@ -232,12 +252,21 @@ function EditProfileModal() {
   };
 
   // Geocoding function for off-campus addresses
-  const geocodeAddress = async (address) => {
+  const geocodeAddress = async (addressObj) => {
     try {
       setIsGeocoding(true);
       
+      // Concatenate address parts into a full address string
+      const addressParts = [
+        addressObj.address,
+        addressObj.city,
+        addressObj.state
+      ].filter(part => part && part.trim() !== '');
+      
+      const fullAddress = addressParts.join(', ');
+      
       // Using a free geocoding service - you might want to use Google Maps API or another service
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Riverside, CA')}`);
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`);
       const data = await response.json();
       
       if (data && data.length > 0) {
@@ -303,11 +332,29 @@ function EditProfileModal() {
       }
 
       // Handle location updates
+      // Parse current user's address for comparison
+      let currentParsedAddress = { address: '', city: '', state: '' };
+      if (currentUserProfile?.custom_address) {
+        const addressParts = currentUserProfile.custom_address.split(',').map(part => part.trim());
+        if (addressParts.length >= 3) {
+          currentParsedAddress.address = addressParts[0];
+          currentParsedAddress.city = addressParts[1];
+          currentParsedAddress.state = addressParts[2];
+        } else if (addressParts.length === 2) {
+          currentParsedAddress.address = addressParts[0];
+          currentParsedAddress.city = addressParts[1];
+        } else if (addressParts.length === 1) {
+          currentParsedAddress.address = addressParts[0];
+        }
+      }
+      
       const currentLocationData = {
         showLocationInProfile: currentUserProfile?.show_location_in_profile || false,
         locationType: currentUserProfile?.location_type || '',
         campusLocationName: currentUserProfile?.campus_location_name || '',
-        customAddress: currentUserProfile?.custom_address || ''
+        customAddress: currentParsedAddress.address,
+        customCity: currentParsedAddress.city,
+        customState: currentParsedAddress.state
       };
 
       const hasLocationChanges = JSON.stringify(locationData) !== JSON.stringify(currentLocationData);
@@ -331,9 +378,19 @@ function EditProfileModal() {
           locationPayload.campusLocationName = locationData.campusLocationName;
         } else if (locationData.locationType === 'off_campus' && locationData.customAddress.trim()) {
           try {
-            const coords = await geocodeAddress(locationData.customAddress);
+            const coords = await geocodeAddress({
+              address: locationData.customAddress,
+              city: locationData.customCity,
+              state: locationData.customState
+            });
             locationPayload.locationType = 'off_campus';
-            locationPayload.customAddress = locationData.customAddress.trim();
+            // Concatenate address parts for storage
+            const addressParts = [
+              locationData.customAddress.trim(),
+              locationData.customCity.trim(),
+              locationData.customState.trim()
+            ].filter(part => part !== '');
+            locationPayload.customAddress = addressParts.join(', ');
             locationPayload.customLatitude = coords.latitude;
             locationPayload.customLongitude = coords.longitude;
           } catch (error) {
@@ -616,6 +673,8 @@ function EditProfileModal() {
                       ...locationData, 
                       locationType: e.target.value, 
                       customAddress: '', 
+                      customCity: '',
+                      customState: '',
                       campusLocationName: '' 
                     })}
                     className="radio radio-primary"
@@ -636,7 +695,9 @@ function EditProfileModal() {
                       ...locationData, 
                       locationType: e.target.value, 
                       campusLocationName: '', 
-                      customAddress: '' 
+                      customAddress: '', 
+                      customCity: '',
+                      customState: ''
                     })}
                     className="radio radio-primary"
                   />
@@ -657,6 +718,8 @@ function EditProfileModal() {
                       locationType: e.target.value, 
                       campusLocationName: 'UCR Main Campus (default)', 
                       customAddress: '',
+                      customCity: '',
+                      customState: '',
                       showLocationInProfile: false
                     })}
                     className="radio radio-primary"
@@ -715,17 +778,48 @@ function EditProfileModal() {
 
                 {/* Off-campus address input */}
                 {locationData.locationType === 'off_campus' && (
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Enter your address</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={locationData.customAddress}
-                      onChange={(e) => setLocationData({ ...locationData, customAddress: e.target.value })}
-                      placeholder="123 Main St, Riverside, CA"
-                      className="input input-bordered focus:input-primary transition-colors duration-200"
-                    />
+                  <div className="space-y-4">
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">Street Address</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={locationData.customAddress}
+                        onChange={(e) => setLocationData({ ...locationData, customAddress: e.target.value })}
+                        placeholder="123 Main St"
+                        className="input input-bordered focus:input-primary transition-colors duration-200"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text">City</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={locationData.customCity}
+                          onChange={(e) => setLocationData({ ...locationData, customCity: e.target.value })}
+                          placeholder="City"
+                          className="input input-bordered focus:input-primary transition-colors duration-200"
+                        />
+                      </div>
+                      
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text">State</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={locationData.customState}
+                          onChange={(e) => setLocationData({ ...locationData, customState: e.target.value })}
+                          placeholder="State"
+                          className="input input-bordered focus:input-primary transition-colors duration-200"
+                        />
+                      </div>
+                    </div>
+                    
                     {isGeocoding && (
                       <div className="label">
                         <span className="label-text-alt text-blue-600">Verifying address...</span>

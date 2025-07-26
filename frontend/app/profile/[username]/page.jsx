@@ -156,7 +156,7 @@ export default function ProfilePage() {
                           {viewedUserProfile.location_type === 'on_campus' 
                             ? (viewedUserProfile.campus_location_name || 'On-campus')
                             : viewedUserProfile.location_type === 'off_campus' 
-                              ? 'Off-campus (Riverside area)'
+                              ? 'Off-campus'
                               : 'UCR Campus'
                           }
                         </span>

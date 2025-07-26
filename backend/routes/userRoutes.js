@@ -10,7 +10,8 @@ import {
   updateOnboardingStep1,
   completeOnboarding,
   completeOnboardingAll,
-  updateUserLocation
+  updateUserLocation,
+  geocodeAddress
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -37,5 +38,8 @@ router.put("/onboarding", protectRoute, completeOnboardingAll);
 
 // Location routes
 router.put("/location", protectRoute, updateUserLocation);
+
+// Geocoding route
+router.post("/geocode", protectRoute, geocodeAddress);
 
 export default router; 

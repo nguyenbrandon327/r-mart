@@ -1,5 +1,52 @@
 # R-Mart Backend
 
+## Environment Variables
+
+The following environment variables are required for the backend to function properly:
+
+### Required Variables
+- `PORT` - Server port (default: 3000)
+- `NODE_ENV` - Environment mode (development/production)
+- `CLIENT_URL` - Frontend URL for CORS and email links
+- `JWT_SECRET` - Secret key for JWT token signing
+- `ENCRYPTION_KEY` - 256-bit encryption key for securing user location data (see below)
+
+### AWS S3 Configuration
+- `AWS_REGION` - AWS region for S3 bucket
+- `AWS_ACCESS_KEY_ID` - AWS access key ID
+- `AWS_SECRET_ACCESS_KEY` - AWS secret access key
+- `AWS_S3_BUCKET_NAME` - S3 bucket name for file uploads
+
+### Optional Services
+- `MAILTRAP_TOKEN` - Mailtrap token for email service
+- `ARCJET_KEY` - Arcjet API key for security features
+- `ELASTICSEARCH_URL` - Elasticsearch URL (default: http://localhost:9200)
+- `ELASTICSEARCH_USERNAME` - Elasticsearch username (default: elastic)
+- `ELASTICSEARCH_PASSWORD` - Elasticsearch password
+- `SYNC_ELASTICSEARCH_ON_STARTUP` - Sync existing products on startup (default: false)
+
+### Generating Encryption Key
+
+To generate a secure 256-bit encryption key for the `ENCRYPTION_KEY` variable, you can use either:
+
+**Option 1: Using the provided script (recommended)**
+```bash
+node scripts/generateEncryptionKey.js
+```
+
+**Option 2: Using Node.js directly**
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+This key is used to encrypt sensitive user location data (custom addresses and coordinates) before storing them in the database.
+
+⚠️ **Important Security Notes:**
+- Keep this key secure and never expose it publicly
+- If you change this key, all existing encrypted location data will become unreadable
+- Back up this key securely in your production environment
+- Use a different key for each environment (development, staging, production)
+
 ## Authentication Endpoints (`/api/auth`)
 
 | Method | Endpoint | Description | Protection |

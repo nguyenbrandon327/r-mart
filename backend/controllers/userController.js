@@ -1,5 +1,6 @@
 import { sql } from "../config/db.js";
 import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
+import { encryptLocationData, decryptLocationData } from "../utils/crypto.js";
 
 // Get current user's profile
 export const getUserProfile = async (req, res) => {
@@ -19,6 +20,27 @@ export const getUserProfile = async (req, res) => {
         success: false,
         message: "User not found"
       });
+    }
+    
+    // Decrypt location data before returning to client
+    if (user.location_type === 'off_campus') {
+      try {
+        const decryptedLocation = decryptLocationData({
+          custom_address: user.custom_address,
+          custom_latitude: user.custom_latitude,
+          custom_longitude: user.custom_longitude
+        });
+        
+        user.custom_address = decryptedLocation.custom_address;
+        user.custom_latitude = decryptedLocation.custom_latitude;
+        user.custom_longitude = decryptedLocation.custom_longitude;
+      } catch (decryptError) {
+        console.error("Error decrypting location data:", decryptError);
+        // Set to null if decryption fails to avoid exposing encrypted data
+        user.custom_address = null;
+        user.custom_latitude = null;
+        user.custom_longitude = null;
+      }
     }
     
     res.status(200).json({
@@ -58,6 +80,32 @@ export const getUserByUsername = async (req, res) => {
     }
     
     const user = users[0];
+    
+    // Decrypt location data before returning to client (only if user wants to show location)
+    if (user.location_type === 'off_campus' && user.show_location_in_profile) {
+      try {
+        const decryptedLocation = decryptLocationData({
+          custom_address: user.custom_address,
+          custom_latitude: user.custom_latitude,
+          custom_longitude: user.custom_longitude
+        });
+        
+        user.custom_address = decryptedLocation.custom_address;
+        user.custom_latitude = decryptedLocation.custom_latitude;
+        user.custom_longitude = decryptedLocation.custom_longitude;
+      } catch (decryptError) {
+        console.error("Error decrypting location data:", decryptError);
+        // Set to null if decryption fails
+        user.custom_address = null;
+        user.custom_latitude = null;
+        user.custom_longitude = null;
+      }
+    } else if (user.location_type === 'off_campus' && !user.show_location_in_profile) {
+      // Hide location data if user doesn't want to show it
+      user.custom_address = null;
+      user.custom_latitude = null;
+      user.custom_longitude = null;
+    }
     
     // Get user's products (unsold first, then sold)
     const products = await sql`
@@ -416,6 +464,29 @@ export const updateUserLocation = async (req, res) => {
       });
     }
 
+    // Encrypt location data for off-campus users before storing
+    let encryptedLocationData = {
+      custom_address: null,
+      custom_latitude: null,
+      custom_longitude: null
+    };
+
+    if (locationType === 'off_campus') {
+      try {
+        encryptedLocationData = encryptLocationData({
+          custom_address: customAddress,
+          custom_latitude: customLatitude,
+          custom_longitude: customLongitude
+        });
+      } catch (encryptError) {
+        console.error("Error encrypting location data:", encryptError);
+        return res.status(500).json({
+          success: false,
+          message: "Error securing location data"
+        });
+      }
+    }
+
     // Update user location
     await sql`
       UPDATE users 
@@ -423,9 +494,9 @@ export const updateUserLocation = async (req, res) => {
         location_type = ${locationType},
         show_location_in_profile = ${showLocationInProfile || false},
         campus_location_name = ${locationType === 'on_campus' ? campusLocationName : null},
-        custom_address = ${locationType === 'off_campus' ? customAddress : null},
-        custom_latitude = ${locationType === 'off_campus' ? customLatitude : null},
-        custom_longitude = ${locationType === 'off_campus' ? customLongitude : null}
+        custom_address = ${encryptedLocationData.custom_address},
+        custom_latitude = ${encryptedLocationData.custom_latitude},
+        custom_longitude = ${encryptedLocationData.custom_longitude}
       WHERE id = ${userId}
     `;
 
@@ -445,6 +516,27 @@ export const updateUserLocation = async (req, res) => {
       });
     }
 
+    // Decrypt location data before returning to client
+    if (updatedUser.location_type === 'off_campus') {
+      try {
+        const decryptedLocation = decryptLocationData({
+          custom_address: updatedUser.custom_address,
+          custom_latitude: updatedUser.custom_latitude,
+          custom_longitude: updatedUser.custom_longitude
+        });
+        
+        updatedUser.custom_address = decryptedLocation.custom_address;
+        updatedUser.custom_latitude = decryptedLocation.custom_latitude;
+        updatedUser.custom_longitude = decryptedLocation.custom_longitude;
+      } catch (decryptError) {
+        console.error("Error decrypting location data for response:", decryptError);
+        // Set to null if decryption fails
+        updatedUser.custom_address = null;
+        updatedUser.custom_latitude = null;
+        updatedUser.custom_longitude = null;
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "Location updated successfully",
@@ -455,6 +547,60 @@ export const updateUserLocation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating location",
+      error: error.message
+    });
+  }
+}; 
+
+// Geocode address using Nominatim API
+export const geocodeAddress = async (req, res) => {
+  try {
+    const { address } = req.body;
+    
+    if (!address || !address.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Address is required"
+      });
+    }
+
+    // Make request to Nominatim with proper headers
+    const encodedAddress = encodeURIComponent(address.trim());
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'R-Mart App (contact: your-email@example.com)', // Replace with your actual contact
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      return res.status(200).json({
+        success: true,
+        coordinates: {
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon)
+        }
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "No coordinates found for this address"
+      });
+    }
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error geocoding address",
       error: error.message
     });
   }
