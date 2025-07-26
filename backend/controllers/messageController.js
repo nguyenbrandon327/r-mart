@@ -1,6 +1,26 @@
 import { sql } from "../config/db.js";
 import { upload } from "../utils/s3.js";
 import { getReceiverSocketId, isUserInChatRoom, io } from "../socket/socket.js";
+import { encrypt, decrypt } from "../utils/crypto.js";
+
+// Helper function to safely decrypt messages (handles both encrypted and plain text)
+const safeDecrypt = (text) => {
+    if (!text) return null;
+    
+    // Check if the text is in encrypted format (iv:encrypted:authTag)
+    const parts = text.split(':');
+    if (parts.length === 3) {
+        try {
+            return decrypt(text);
+        } catch (error) {
+            console.log('Failed to decrypt message, returning as plain text:', error.message);
+            return text;
+        }
+    }
+    
+    // If not in encrypted format, assume it's plain text
+    return text;
+};
 
 // Create a new chat between two users (optionally about a product)
 export const createChat = async (req, res) => {
@@ -136,9 +156,10 @@ export const getChats = async (req, res) => {
             ORDER BY COALESCE((SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1), c.created_at) DESC
         `;
 
-        // Format timestamps to ensure consistency
+        // Format timestamps and decrypt last message to ensure consistency
         const formattedChats = chats.map(chat => ({
             ...chat,
+            last_message: safeDecrypt(chat.last_message),
             last_message_at: chat.last_message_at ? new Date(chat.last_message_at).toISOString() : null
         }));
 
@@ -226,9 +247,10 @@ export const getMessages = async (req, res) => {
             ORDER BY m.created_at ASC
         `;
 
-        // Convert timestamps to proper UTC format for frontend
+        // Convert timestamps to proper UTC format for frontend and decrypt text
         const formattedMessages = messages.map(message => ({
             ...message,
+            text: safeDecrypt(message.text),
             created_at: message.created_at_utc ? new Date(message.created_at_utc).toISOString() : message.created_at,
             seen_at: message.seen_at_utc ? new Date(message.seen_at_utc).toISOString() : message.seen_at
         }));
@@ -384,12 +406,15 @@ export const sendMessage = async (req, res) => {
                     message: "Message must contain text or image"
                 });
             }
+
+            // Encrypt the text if it exists
+            const encryptedText = text ? encrypt(text) : null;
     
             // Optimized: Single query to insert message and get complete data with user info
             const completeMessage = await sql`
                 WITH new_message AS (
                     INSERT INTO messages (chat_id, sender_id, text, image, created_at)
-                    VALUES (${chatId}, ${senderId}, ${text}, ${imageURL}, NOW() AT TIME ZONE 'UTC')
+                    VALUES (${chatId}, ${senderId}, ${encryptedText}, ${imageURL}, NOW() AT TIME ZONE 'UTC')
                     RETURNING *
                 ),
                 updated_chat AS (
@@ -411,6 +436,7 @@ export const sendMessage = async (req, res) => {
             // Format the timestamp for the response (consistent with getMessages)
             const formattedMessage = {
                 ...completeMessage[0],
+                text: safeDecrypt(completeMessage[0].text),
                 created_at: completeMessage[0].created_at_utc ? new Date(completeMessage[0].created_at_utc).toISOString() : completeMessage[0].created_at,
                 seen_at: completeMessage[0].seen_at_utc ? new Date(completeMessage[0].seen_at_utc).toISOString() : completeMessage[0].seen_at
             };

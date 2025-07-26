@@ -415,6 +415,7 @@ export default function ChatPage({ params }) {
 
   // Check if a user is online
   const isOnline = (userId) => {
+    if (!userId) return false;
     return onlineUsers.includes(userId.toString());
   };
 

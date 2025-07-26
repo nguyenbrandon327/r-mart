@@ -121,6 +121,7 @@ function EditProfileModal() {
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [modalKey, setModalKey] = useState(0); // Key to force re-initialization
+  const [addressError, setAddressError] = useState(''); // Add address error state
 
   // Major dropdown states
   const [majorSearchTerm, setMajorSearchTerm] = useState('');
@@ -174,6 +175,7 @@ function EditProfileModal() {
       setImagePreview(null);
       setMajorSearchTerm('');
       setIsMajorDropdownOpen(false);
+      setAddressError(''); // Clear address error
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -393,15 +395,12 @@ function EditProfileModal() {
             locationPayload.customAddress = addressParts.join(', ');
             locationPayload.customLatitude = coords.latitude;
             locationPayload.customLongitude = coords.longitude;
+            // Clear any previous address error
+            setAddressError('');
           } catch (error) {
             console.error('Geocoding failed:', error);
-            toast.error('Could not verify address. Location will be set to default.');
-            // Continue without custom location - will default to UCR Main Campus
-            locationPayload.locationType = 'on_campus';
-            const defaultLocation = CAMPUS_LOCATIONS.find(loc => loc.name.includes('UCR Main Campus'));
-            if (defaultLocation) {
-              locationPayload.campusLocationName = defaultLocation.name;
-            }
+            setAddressError('Invalid address. Please check your address and try again.');
+            return; // Stop form submission and keep modal open
           }
         } else {
           // Fallback to UCR Main Campus if no valid location is provided
@@ -669,14 +668,17 @@ function EditProfileModal() {
                     name="locationTypeEdit"
                     value="on_campus"
                     checked={locationData.locationType === 'on_campus'}
-                    onChange={(e) => setLocationData({ 
-                      ...locationData, 
-                      locationType: e.target.value, 
-                      customAddress: '', 
-                      customCity: '',
-                      customState: '',
-                      campusLocationName: '' 
-                    })}
+                    onChange={(e) => {
+                      setLocationData({ 
+                        ...locationData, 
+                        locationType: e.target.value, 
+                        customAddress: '', 
+                        customCity: '',
+                        customState: '',
+                        campusLocationName: '' 
+                      });
+                      setAddressError(''); // Clear address error when changing location type
+                    }}
                     className="radio radio-primary"
                   />
                   <label htmlFor="on_campus_edit" className="ml-2 flex items-center">
@@ -691,14 +693,17 @@ function EditProfileModal() {
                     name="locationTypeEdit"
                     value="off_campus"
                     checked={locationData.locationType === 'off_campus'}
-                    onChange={(e) => setLocationData({ 
-                      ...locationData, 
-                      locationType: e.target.value, 
-                      campusLocationName: '', 
-                      customAddress: '', 
-                      customCity: '',
-                      customState: ''
-                    })}
+                    onChange={(e) => {
+                      setLocationData({ 
+                        ...locationData, 
+                        locationType: e.target.value, 
+                        campusLocationName: '', 
+                        customAddress: '', 
+                        customCity: '',
+                        customState: ''
+                      });
+                      setAddressError(''); // Clear address error when changing location type
+                    }}
                     className="radio radio-primary"
                   />
                   <label htmlFor="off_campus_edit" className="ml-2 flex items-center">
@@ -713,15 +718,18 @@ function EditProfileModal() {
                     name="locationTypeEdit"
                     value="dont_share"
                     checked={locationData.locationType === 'dont_share'}
-                    onChange={(e) => setLocationData({ 
-                      ...locationData, 
-                      locationType: e.target.value, 
-                      campusLocationName: 'UCR Main Campus (default)', 
-                      customAddress: '',
-                      customCity: '',
-                      customState: '',
-                      showLocationInProfile: false
-                    })}
+                    onChange={(e) => {
+                      setLocationData({ 
+                        ...locationData, 
+                        locationType: e.target.value, 
+                        campusLocationName: 'UCR Main Campus (default)', 
+                        customAddress: '',
+                        customCity: '',
+                        customState: '',
+                        showLocationInProfile: false
+                      });
+                      setAddressError(''); // Clear address error when changing location type
+                    }}
                     className="radio radio-primary"
                   />
                   <label htmlFor="dont_share_edit" className="ml-2 flex items-center">
@@ -786,7 +794,10 @@ function EditProfileModal() {
                       <input
                         type="text"
                         value={locationData.customAddress}
-                        onChange={(e) => setLocationData({ ...locationData, customAddress: e.target.value })}
+                        onChange={(e) => {
+                          setLocationData({ ...locationData, customAddress: e.target.value });
+                          setAddressError(''); // Clear address error when user modifies address
+                        }}
                         placeholder="123 Main St"
                         className="input input-bordered focus:input-primary transition-colors duration-200"
                       />
@@ -800,7 +811,10 @@ function EditProfileModal() {
                         <input
                           type="text"
                           value={locationData.customCity}
-                          onChange={(e) => setLocationData({ ...locationData, customCity: e.target.value })}
+                          onChange={(e) => {
+                            setLocationData({ ...locationData, customCity: e.target.value });
+                            setAddressError(''); // Clear address error when user modifies city
+                          }}
                           placeholder="City"
                           className="input input-bordered focus:input-primary transition-colors duration-200"
                         />
@@ -813,7 +827,10 @@ function EditProfileModal() {
                         <input
                           type="text"
                           value={locationData.customState}
-                          onChange={(e) => setLocationData({ ...locationData, customState: e.target.value })}
+                          onChange={(e) => {
+                            setLocationData({ ...locationData, customState: e.target.value });
+                            setAddressError(''); // Clear address error when user modifies state
+                          }}
                           placeholder="State"
                           className="input input-bordered focus:input-primary transition-colors duration-200"
                         />
@@ -823,6 +840,12 @@ function EditProfileModal() {
                     {isGeocoding && (
                       <div className="label">
                         <span className="label-text-alt text-blue-600">Verifying address...</span>
+                      </div>
+                    )}
+                    
+                    {addressError && (
+                      <div className="label">
+                        <span className="label-text-alt text-red-600">{addressError}</span>
                       </div>
                     )}
                   </div>

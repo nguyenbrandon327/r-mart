@@ -65,11 +65,6 @@ function ProductCard({ product }) {
                 {product.distance < 0.1 
                   ? 'Very close' 
                   : `${product.distance} mi`}
-                {product.seller_location && (
-                  <span className="ml-1 text-gray-500">
-                    • {product.seller_location}
-                  </span>
-                )}
               </span>
             </div>
           )}

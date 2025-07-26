@@ -189,11 +189,6 @@ const initialState = {
   sellerOtherProducts: [],
   sellerOtherProductsLoading: false,
   sort: 'best_match',
-  locationFilter: {
-    enabled: false,
-    maxDistance: 10,
-    userLocation: null
-  },
   formData: {
     name: "",
     price: "",
@@ -224,15 +219,6 @@ const productSlice = createSlice({
     },
     setSort: (state, action) => {
       state.sort = action.payload;
-    },
-    setLocationFilter: (state, action) => {
-      state.locationFilter = { ...state.locationFilter, ...action.payload };
-    },
-    toggleLocationFilter: (state) => {
-      state.locationFilter.enabled = !state.locationFilter.enabled;
-    },
-    setMaxDistance: (state, action) => {
-      state.locationFilter.maxDistance = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -273,14 +259,11 @@ const productSlice = createSlice({
       .addCase(fetchProductsByLocation.fulfilled, (state, action) => {
         state.loading = false;
         state.products = action.payload.products;
-        state.locationFilter.userLocation = action.payload.userLocation;
-        state.locationFilter.enabled = true;
       })
       .addCase(fetchProductsByLocation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.products = [];
-        state.locationFilter.enabled = false;
       })
       // Add Product
       .addCase(addProduct.pending, (state) => {
@@ -430,5 +413,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { setFormData, resetForm, populateFormData, setSort, setLocationFilter, toggleLocationFilter, setMaxDistance } = productSlice.actions;
+export const { setFormData, resetForm, populateFormData, setSort } = productSlice.actions;
 export default productSlice.reducer; 

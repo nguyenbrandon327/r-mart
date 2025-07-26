@@ -2404,6 +2404,26 @@ input.tab:checked + .tab-content,
   outline-offset: 2px;
   outline-color: var(--fallback-bc,oklch(var(--bc)/0.2));
 }
+.input-success {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-su,oklch(var(--su)/var(--tw-border-opacity)));
+}
+.input-success:focus,
+    .input-success:focus-within {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-su,oklch(var(--su)/var(--tw-border-opacity)));
+  outline-color: var(--fallback-su,oklch(var(--su)/1));
+}
+.input-error {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-er,oklch(var(--er)/var(--tw-border-opacity)));
+}
+.input-error:focus,
+    .input-error:focus-within {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-er,oklch(var(--er)/var(--tw-border-opacity)));
+  outline-color: var(--fallback-er,oklch(var(--er)/1));
+}
 .input:has(> input[disabled]),
   .input-disabled,
   .input:disabled,
@@ -3727,6 +3747,9 @@ input.tab:checked + .tab-content,
 .z-\[1\] {
   z-index: 1;
 }
+.z-40 {
+  z-index: 40;
+}
 .-m-1 {
   margin: -0.25rem;
 }
@@ -3884,6 +3907,10 @@ input.tab:checked + .tab-content,
 .size-7 {
   width: 1.75rem;
   height: 1.75rem;
+}
+.size-2 {
+  width: 0.5rem;
+  height: 0.5rem;
 }
 .\!h-10 {
   height: 2.5rem !important;
@@ -4098,6 +4125,12 @@ input.tab:checked + .tab-content,
 .min-w-\[120px\] {
   min-width: 120px;
 }
+.min-w-\[200px\] {
+  min-width: 200px;
+}
+.min-w-\[180px\] {
+  min-width: 180px;
+}
 .max-w-2xl {
   max-width: 42rem;
 }
@@ -4176,6 +4209,10 @@ input.tab:checked + .tab-content,
   --tw-rotate: 6deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
+.rotate-180 {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
 .scale-105 {
   --tw-scale-x: 1.05;
   --tw-scale-y: 1.05;
@@ -4238,6 +4275,9 @@ input.tab:checked + .tab-content,
 }
 .cursor-zoom-in {
   cursor: zoom-in;
+}
+.cursor-not-allowed {
+  cursor: not-allowed;
 }
 .resize-none {
   resize: none;
@@ -4420,6 +4460,9 @@ input.tab:checked + .tab-content,
 .border-l-2 {
   border-left-width: 2px;
 }
+.border-r-2 {
+  border-right-width: 2px;
+}
 .border-none {
   border-style: none;
 }
@@ -4465,6 +4508,10 @@ input.tab:checked + .tab-content,
 .border-white {
   --tw-border-opacity: 1;
   border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
+}
+.border-r-primary {
+  --tw-border-opacity: 1;
+  border-right-color: var(--fallback-p,oklch(var(--p)/var(--tw-border-opacity, 1)));
 }
 .bg-base-100 {
   --tw-bg-opacity: 1;
@@ -4581,6 +4628,9 @@ input.tab:checked + .tab-content,
 .bg-yellow-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));
+}
+.bg-primary\/10 {
+  background-color: var(--fallback-p,oklch(var(--p)/0.1));
 }
 .bg-opacity-30 {
   --tw-bg-opacity: 0.3;
@@ -4985,6 +5035,14 @@ input.tab:checked + .tab-content,
   --tw-text-opacity: 1;
   color: rgb(22 163 74 / var(--tw-text-opacity, 1));
 }
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+.text-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+}
 .placeholder-base-content\/50::-moz-placeholder {
   color: var(--fallback-bc,oklch(var(--bc)/0.5));
 }
@@ -5109,6 +5167,9 @@ input.tab:checked + .tab-content,
 }
 .duration-500 {
   transition-duration: 500ms;
+}
+.duration-150 {
+  transition-duration: 150ms;
 }
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -5250,6 +5311,10 @@ input.tab:checked + .tab-content,
   border-color: rgb(107 114 128 / var(--tw-border-opacity, 1));
 }
 
+.hover\:border-primary\/50:hover {
+  border-color: var(--fallback-p,oklch(var(--p)/0.5));
+}
+
 .hover\:bg-\[\#003DA5\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(0 61 165 / var(--tw-bg-opacity, 1));
@@ -5355,6 +5420,12 @@ input.tab:checked + .tab-content,
 .hover\:shadow-xl:hover {
   --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.hover\:shadow-md:hover {
+  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
