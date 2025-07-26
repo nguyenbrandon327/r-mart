@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { MapPinIcon } from "lucide-react";
 
 function ProductCard({ product }) {
   const getCategoryLabel = (category) => {
@@ -55,6 +56,23 @@ function ProductCard({ product }) {
             <h2 className="text-lg font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
           </div>
           <p className="text-lg font-normal text-black">${Number(product.price).toFixed(2)}</p>
+          
+          {/* LOCATION INFO - Only show if distance is available */}
+          {product.distance !== undefined && (
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <MapPinIcon className="w-4 h-4 mr-1" />
+              <span>
+                {product.distance < 0.1 
+                  ? 'Very close' 
+                  : `${product.distance} mi`}
+                {product.seller_location && (
+                  <span className="ml-1 text-gray-500">
+                    • {product.seller_location}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </Link>

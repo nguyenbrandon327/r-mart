@@ -2,6 +2,7 @@ import { sql } from "../config/db.js";
 import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
 import { recordProductView } from "./recentlySeenController.js";
 import { indexProduct, updateProductIndex, deleteProductIndex } from "./searchController.js";
+import { calculateDistance, getUserCoordinates } from "../utils/distanceCalculator.js";
 import crypto from "crypto";
 
 // CRUD operations
@@ -617,6 +618,141 @@ export const getRecentProducts = async (req, res) => {
     } catch (error) {
         console.log("Error in getRecentProducts", error);
         res.status(500).json({success: false, message: "Failed to fetch recent products"});
+    }
+};
+
+// Get products filtered by distance from user's location
+export const getProductsByLocation = async (req, res) => {
+    try {
+        const { category, maxDistance = 10, sort = 'distance' } = req.query;
+        const currentUserId = req.user?.id;
+        
+        if (!currentUserId) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required for location-based filtering"
+            });
+        }
+        
+        // Get current user's location
+        const [currentUser] = await sql`
+            SELECT location_type, campus_location_name, custom_latitude, custom_longitude
+            FROM users 
+            WHERE id = ${currentUserId}
+        `;
+        
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        
+        const userCoordinates = getUserCoordinates(currentUser);
+        if (!userCoordinates) {
+            return res.status(400).json({
+                success: false,
+                message: "User location not set. Please update your location in profile settings."
+            });
+        }
+        
+        // Base query to get products with user location data
+        let baseQuery = sql`
+            SELECT p.*, 
+                   u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+                   u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
+            FROM products p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.is_sold = false
+        `;
+        
+        // Add category filter if specified
+        let products;
+        if (category) {
+            products = await sql`
+                SELECT p.*, 
+                       u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+                       u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
+                FROM products p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.is_sold = false AND p.category = ${category}
+            `;
+        } else {
+            products = await sql`
+                SELECT p.*, 
+                       u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+                       u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
+                FROM products p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.is_sold = false
+            `;
+        }
+        
+        // Calculate distances and filter by maxDistance
+        const productsWithDistance = [];
+        
+        for (const product of products) {
+            const sellerCoordinates = getUserCoordinates({
+                location_type: product.location_type,
+                campus_location_name: product.campus_location_name,
+                custom_latitude: product.custom_latitude,
+                custom_longitude: product.custom_longitude
+            });
+            
+            if (sellerCoordinates) {
+                const distance = calculateDistance(
+                    userCoordinates.latitude,
+                    userCoordinates.longitude,
+                    sellerCoordinates.latitude,
+                    sellerCoordinates.longitude
+                );
+                
+                if (distance <= maxDistance) {
+                    productsWithDistance.push({
+                        ...product,
+                        distance: distance,
+                        seller_location: product.location_type === 'on_campus' 
+                            ? product.campus_location_name 
+                            : 'Off-campus'
+                    });
+                }
+            }
+        }
+        
+        // Sort products based on sort parameter
+        switch (sort) {
+            case 'distance':
+                productsWithDistance.sort((a, b) => a.distance - b.distance);
+                break;
+            case 'recent_first':
+                productsWithDistance.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                break;
+            case 'price_low_high':
+                productsWithDistance.sort((a, b) => a.price - b.price);
+                break;
+            case 'price_high_low':
+                productsWithDistance.sort((a, b) => b.price - a.price);
+                break;
+            default:
+                // Default to distance
+                productsWithDistance.sort((a, b) => a.distance - b.distance);
+        }
+        
+        console.log(`Fetched ${productsWithDistance.length} products within ${maxDistance} miles${category ? ` for category: ${category}` : ''} with sort: ${sort}`);
+        res.status(200).json({
+            success: true, 
+            data: productsWithDistance,
+            userLocation: {
+                latitude: userCoordinates.latitude,
+                longitude: userCoordinates.longitude
+            }
+        });
+    } catch (error) {
+        console.log("Error in getProductsByLocation", error);
+        res.status(500).json({
+            success: false, 
+            message: "Failed to fetch products by location"
+        });
     }
 };
 

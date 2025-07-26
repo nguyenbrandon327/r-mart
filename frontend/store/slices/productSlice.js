@@ -33,6 +33,35 @@ export const fetchProductsByCategory = createAsyncThunk(
   }
 );
 
+export const fetchProductsByLocation = createAsyncThunk(
+  'products/fetchProductsByLocation',
+  async ({ category, maxDistance = 10, sort = 'distance' }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams({ 
+        ...(category && { category }),
+        maxDistance: maxDistance.toString(),
+        sort 
+      });
+      const response = await axios.get(`/api/products/by-location?${params}`);
+      return { 
+        products: response.data.data, 
+        userLocation: response.data.userLocation 
+      };
+    } catch (err) {
+      if (err.response?.status === 401) {
+        return rejectWithValue("Please log in to use location-based filtering");
+      }
+      if (err.response?.status === 400) {
+        return rejectWithValue(err.response.data.message || "Location not set");
+      }
+      if (err.response?.status === 429) {
+        return rejectWithValue("Rate limit exceeded");
+      }
+      return rejectWithValue("Something went wrong");
+    }
+  }
+);
+
 export const addProduct = createAsyncThunk(
   'products/addProduct',
   async (formData, { rejectWithValue }) => {
@@ -160,6 +189,11 @@ const initialState = {
   sellerOtherProducts: [],
   sellerOtherProductsLoading: false,
   sort: 'best_match',
+  locationFilter: {
+    enabled: false,
+    maxDistance: 10,
+    userLocation: null
+  },
   formData: {
     name: "",
     price: "",
@@ -191,6 +225,15 @@ const productSlice = createSlice({
     setSort: (state, action) => {
       state.sort = action.payload;
     },
+    setLocationFilter: (state, action) => {
+      state.locationFilter = { ...state.locationFilter, ...action.payload };
+    },
+    toggleLocationFilter: (state) => {
+      state.locationFilter.enabled = !state.locationFilter.enabled;
+    },
+    setMaxDistance: (state, action) => {
+      state.locationFilter.maxDistance = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -221,6 +264,23 @@ const productSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         state.products = [];
+      })
+      // Fetch Products by Location
+      .addCase(fetchProductsByLocation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProductsByLocation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.products = action.payload.products;
+        state.locationFilter.userLocation = action.payload.userLocation;
+        state.locationFilter.enabled = true;
+      })
+      .addCase(fetchProductsByLocation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.products = [];
+        state.locationFilter.enabled = false;
       })
       // Add Product
       .addCase(addProduct.pending, (state) => {
@@ -370,5 +430,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { setFormData, resetForm, populateFormData, setSort } = productSlice.actions;
+export const { setFormData, resetForm, populateFormData, setSort, setLocationFilter, toggleLocationFilter, setMaxDistance } = productSlice.actions;
 export default productSlice.reducer; 

@@ -12,7 +12,8 @@ import {
     markProductAsAvailable,
     recordView,
     getHotProducts,
-    getRecentProducts
+    getRecentProducts,
+    getProductsByLocation
 } from "../controllers/productController.js";
 import { protectRoute } from "../utils/protectRoute.js";
 import { checkAuth } from "../utils/checkAuth.js";
@@ -24,6 +25,7 @@ router.get("/", checkAuth, getProducts);
 router.get("/category/:category", getProductsByCategory);
 router.get("/hot", getHotProducts);
 router.get("/recent", getRecentProducts);
+router.get("/by-location", protectRoute, getProductsByLocation);
 router.get("/:id", checkAuth, getProduct);
 router.get("/seller/:userId/other/:excludeProductId", getSellerOtherProducts);
 
