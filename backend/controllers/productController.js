@@ -598,3 +598,25 @@ export const getHotProducts = async (req, res) => {
 };
 // -------------------------------------------------------------------------
 
+// Get recently posted products
+export const getRecentProducts = async (req, res) => {
+    try {
+        const { limit = 10 } = req.query;
+        
+        const recentProducts = await sql`
+            SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+            FROM products p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.is_sold = false
+            ORDER BY p.created_at DESC
+            LIMIT ${limit}
+        `;
+        
+        console.log(`Fetched ${recentProducts.length} recently posted products`);
+        res.status(200).json({success: true, data: recentProducts});
+    } catch (error) {
+        console.log("Error in getRecentProducts", error);
+        res.status(500).json({success: false, message: "Failed to fetch recent products"});
+    }
+};
+

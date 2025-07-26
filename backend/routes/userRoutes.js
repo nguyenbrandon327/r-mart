@@ -9,7 +9,8 @@ import {
   getUserByUsername,
   updateOnboardingStep1,
   completeOnboarding,
-  completeOnboardingAll
+  completeOnboardingAll,
+  updateUserLocation
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -33,5 +34,8 @@ router.delete("/profile-pic", protectRoute, deleteProfilePic);
 router.put("/onboarding/step1", protectRoute, updateOnboardingStep1);
 router.put("/onboarding/complete", protectRoute, completeOnboarding);
 router.put("/onboarding", protectRoute, completeOnboardingAll);
+
+// Location routes
+router.put("/location", protectRoute, updateUserLocation);
 
 export default router; 

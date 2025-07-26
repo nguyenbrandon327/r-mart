@@ -7,9 +7,11 @@ export const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     
     const [user] = await sql`
-      SELECT id, name, email, profile_pic, description, year, major, created_at, isVerified
-      FROM users 
-      WHERE id = ${userId}
+      SELECT u.id, u.name, u.email, u.profile_pic, u.description, u.year, u.major, u.created_at, u.isVerified,
+             u.location_type, u.show_location_in_profile, u.campus_location_name, u.custom_address,
+             u.custom_latitude, u.custom_longitude
+      FROM users u
+      WHERE u.id = ${userId}
     `;
     
     if (!user) {
@@ -40,9 +42,11 @@ export const getUserByUsername = async (req, res) => {
     
     // Find user by email pattern (username@domain)
     const users = await sql`
-      SELECT id, name, email, profile_pic, description, year, major, created_at
-      FROM users 
-      WHERE email LIKE ${username + '@%'}
+      SELECT u.id, u.name, u.email, u.profile_pic, u.description, u.year, u.major, u.created_at,
+             u.location_type, u.show_location_in_profile, u.campus_location_name, u.custom_address,
+             u.custom_latitude, u.custom_longitude
+      FROM users u
+      WHERE u.email LIKE ${username + '@%'}
       LIMIT 1
     `;
     
@@ -368,6 +372,89 @@ export const completeOnboardingAll = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error completing onboarding",
+      error: error.message
+    });
+  }
+}; 
+
+
+
+// Update user location during onboarding
+export const updateUserLocation = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { 
+      locationType, 
+      campusLocationName, 
+      customAddress, 
+      customLatitude, 
+      customLongitude, 
+      showLocationInProfile 
+    } = req.body;
+
+    // Validate location type
+    if (!locationType || !['on_campus', 'off_campus'].includes(locationType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid location type"
+      });
+    }
+
+    // Validate campus location for on-campus users
+    if (locationType === 'on_campus' && !campusLocationName) {
+      return res.status(400).json({
+        success: false,
+        message: "Campus location name is required for on-campus users"
+      });
+    }
+
+    // Validate custom address for off-campus users (only if they're not using don't share option)
+    if (locationType === 'off_campus' && (!customAddress || !customLatitude || !customLongitude)) {
+      return res.status(400).json({
+        success: false,
+        message: "Address and coordinates are required for off-campus users"
+      });
+    }
+
+    // Update user location
+    await sql`
+      UPDATE users 
+      SET 
+        location_type = ${locationType},
+        show_location_in_profile = ${showLocationInProfile || false},
+        campus_location_name = ${locationType === 'on_campus' ? campusLocationName : null},
+        custom_address = ${locationType === 'off_campus' ? customAddress : null},
+        custom_latitude = ${locationType === 'off_campus' ? customLatitude : null},
+        custom_longitude = ${locationType === 'off_campus' ? customLongitude : null}
+      WHERE id = ${userId}
+    `;
+
+    // Get the updated user
+    const [updatedUser] = await sql`
+      SELECT u.id, u.name, u.email, u.profile_pic, u.description, u.year, u.major, u.created_at, u.isVerified,
+             u.location_type, u.show_location_in_profile, u.campus_location_name, u.custom_address,
+             u.custom_latitude, u.custom_longitude, u.isOnboarded
+      FROM users u
+      WHERE u.id = ${userId}
+    `;
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Location updated successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("Error updating user location:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating location",
       error: error.message
     });
   }

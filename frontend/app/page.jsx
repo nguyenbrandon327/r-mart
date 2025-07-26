@@ -15,6 +15,10 @@ export default function HomePage() {
   // Hot products state
   const [hotProducts, setHotProducts] = useState([]);
   const [hotProductsLoading, setHotProductsLoading] = useState(true);
+  
+  // Recently posted products state
+  const [recentProducts, setRecentProducts] = useState([]);
+  const [recentProductsLoading, setRecentProductsLoading] = useState(true);
 
   useEffect(() => {
     // Only fetch recently viewed products for authenticated users when auth check is complete
@@ -35,6 +39,21 @@ export default function HomePage() {
       .catch(err => {
         console.error(err);
         setHotProductsLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    // Fetch recently posted products
+    setRecentProductsLoading(true);
+    axios
+      .get('/api/products/recent?limit=10', { withCredentials: true })
+      .then(res => {
+        setRecentProducts(res.data.data ?? []);
+        setRecentProductsLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setRecentProductsLoading(false);
       });
   }, []);
 
@@ -71,14 +90,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 🔥 Hot listings */}
-      <ProductCarousel
-        title="Hot at UCR"
-        icon="🔥"
-        products={hotProducts}
-        loading={hotProductsLoading}
-      />
-
       {/* Recently Viewed Products */}
       {isAuthenticated && (
         <ProductCarousel
@@ -88,6 +99,22 @@ export default function HomePage() {
           loading={recentlyViewedLoading}
         />
       )}
+
+      {/* 🔥 Hot listings */}
+      <ProductCarousel
+        title="Hot at UCR"
+        icon="🔥"
+        products={hotProducts}
+        loading={hotProductsLoading}
+      />
+
+      {/* Just Posted listings */}
+      <ProductCarousel
+        title="Just Posted"
+        icon="⚡"
+        products={recentProducts}
+        loading={recentProductsLoading}
+      />
     </div>
   );
 } 

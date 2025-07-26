@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { UserIcon, ImageIcon, SaveIcon, X, CameraIcon, Trash2Icon, GraduationCapIcon, Search } from "lucide-react";
+import { UserIcon, ImageIcon, SaveIcon, X, CameraIcon, Trash2Icon, GraduationCapIcon, Search, MapPin, Home } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
-import { updateUserProfile, uploadProfilePic, deleteProfilePic, clearMessage, clearError } from '../store/slices/userSlice';
+import { updateUserProfile, uploadProfilePic, deleteProfilePic, clearMessage, clearError, updateUserLocation } from '../store/slices/userSlice';
+import { CAMPUS_LOCATIONS } from '../constants/campusLocations';
 import toast from 'react-hot-toast';
 
 const MAJORS = [
@@ -109,13 +110,23 @@ function EditProfileModal() {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Location-related state
+  const [locationData, setLocationData] = useState({
+    showLocationInProfile: false,
+    locationType: '',
+    campusLocationName: '',
+    customAddress: ''
+  });
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [modalKey, setModalKey] = useState(0); // Key to force re-initialization
+
   // Major dropdown states
   const [majorSearchTerm, setMajorSearchTerm] = useState('');
   const [isMajorDropdownOpen, setIsMajorDropdownOpen] = useState(false);
   const [filteredMajors, setFilteredMajors] = useState(MAJORS);
   const majorDropdownRef = useRef(null);
 
-  // Initialize form data when currentUserProfile is available
+  // Initialize form data when currentUserProfile is available or when modal key changes
   useEffect(() => {
     if (currentUserProfile) {
       setFormData({
@@ -123,8 +134,53 @@ function EditProfileModal() {
         description: currentUserProfile.description || '',
         major: currentUserProfile.major || ''
       });
+      
+      // Initialize location data
+      // Detect if user previously selected "Don't Share"
+      // (stored as on_campus with UCR Main Campus and showLocationInProfile = false)
+      const isDontShare = currentUserProfile.location_type === 'on_campus' && 
+                         currentUserProfile.campus_location_name?.includes('UCR Main Campus') &&
+                         !currentUserProfile.show_location_in_profile;
+      
+      setLocationData({
+        showLocationInProfile: currentUserProfile.show_location_in_profile || false,
+        locationType: isDontShare ? 'dont_share' : (currentUserProfile.location_type || ''),
+        campusLocationName: currentUserProfile.campus_location_name || '',
+        customAddress: currentUserProfile.custom_address || ''
+      });
+
+      // Reset other modal state
+      setSelectedImage(null);
+      setImagePreview(null);
+      setMajorSearchTerm('');
+      setIsMajorDropdownOpen(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
-  }, [currentUserProfile]);
+  }, [currentUserProfile, modalKey]);
+
+  // Add effect to detect when modal opens and refresh data
+  useEffect(() => {
+    const modal = document.getElementById("edit_profile_modal");
+    
+    const handleModalToggle = () => {
+      // Check if modal is being shown
+      if (modal && modal.open) {
+        setModalKey(prev => prev + 1); // Trigger re-initialization
+      }
+    };
+
+    if (modal) {
+      // Use MutationObserver to detect when the modal's open attribute changes
+      const observer = new MutationObserver(handleModalToggle);
+      observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
+
+
 
   // Filter majors based on search term
   useEffect(() => {
@@ -175,6 +231,31 @@ function EditProfileModal() {
     setIsMajorDropdownOpen(true);
   };
 
+  // Geocoding function for off-campus addresses
+  const geocodeAddress = async (address) => {
+    try {
+      setIsGeocoding(true);
+      
+      // Using a free geocoding service - you might want to use Google Maps API or another service
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Riverside, CA')}`);
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        return {
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon)
+        };
+      } else {
+        throw new Error('No coordinates found for this address');
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      throw error;
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -220,6 +301,69 @@ function EditProfileModal() {
         await dispatch(uploadProfilePic(formDataImage)).unwrap();
         hasUpdates = true;
       }
+
+      // Handle location updates
+      const currentLocationData = {
+        showLocationInProfile: currentUserProfile?.show_location_in_profile || false,
+        locationType: currentUserProfile?.location_type || '',
+        campusLocationName: currentUserProfile?.campus_location_name || '',
+        customAddress: currentUserProfile?.custom_address || ''
+      };
+
+      const hasLocationChanges = JSON.stringify(locationData) !== JSON.stringify(currentLocationData);
+
+      if (hasLocationChanges) {
+        let locationPayload = {
+          showLocationInProfile: locationData.showLocationInProfile
+        };
+
+        // Handle different location types
+        if (locationData.locationType === 'dont_share') {
+          // For "Don't Share", set to UCR Main Campus and don't show in profile
+          locationPayload.locationType = 'on_campus';
+          const defaultLocation = CAMPUS_LOCATIONS.find(loc => loc.name.includes('UCR Main Campus'));
+          if (defaultLocation) {
+            locationPayload.campusLocationName = defaultLocation.name;
+          }
+          locationPayload.showLocationInProfile = false;
+        } else if (locationData.locationType === 'on_campus' && locationData.campusLocationName) {
+          locationPayload.locationType = 'on_campus';
+          locationPayload.campusLocationName = locationData.campusLocationName;
+        } else if (locationData.locationType === 'off_campus' && locationData.customAddress.trim()) {
+          try {
+            const coords = await geocodeAddress(locationData.customAddress);
+            locationPayload.locationType = 'off_campus';
+            locationPayload.customAddress = locationData.customAddress.trim();
+            locationPayload.customLatitude = coords.latitude;
+            locationPayload.customLongitude = coords.longitude;
+          } catch (error) {
+            console.error('Geocoding failed:', error);
+            toast.error('Could not verify address. Location will be set to default.');
+            // Continue without custom location - will default to UCR Main Campus
+            locationPayload.locationType = 'on_campus';
+            const defaultLocation = CAMPUS_LOCATIONS.find(loc => loc.name.includes('UCR Main Campus'));
+            if (defaultLocation) {
+              locationPayload.campusLocationName = defaultLocation.name;
+            }
+          }
+        } else {
+          // Fallback to UCR Main Campus if no valid location is provided
+          locationPayload.locationType = 'on_campus';
+          const defaultLocation = CAMPUS_LOCATIONS.find(loc => loc.name.includes('UCR Main Campus'));
+          if (defaultLocation) {
+            locationPayload.campusLocationName = defaultLocation.name;
+          }
+        }
+
+        // Submit location data
+        try {
+          await dispatch(updateUserLocation(locationPayload)).unwrap();
+          hasUpdates = true;
+        } catch (error) {
+          console.error('Location update failed:', error);
+          toast.error('Failed to update location. Other changes were saved.');
+        }
+      }
       
       // Clear any existing success messages from Redux state
       dispatch(clearMessage());
@@ -247,18 +391,8 @@ function EditProfileModal() {
   };
 
   const handleCloseModal = () => {
-    setFormData({
-      name: currentUserProfile?.name || '',
-      description: currentUserProfile?.description || '',
-      major: currentUserProfile?.major || ''
-    });
-    setSelectedImage(null);
-    setImagePreview(null);
-    setMajorSearchTerm('');
-    setIsMajorDropdownOpen(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    // Don't reset the state here - let the useEffect handle it
+    // This prevents the race condition where we reset to old data
     document.getElementById("edit_profile_modal").close();
   };
 
@@ -457,6 +591,159 @@ function EditProfileModal() {
                 {formData.description.length}/500 characters
               </span>
             </div>
+          </div>
+
+          {/* LOCATION SECTION */}
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text text-base font-medium">Housing Information</span>
+            </label>
+            
+            {/* Location type selection */}
+            <div>
+              <label className="label">
+                <span className="label-text">Where do you live?</span>
+              </label>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="on_campus_edit"
+                    name="locationTypeEdit"
+                    value="on_campus"
+                    checked={locationData.locationType === 'on_campus'}
+                    onChange={(e) => setLocationData({ 
+                      ...locationData, 
+                      locationType: e.target.value, 
+                      customAddress: '', 
+                      campusLocationName: '' 
+                    })}
+                    className="radio radio-primary"
+                  />
+                  <label htmlFor="on_campus_edit" className="ml-2 flex items-center">
+                    <Home className="w-4 h-4 mr-1 text-blue-600" />
+                    On-Campus
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="off_campus_edit"
+                    name="locationTypeEdit"
+                    value="off_campus"
+                    checked={locationData.locationType === 'off_campus'}
+                    onChange={(e) => setLocationData({ 
+                      ...locationData, 
+                      locationType: e.target.value, 
+                      campusLocationName: '', 
+                      customAddress: '' 
+                    })}
+                    className="radio radio-primary"
+                  />
+                  <label htmlFor="off_campus_edit" className="ml-2 flex items-center">
+                    <MapPin className="w-4 h-4 mr-1 text-green-600" />
+                    Off-Campus
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="dont_share_edit"
+                    name="locationTypeEdit"
+                    value="dont_share"
+                    checked={locationData.locationType === 'dont_share'}
+                    onChange={(e) => setLocationData({ 
+                      ...locationData, 
+                      locationType: e.target.value, 
+                      campusLocationName: 'UCR Main Campus (default)', 
+                      customAddress: '',
+                      showLocationInProfile: false
+                    })}
+                    className="radio radio-primary"
+                  />
+                  <label htmlFor="dont_share_edit" className="ml-2 flex items-center">
+                    Don't Share
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Show location checkbox - only for on_campus and off_campus */}
+            {(locationData.locationType === 'on_campus' || locationData.locationType === 'off_campus') && (
+              <div className="flex items-center gap-3 mt-4 mb-4">
+                <input
+                  type="checkbox"
+                  id="showLocation"
+                  checked={locationData.showLocationInProfile}
+                  onChange={(e) => setLocationData({ 
+                    ...locationData, 
+                    showLocationInProfile: e.target.checked
+                  })}
+                  className="checkbox checkbox-primary"
+                />
+                <label htmlFor="showLocation" className="text-sm">
+                  Show my general location in my profile
+                </label>
+              </div>
+            )}
+
+            {/* Location details for on_campus and off_campus */}
+            {(locationData.locationType === 'on_campus' || locationData.locationType === 'off_campus') && (
+              <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+                {/* On-campus housing selection */}
+                {locationData.locationType === 'on_campus' && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Select your residence hall</span>
+                    </label>
+                    <select
+                      value={locationData.campusLocationName}
+                      onChange={(e) => setLocationData({ ...locationData, campusLocationName: e.target.value })}
+                      className="select select-bordered focus:select-primary transition-colors duration-200"
+                    >
+                      <option value="">Select a residence hall</option>
+                      {CAMPUS_LOCATIONS
+                        .filter(location => !location.name.includes('UCR Main Campus'))
+                        .map((location) => (
+                          <option key={location.id} value={location.name}>
+                            {location.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Off-campus address input */}
+                {locationData.locationType === 'off_campus' && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Enter your address</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={locationData.customAddress}
+                      onChange={(e) => setLocationData({ ...locationData, customAddress: e.target.value })}
+                      placeholder="123 Main St, Riverside, CA"
+                      className="input input-bordered focus:input-primary transition-colors duration-200"
+                    />
+                    {isGeocoding && (
+                      <div className="label">
+                        <span className="label-text-alt text-blue-600">Verifying address...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Don't Share explanation */}
+            {locationData.locationType === 'dont_share' && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  Your location will be set to UCR Main Campus by default for app functionality, but won't be visible in your profile.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* MODAL ACTIONS */}

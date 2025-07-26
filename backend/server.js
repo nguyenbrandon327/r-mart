@@ -204,6 +204,30 @@ async function initDB() {
   } catch (error) {
     console.log("Error initializing recently seen products table", error);
   }
+
+
+
+  // Add location fields to users table (migration)
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS location_type VARCHAR(20) CHECK (location_type IN ('on_campus', 'off_campus'))`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS show_location_in_profile BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS campus_location_name VARCHAR(255)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_address TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_latitude DECIMAL(10, 8)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_longitude DECIMAL(11, 8)`;
+
+    // Set default location to UCR Main Campus for existing users who don't have location set
+    await sql`
+      UPDATE users 
+      SET location_type = 'on_campus', 
+          campus_location_name = 'UCR Main Campus (default)'
+      WHERE location_type IS NULL
+    `;
+
+    console.log("Users table location fields migration applied successfully");
+  } catch (error) {
+    console.log("Error applying users table location fields migration", error);
+  }
 }
 
 initDB().then(async () => {

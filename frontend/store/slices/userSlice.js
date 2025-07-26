@@ -86,6 +86,21 @@ export const deleteProfilePic = createAsyncThunk(
   }
 );
 
+
+
+// Update user location
+export const updateUserLocation = createAsyncThunk(
+  'user/updateUserLocation',
+  async (locationData, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/location`, locationData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Error updating location");
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -189,6 +204,27 @@ const userSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(deleteProfilePic.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+
+
+      // Update user location
+      .addCase(updateUserLocation.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserLocation.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentUserProfile = action.payload.user;
+        // Also update viewedUserProfile if it's the same user
+        if (state.viewedUserProfile && state.viewedUserProfile.id === action.payload.user.id) {
+          state.viewedUserProfile = action.payload.user;
+        }
+        state.message = action.payload.message;
+      })
+      .addCase(updateUserLocation.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

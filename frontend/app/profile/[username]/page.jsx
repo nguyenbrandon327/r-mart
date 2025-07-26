@@ -149,6 +149,19 @@ export default function ProfilePage() {
                         )}
                       </>
                     )}
+                    {viewedUserProfile.show_location_in_profile && (
+                      <div className="flex items-center justify-start gap-2">
+                        <span>📍</span>
+                        <span>
+                          {viewedUserProfile.location_type === 'on_campus' 
+                            ? (viewedUserProfile.campus_location_name || 'On-campus')
+                            : viewedUserProfile.location_type === 'off_campus' 
+                              ? 'Off-campus (Riverside area)'
+                              : 'UCR Campus'
+                          }
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-start gap-2">
                       <span>📅</span>
                       <span>Joined {formatDate(viewedUserProfile.created_at)}</span>
