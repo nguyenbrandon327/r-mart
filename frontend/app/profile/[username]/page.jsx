@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { getUserByUsername, clearViewedUserProfile, getCurrentUserProfile } from '../../../store/slices/userSlice';
 import ProductCard from '../../../components/ProductCard';
 import EditProfileModal from '../../../components/EditProfileModal';
-import { EditIcon } from 'lucide-react';
+import { EditIcon, GraduationCap, BookOpen, MapPin, Calendar, Package } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import AuthGuard from '../../../components/AuthGuard';
 
@@ -138,12 +138,12 @@ export default function ProfilePage() {
                     {viewedUserProfile.year && (
                       <>
                         <div className="flex items-center justify-start gap-2">
-                          <span>🎓</span>
+                          <GraduationCap className="w-4 h-4 text-gray-500" />
                           <span>{viewedUserProfile.year}</span>
                         </div>
                         {viewedUserProfile.major && (
                           <div className="flex items-center justify-start gap-2">
-                            <span>📚</span>
+                            <BookOpen className="w-4 h-4 text-gray-500" />
                             <span>{viewedUserProfile.major}</span>
                           </div>
                         )}
@@ -151,7 +151,7 @@ export default function ProfilePage() {
                     )}
                     {viewedUserProfile.show_location_in_profile && (
                       <div className="flex items-center justify-start gap-2">
-                        <span>📍</span>
+                        <MapPin className="w-4 h-4 text-gray-500" />
                         <span>
                           {viewedUserProfile.location_type === 'on_campus' 
                             ? (viewedUserProfile.campus_location_name || 'On-campus')
@@ -163,11 +163,11 @@ export default function ProfilePage() {
                       </div>
                     )}
                     <div className="flex items-center justify-start gap-2">
-                      <span>📅</span>
+                      <Calendar className="w-4 h-4 text-gray-500" />
                       <span>Joined {formatDate(viewedUserProfile.created_at)}</span>
                     </div>
                     <div className="flex items-center justify-start gap-2">
-                      <span>📦</span>
+                      <Package className="w-4 h-4 text-gray-500" />
                       <span>{userProducts.length} listing{userProducts.length !== 1 ? 's' : ''}</span>
                     </div>
                   </div>

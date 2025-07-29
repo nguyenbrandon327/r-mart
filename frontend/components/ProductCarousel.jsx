@@ -138,7 +138,7 @@ export default function ProductCarousel({
             {products.map((product) => (
               <div 
                 key={product.id} 
-                className="flex-none w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 max-w-[calc(100%/5.3-1.2rem)]"
+                className="flex-none w-[170px] sm:w-[220px] md:w-[260px] lg:w-[280px] xl:w-[300px]"
               >
                 <ProductCard product={product} />
               </div>

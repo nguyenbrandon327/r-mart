@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
+import TalkToSellerModal from "../../../components/TalkToSellerModal";
 import UserLink from "../../../components/UserLink";
-import SellerOtherProductsCarousel from "../../../components/SellerOtherProductsCarousel";
+import ProductCarousel from "../../../components/ProductCarousel";
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
 import { useChatStore } from "../../../store/hooks";
 import toast from "react-hot-toast";
@@ -75,7 +76,7 @@ export default function ProductPage({ params }) {
   const dispatch = useDispatch();
   const { currentProduct, loading, error, sellerOtherProducts, sellerOtherProductsLoading } = useSelector((state) => state.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const { createChat } = useChatStore();
+  const { createChat, sendMessage } = useChatStore();
   const [activeImage, setActiveImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
@@ -105,7 +106,7 @@ export default function ProductPage({ params }) {
     }
   }, [dispatch, currentProduct, id]);
 
-  const handleContactSeller = async () => {
+  const handleContactSeller = () => {
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
@@ -116,12 +117,29 @@ export default function ProductPage({ params }) {
       return;
     }
 
+    // Open the DaisyUI modal
+    document.getElementById('talk_to_seller_modal')?.showModal();
+  };
+
+  const handleSendFirstMessage = async (message) => {
     setIsContactingSeller(true);
     try {
-      const chat = await createChat(currentProduct.user_id, currentProduct.id);
-      router.push(`/inbox/${chat.id}`);
+      // First create the chat
+      const chatResult = await createChat(currentProduct.user_id, currentProduct.id);
+      
+      // Then send the first message
+      const messageData = new FormData();
+      messageData.append('text', message);
+      
+      await sendMessage(messageData, chatResult.id);
+      
+      // Close modal and redirect to chat
+      document.getElementById('talk_to_seller_modal')?.close();
+      router.push(`/inbox/${chatResult.id}`);
+      toast.success('Message sent successfully!');
     } catch (error) {
-      console.error('Failed to create chat:', error);
+      console.error('Failed to create chat or send message:', error);
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setIsContactingSeller(false);
     }
@@ -325,6 +343,13 @@ export default function ProductPage({ params }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-0" data-theme="light">
       <EditProductModal />
+      <TalkToSellerModal
+        onClose={() => document.getElementById('talk_to_seller_modal')?.close()}
+        onSendMessage={handleSendFirstMessage}
+        sellerName={currentProduct?.user_name}
+        productName={currentProduct?.name}
+        isLoading={isContactingSeller}
+      />
 
       <div className="mb-2 -mt-2">
         <button 
@@ -599,18 +624,12 @@ export default function ProductPage({ params }) {
 
       {/* Seller Other Products Carousel */}
       {currentProduct && currentProduct.user_id && (
-        <SellerOtherProductsCarousel 
+        <ProductCarousel
+          title={`More from ${currentProduct.user_name || 'this seller'}`}
+          icon="📦"
           products={sellerOtherProducts}
           loading={sellerOtherProductsLoading}
-          seller={{
-            id: currentProduct.user_id,
-            name: currentProduct.user_name,
-            user_name: currentProduct.user_name,
-            email: currentProduct.user_email,
-            user_email: currentProduct.user_email,
-            profile_pic: currentProduct.user_profile_pic,
-            user_profile_pic: currentProduct.user_profile_pic
-          }}
+          className="mt-16 mb-12"
         />
       )}
     </div>

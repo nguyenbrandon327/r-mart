@@ -7,10 +7,14 @@ import toast from 'react-hot-toast';
 // Async thunks
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async (excludeRecentlyViewed = false, { rejectWithValue }) => {
+  async ({ excludeRecentlyViewed = false, sort = 'best_match' } = {}, { rejectWithValue }) => {
     try {
-      const queryParam = excludeRecentlyViewed ? '?excludeRecentlyViewed=true' : '';
-      const response = await axios.get(`/api/products${queryParam}`);
+      const params = new URLSearchParams();
+      if (excludeRecentlyViewed) params.append('excludeRecentlyViewed', 'true');
+      if (sort) params.append('sort', sort);
+      
+      const queryString = params.toString();
+      const response = await axios.get(`/api/products${queryString ? `?${queryString}` : ''}`);
       return response.data.data;
     } catch (err) {
       if (err.status === 429) return rejectWithValue("Rate limit exceeded");
@@ -71,7 +75,6 @@ export const addProduct = createAsyncThunk(
           'Content-Type': 'multipart/form-data',
         },
       });
-      toast.success("Product added successfully");
       return response.data.data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");

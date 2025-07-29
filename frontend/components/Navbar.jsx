@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserIcon, LogOutIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
+import { UserIcon, LogOutIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon, PlusIcon, SearchIcon, MenuIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import SearchBar from './SearchBar';
@@ -43,6 +43,10 @@ function Navbar() {
     return email ? email.split('@')[0] : '';
   };
 
+  const handleMobileSearch = () => {
+    router.push('/search');
+  };
+
   return (
     <div className="bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto">
@@ -67,8 +71,20 @@ function Navbar() {
               </Link>
             </div>
             
-            {/* SEARCH BAR */}
-            <SearchBar />
+            {/* DESKTOP SEARCH BAR */}
+            <div className="hidden md:block flex-1">
+              <SearchBar />
+            </div>
+
+            {/* MOBILE SEARCH ICON */}
+            <div className="md:hidden flex-1 flex justify-end mr-2">
+              <button 
+                onClick={handleMobileSearch}
+                className="btn btn-ghost btn-sm btn-circle"
+              >
+                <SearchIcon className="size-4" />
+              </button>
+            </div>
           </div>
 
           {/* RIGHT SECTION */}
@@ -85,23 +101,60 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/add-listing" className="btn btn-primary rounded-none !h-10 !min-h-0 text-white">
-                    <PlusIcon className="size-4" />
-                    Create a Listing
-                  </Link>
-                  
-                  <Link href="/saved" className="btn btn-ghost btn-sm btn-circle">
-                    <HeartIcon className="size-4" />
-                  </Link>
-                  
-                  <Link href="/inbox" className="btn btn-ghost btn-sm btn-circle relative">
-                    <MessageSquareTextIcon className="size-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-error text-error-content text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
+                  {/* DESKTOP ACTION BUTTONS */}
+                  <div className="hidden md:flex items-center gap-4">
+                    <Link href="/add-listing" className="btn btn-primary rounded-none !h-10 !min-h-0 text-white">
+                      <PlusIcon className="size-4" />
+                      Create a Listing
+                    </Link>
+                    
+                    <Link href="/saved" className="btn btn-ghost btn-sm btn-circle">
+                      <HeartIcon className="size-4" />
+                    </Link>
+                    
+                    <Link href="/inbox" className="btn btn-ghost btn-sm btn-circle relative">
+                      <MessageSquareTextIcon className="size-4" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-error text-error-content text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+
+                  {/* MOBILE ACTION MENU */}
+                  <div className="md:hidden">
+                    <div className="dropdown dropdown-end">
+                      <div tabIndex={0} role="button" className="btn btn-ghost btn-sm btn-circle">
+                        <MenuIcon className="size-4" />
+                      </div>
+                      <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-0 w-52 p-2 shadow">
+                        <li>
+                          <Link href="/add-listing" onClick={closeDropdown}>
+                            <PlusIcon className="size-4" />
+                            Create a Listing
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/saved" onClick={closeDropdown}>
+                            <HeartIcon className="size-4" />
+                            Saved Items
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/inbox" className="relative" onClick={closeDropdown}>
+                            <MessageSquareTextIcon className="size-4" />
+                            <span>Inbox</span>
+                            {unreadCount > 0 && (
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-error text-error-content text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                   
                   {/* Profile Picture Dropdown */}
                   {user && (
@@ -122,7 +175,7 @@ function Navbar() {
                             )}
                           </div>
                         </div>
-                        <ChevronDownIcon className="size-3" />
+                        <ChevronDownIcon className="size-3 hidden sm:block" />
                       </div>
                       <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-0 w-52 p-2 shadow">
                         <li className="menu-title">

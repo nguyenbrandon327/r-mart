@@ -8,10 +8,29 @@ import crypto from "crypto";
 // CRUD operations
 export const getProducts = async (req, res) => {
     try {
-        const { excludeRecentlyViewed } = req.query;
+        const { excludeRecentlyViewed, sort = 'best_match' } = req.query;
         const userId = req.user?.id; // Get user ID if authenticated
         
         let products;
+        let orderClause;
+        
+        // Determine sort order
+        switch (sort) {
+            case 'recent_first':
+                orderClause = sql`ORDER BY p.created_at DESC`;
+                break;
+            case 'price_low_high':
+                orderClause = sql`ORDER BY p.price ASC`;
+                break;
+            case 'price_high_low':
+                orderClause = sql`ORDER BY p.price DESC`;
+                break;
+            case 'best_match':
+            default:
+                // Default behavior - show all unsold products with randomized date-emphasized ordering
+                orderClause = sql`ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC`;
+                break;
+        }
         
         if (excludeRecentlyViewed === 'true' && userId) {
             // Exclude recently viewed products for authenticated users
@@ -24,20 +43,19 @@ export const getProducts = async (req, res) => {
                     FROM recently_seen_products 
                     WHERE user_id = ${userId}
                 )
-                ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
+                ${orderClause}
             `;
         } else {
-            // Default behavior - show all unsold products with randomized date-emphasized ordering
             products = await sql`
                 SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id
                 WHERE p.is_sold = false
-                ORDER BY (EXTRACT(EPOCH FROM p.created_at) * RANDOM()) DESC
+                ${orderClause}
             `;
         }
         
-        console.log("fetched products", excludeRecentlyViewed === 'true' && userId ? "(excluding recently viewed)" : "");
+        console.log("fetched products", excludeRecentlyViewed === 'true' && userId ? "(excluding recently viewed)" : "", `sorted by: ${sort}`);
         res.status(200).json({success:true, data:products});
     } catch (error) {
         console.log("Error in getProducts", error);
