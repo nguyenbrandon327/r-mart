@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from '../store/slices/authSlice';
 import Navbar from './Navbar';
 import SecondaryNavbar from './SecondaryNavbar';
+import Footer from './Footer';
 import { useSocket } from '../lib/socket';
 import { useChatStore } from '../store/hooks';
 
@@ -19,6 +20,8 @@ export default function NavigationWrapper({ children }) {
   const isAddListingPage = pathname?.startsWith('/add-listing');
   const isInboxPage = pathname?.startsWith('/inbox');
   const isChatPage = pathname?.match(/^\/inbox\/\d+$/); // Matches /inbox/[chatId]
+  const isTermsPage = pathname?.startsWith('/terms');
+  const isPrivacyPage = pathname?.startsWith('/privacy');
   const dispatch = useDispatch();
   const { isAuthenticated, socket } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.chat);
@@ -63,16 +66,17 @@ export default function NavigationWrapper({ children }) {
   }, [pathname, isChatPage, setSelectedChat]);
 
   return (
-    <>
-      {!isAuthPage && !isLandingPage && !isAddListingPage && (
+    <div className="flex flex-col min-h-screen">
+      {!isAuthPage && !isLandingPage && !isAddListingPage && !isTermsPage && !isPrivacyPage && (
         <>
           <Navbar />
           {!isProductDetailPage && !isSavedPage && !isProfilePage && !isInboxPage && <SecondaryNavbar />}
         </>
       )}
-      <main className={isAuthPage || isLandingPage || isAddListingPage || isChatPage ? "" : "container mx-auto px-4 py-6"}>
+      <main className={`flex-grow ${isAuthPage || isLandingPage || isAddListingPage || isTermsPage || isPrivacyPage || isChatPage ? "" : "container mx-auto px-4 py-6"}`}>
         {children}
       </main>
-    </>
+      {!isAuthPage && !isAddListingPage && !isChatPage && <Footer />}
+    </div>
   );
 } 

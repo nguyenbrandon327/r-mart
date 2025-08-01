@@ -152,7 +152,9 @@ export const updateUserProfile = async (req, res) => {
         description = ${description ? description.trim() : null},
         major = ${major ? major.trim() : null}
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, major, year, created_at, isVerified
+      RETURNING id, name, email, profile_pic, description, major, year, created_at, isVerified,
+                location_type, show_location_in_profile, campus_location_name, custom_address,
+                custom_latitude, custom_longitude
     `;
     
     if (!updatedUser) {
@@ -160,6 +162,27 @@ export const updateUserProfile = async (req, res) => {
         success: false,
         message: "User not found"
       });
+    }
+    
+    // Decrypt location data before returning to client
+    if (updatedUser.location_type === 'off_campus') {
+      try {
+        const decryptedLocation = decryptLocationData({
+          custom_address: updatedUser.custom_address,
+          custom_latitude: updatedUser.custom_latitude,
+          custom_longitude: updatedUser.custom_longitude
+        });
+        
+        updatedUser.custom_address = decryptedLocation.custom_address;
+        updatedUser.custom_latitude = decryptedLocation.custom_latitude;
+        updatedUser.custom_longitude = decryptedLocation.custom_longitude;
+      } catch (decryptError) {
+        console.error("Error decrypting location data:", decryptError);
+        // Set to null if decryption fails to avoid exposing encrypted data
+        updatedUser.custom_address = null;
+        updatedUser.custom_latitude = null;
+        updatedUser.custom_longitude = null;
+      }
     }
     
     res.status(200).json({
@@ -209,8 +232,31 @@ export const uploadProfilePic = async (req, res) => {
       UPDATE users 
       SET profile_pic = ${profilePicUrl}
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified
+      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified,
+                location_type, show_location_in_profile, campus_location_name, custom_address,
+                custom_latitude, custom_longitude
     `;
+    
+    // Decrypt location data before returning to client
+    if (updatedUser.location_type === 'off_campus') {
+      try {
+        const decryptedLocation = decryptLocationData({
+          custom_address: updatedUser.custom_address,
+          custom_latitude: updatedUser.custom_latitude,
+          custom_longitude: updatedUser.custom_longitude
+        });
+        
+        updatedUser.custom_address = decryptedLocation.custom_address;
+        updatedUser.custom_latitude = decryptedLocation.custom_latitude;
+        updatedUser.custom_longitude = decryptedLocation.custom_longitude;
+      } catch (decryptError) {
+        console.error("Error decrypting location data:", decryptError);
+        // Set to null if decryption fails to avoid exposing encrypted data
+        updatedUser.custom_address = null;
+        updatedUser.custom_latitude = null;
+        updatedUser.custom_longitude = null;
+      }
+    }
     
     res.status(200).json({
       success: true,
@@ -258,8 +304,31 @@ export const deleteProfilePic = async (req, res) => {
       UPDATE users 
       SET profile_pic = NULL
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified
+      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified,
+                location_type, show_location_in_profile, campus_location_name, custom_address,
+                custom_latitude, custom_longitude
     `;
+    
+    // Decrypt location data before returning to client
+    if (updatedUser.location_type === 'off_campus') {
+      try {
+        const decryptedLocation = decryptLocationData({
+          custom_address: updatedUser.custom_address,
+          custom_latitude: updatedUser.custom_latitude,
+          custom_longitude: updatedUser.custom_longitude
+        });
+        
+        updatedUser.custom_address = decryptedLocation.custom_address;
+        updatedUser.custom_latitude = decryptedLocation.custom_latitude;
+        updatedUser.custom_longitude = decryptedLocation.custom_longitude;
+      } catch (decryptError) {
+        console.error("Error decrypting location data:", decryptError);
+        // Set to null if decryption fails to avoid exposing encrypted data
+        updatedUser.custom_address = null;
+        updatedUser.custom_latitude = null;
+        updatedUser.custom_longitude = null;
+      }
+    }
     
     res.status(200).json({
       success: true,

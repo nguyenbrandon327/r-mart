@@ -11,6 +11,7 @@ import {
   checkAuth as checkAuthAction,
   forgotPassword as forgotPasswordAction,
   resetPassword as resetPasswordAction,
+  resendVerificationCode as resendVerificationCodeAction,
   clearError,
   clearMessage 
 } from './slices/authSlice';
@@ -53,9 +54,9 @@ export const useAuthStore = () => {
     socket: auth.socket,
 
     // Actions
-    signup: async (email, password, name) => {
+    signup: async ({ email, password, name, captchaToken }) => {
       try {
-        await dispatch(signupAction({ email, password, name })).unwrap();
+        await dispatch(signupAction({ email, password, name, captchaToken })).unwrap();
       } catch (error) {
         throw error;
       }
@@ -105,6 +106,14 @@ export const useAuthStore = () => {
     resetPassword: async (token, password) => {
       try {
         await dispatch(resetPasswordAction({ token, password })).unwrap();
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    resendVerificationCode: async () => {
+      try {
+        await dispatch(resendVerificationCodeAction()).unwrap();
       } catch (error) {
         throw error;
       }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MapPinIcon } from "lucide-react";
 
-function ProductCard({ product }) {
+function ProductCard({ product, sourceContext = null }) {
   const getCategoryLabel = (category) => {
     const categories = {
       'clothes': 'Clothes',
@@ -32,8 +32,12 @@ function ProductCard({ product }) {
     return product.image || 'https://placehold.co/400x400?text=No+Image';
   };
 
+  const linkHref = sourceContext 
+    ? `/product/${product.id}?from=${sourceContext}` 
+    : `/product/${product.id}`;
+
   return (
-    <Link href={`/product/${product.id}`}>
+    <Link href={linkHref}>
       <div className="bg-transparent rounded-none cursor-pointer border-2 border-transparent hover:border-gray-500 transition-all duration-300 -m-1 p-1">
         {/* PRODUCT IMAGE */}
         <figure className="relative pt-[100%] mb-0 rounded-md overflow-hidden">

@@ -13,7 +13,7 @@ export const protectRoute = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from the token
-    const user = await sql`SELECT id, name, email, profile_pic, description, isOnboarded FROM users WHERE id=${decoded.userId}`;
+    const user = await sql`SELECT id, name, email, profile_pic, description, isVerified, isOnboarded FROM users WHERE id=${decoded.userId}`;
     
     if (!user || user.length === 0) {
       return res.status(401).json({ success: false, message: "Not authorized, user not found" });

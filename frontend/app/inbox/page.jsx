@@ -8,6 +8,7 @@ import { UserCircleIcon, MessageSquareIcon, Trash2Icon, ShoppingBagIcon, CheckIc
 import Image from 'next/image';
 import Link from 'next/link';
 import AuthGuard from '../../components/AuthGuard';
+import Breadcrumb, { createBreadcrumbs } from '../../components/Breadcrumb';
 
 export default function InboxPage() {
   const {
@@ -116,9 +117,8 @@ export default function InboxPage() {
       const days = Math.floor(diffInDays);
       return `${days} day${days !== 1 ? 's' : ''} ago`;
     } else {
-      // For older messages, show the date in PST
+      // For older messages, show the date
       return date.toLocaleDateString('en-US', {
-        timeZone: 'America/Los_Angeles',
         month: 'short',
         day: 'numeric'
       });
@@ -147,6 +147,12 @@ export default function InboxPage() {
     <AuthGuard>
       <div>
         <div className="max-w-4xl mx-auto p-4">
+        {/* Breadcrumb */}
+        <Breadcrumb 
+          items={createBreadcrumbs.inbox()}
+          className="mb-6"
+        />
+        
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-base-content">Messages</h1>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserIcon, LogOutIcon, HeartIcon, MessageSquareTextIcon, UserCircleIcon, ChevronDownIcon, PlusIcon, SearchIcon, MenuIcon } from "lucide-react";
+import { UserIcon, LogOutIcon, HeartIcon, MessageCircleMore, UserCircleIcon, ChevronDownIcon, PlusIcon, SearchIcon, MenuIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import SearchBar from './SearchBar';
@@ -113,7 +113,7 @@ function Navbar() {
                     </Link>
                     
                     <Link href="/inbox" className="btn btn-ghost btn-sm btn-circle relative">
-                      <MessageSquareTextIcon className="size-4" />
+                      <MessageCircleMore className="size-4" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-error text-error-content text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
                           {unreadCount > 99 ? '99+' : unreadCount}
@@ -143,7 +143,7 @@ function Navbar() {
                         </li>
                         <li>
                           <Link href="/inbox" className="relative" onClick={closeDropdown}>
-                            <MessageSquareTextIcon className="size-4" />
+                            <MessageCircleMore className="size-4" />
                             <span>Inbox</span>
                             {unreadCount > 0 && (
                               <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-error text-error-content text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">

@@ -491,7 +491,7 @@ export default function AddListingPage() {
                       <div className="text-xs sm:text-sm font-medium mb-1.5">
                         {images.length > 0 
                           ? `Uploaded Images (${images.length}/10) - First image will be the cover`
-                          : 'No images uploaded yet'
+                          : ''
                         }
                       </div>
                       

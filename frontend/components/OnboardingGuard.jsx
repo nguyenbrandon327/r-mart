@@ -24,7 +24,7 @@ export default function OnboardingGuard({ children }) {
     // Don't do anything while checking auth or during initial load
     if (isCheckingAuth || initialLoad) return;
 
-    // List of paths that don't require onboarding check
+    // List of paths that don't require verification or onboarding check
     const exemptPaths = [
       '/auth/login',
       '/auth/signup',
@@ -38,8 +38,25 @@ export default function OnboardingGuard({ children }) {
     // Check if current path is exempt
     const isExemptPath = exemptPaths.some(path => pathname.startsWith(path));
 
-    // If user is authenticated but not onboarded and not on an exempt path, redirect to onboarding
-    if (isAuthenticated && user && !user.isOnboarded && !isExemptPath) {
+    // Debug logging
+    if (isAuthenticated && user && !isExemptPath) {
+      console.log('OnboardingGuard: User status check', { 
+        isVerified: user.isVerified, 
+        isOnboarded: user.isOnboarded,
+        pathname: pathname,
+        user: user 
+      });
+    }
+
+    // If user is authenticated but not verified and not on an exempt path, redirect to email verification
+    if (isAuthenticated && user && (user.isVerified === false || user.isVerified === undefined) && !isExemptPath) {
+      console.log('OnboardingGuard: Redirecting to email verification', { user: user, isVerified: user.isVerified });
+      router.push('/auth/verify-email');
+      return;
+    }
+
+    // If user is authenticated and verified but not onboarded and not on an exempt path, redirect to onboarding
+    if (isAuthenticated && user && user.isVerified === true && (user.isOnboarded === false || user.isOnboarded === undefined) && !isExemptPath) {
       console.log('OnboardingGuard: Redirecting to onboarding', { user: user, isOnboarded: user.isOnboarded });
       router.push('/auth/onboarding');
     }

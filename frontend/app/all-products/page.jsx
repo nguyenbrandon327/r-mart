@@ -15,6 +15,7 @@ import {
 import { fetchProducts, fetchProductsByLocation, setSort } from '../../store/slices/productSlice';
 import ProductCard from "../../components/ProductCard";
 import AddProductModal from "../../components/EditProductModal";
+import Breadcrumb, { createBreadcrumbs } from "../../components/Breadcrumb";
 
 const sortOptions = [
   { value: 'best_match', label: 'Best match', icon: SparklesIcon, description: 'Most relevant items' },
@@ -130,6 +131,12 @@ export default function AllProductsPage() {
 
   return (
     <div>
+      {/* Breadcrumb */}
+      <Breadcrumb 
+        items={createBreadcrumbs.custom([{ label: 'All Products' }])}
+        className="mb-6"
+      />
+      
       {/* Hero Carousel */}
       <div className="relative w-full h-72 md:h-80 lg:h-88 mb-12 rounded-lg overflow-hidden shadow-lg">
         <div className="carousel w-full h-full">

@@ -3,17 +3,19 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData, fetchSellerOtherProducts, markProductAsSold, markProductAsAvailable } from "../../../store/slices/productSlice";
-import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageSquareTextIcon, Trash2Icon, XIcon, CheckIcon } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageCircleMore, Trash2Icon, XIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
 import TalkToSellerModal from "../../../components/TalkToSellerModal";
 import UserLink from "../../../components/UserLink";
 import ProductCarousel from "../../../components/ProductCarousel";
+import Breadcrumb, { createBreadcrumbs } from "../../../components/Breadcrumb";
 import { saveProduct, unsaveProduct, checkIsSaved } from "../../../store/slices/savedProductsSlice";
 import { useChatStore } from "../../../store/hooks";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { formatRelativeTime } from "../../../utils/timeUtils";
 
 // Save button component for product page
 function SaveButton({ productId }) {
@@ -73,6 +75,7 @@ function SaveButton({ productId }) {
 export default function ProductPage({ params }) {
   const { id } = params;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const { currentProduct, loading, error, sellerOtherProducts, sellerOtherProductsLoading } = useSelector((state) => state.products);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -80,11 +83,38 @@ export default function ProductPage({ params }) {
   const [activeImage, setActiveImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
+  const [cameFromHomepage, setCameFromHomepage] = useState(false);
   const viewRecordedRef = useRef(null); // Track which product we've recorded a view for
 
   useEffect(() => {
     dispatch(fetchProduct(id));
   }, [dispatch, id]);
+
+  // Check if user came from homepage
+  useEffect(() => {
+    // First check URL parameter (most reliable)
+    const fromParam = searchParams.get('from');
+    if (fromParam === 'home') {
+      setCameFromHomepage(true);
+      return;
+    }
+    
+    // Fallback to referrer detection
+    const referrer = document.referrer;
+    const currentOrigin = window.location.origin;
+    const homepageUrl = `${currentOrigin}/`;
+    
+    // User came from homepage if:
+    // 1. Referrer exactly matches homepage URL
+    // 2. Or referrer is the origin without path (covers both trailing slash cases)
+    const cameFromHome = referrer === homepageUrl || 
+                        referrer === currentOrigin ||
+                        referrer === `${currentOrigin}/` ||
+                        // Also handle cases where user navigated directly or refreshed
+                        (referrer === '' && window.history.length === 1);
+    
+    setCameFromHomepage(cameFromHome);
+  }, [searchParams]);
 
   // Record product view when page loads
   useEffect(() => {
@@ -136,7 +166,6 @@ export default function ProductPage({ params }) {
       // Close modal and redirect to chat
       document.getElementById('talk_to_seller_modal')?.close();
       router.push(`/inbox/${chatResult.id}`);
-      toast.success('Message sent successfully!');
     } catch (error) {
       console.error('Failed to create chat or send message:', error);
       toast.error('Failed to send message. Please try again.');
@@ -231,6 +260,12 @@ export default function ProductPage({ params }) {
 
   // Check if the current user is the creator of the product
   const isProductOwner = user && currentProduct && user.id === currentProduct.user_id;
+
+  // Get first name from user name
+  const getFirstName = (fullName) => {
+    if (!fullName) return 'this seller';
+    return fullName.split(' ')[0];
+  };
 
   // Get product images or fallback
   const getProductImages = () => {
@@ -340,6 +375,25 @@ export default function ProductPage({ params }) {
 
   const images = getProductImages();
 
+  // Category mapping for breadcrumbs
+  const categoryLabels = {
+    'clothes': 'Clothes',
+    'tech': 'Tech',
+    'textbooks': 'Textbooks',
+    'furniture': 'Furniture',
+    'kitchen': 'Kitchen',
+    'food': 'Food',
+    'vehicles': 'Vehicles',
+    'housing': 'Housing',
+    'rides': 'Rides',
+    'renting': 'Renting',
+    'merch': 'Merch',
+    'other': 'Other',
+    'in-searching-for': 'I\'m searching for'
+  };
+
+  const getCategoryLabel = (category) => categoryLabels[category] || 'Other';
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-0" data-theme="light">
       <EditProductModal />
@@ -351,21 +405,22 @@ export default function ProductPage({ params }) {
         isLoading={isContactingSeller}
       />
 
-      <div className="mb-2 -mt-2">
-        <button 
-          onClick={() => {
-            if (window.history.length > 1) {
-              router.back();
-            } else {
-              router.push('/');
-            }
-          }} 
-          className="btn btn-ghost"
-        >
-          <ArrowLeftIcon className="size-4 mr-0" />
-          Go Back
-        </button>
-      </div>
+      {/* Breadcrumb */}
+      {currentProduct && (
+        <Breadcrumb 
+          items={cameFromHomepage 
+            ? createBreadcrumbs.productFromHome(currentProduct.name)
+            : createBreadcrumbs.product(
+                getCategoryLabel(currentProduct.category), 
+                currentProduct.name,
+                currentProduct.category
+              )
+          }
+          className="mb-4 -mt-2"
+        />
+      )}
+
+
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Product Images */}
@@ -479,11 +534,7 @@ export default function ProductPage({ params }) {
               </div>
               {currentProduct.created_at && (
                 <p className="text-xs text-gray-500">
-                  Listed on {new Date(currentProduct.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  Listed {formatRelativeTime(currentProduct.created_at)}
                 </p>
               )}
             </div>
@@ -558,7 +609,7 @@ export default function ProductPage({ params }) {
                   {isContactingSeller ? (
                     <span className="loading loading-spinner loading-sm mr-1"></span>
                   ) : (
-                    <MessageSquareTextIcon className="h-5 w-5 mr-1" />
+                    <MessageCircleMore className="h-5 w-5 mr-1" />
                   )}
                   {currentProduct.is_sold ? 'Item Sold' : (isContactingSeller ? 'Creating Chat...' : 'Talk to Seller')}
                 </button>
@@ -625,7 +676,7 @@ export default function ProductPage({ params }) {
       {/* Seller Other Products Carousel */}
       {currentProduct && currentProduct.user_id && (
         <ProductCarousel
-          title={`More from ${currentProduct.user_name || 'this seller'}`}
+          title={`More from ${getFirstName(currentProduct.user_name)}`}
           icon="📦"
           products={sellerOtherProducts}
           loading={sellerOtherProductsLoading}

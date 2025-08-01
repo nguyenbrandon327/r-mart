@@ -9,6 +9,7 @@ import EditProfileModal from '../../../components/EditProfileModal';
 import { EditIcon, GraduationCap, BookOpen, MapPin, Calendar, Package } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import AuthGuard from '../../../components/AuthGuard';
+import Breadcrumb, { createBreadcrumbs } from '../../../components/Breadcrumb';
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -85,7 +86,18 @@ export default function ProfilePage() {
     <AuthGuard>
       <div>
         <EditProfileModal />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        
+        {/* Breadcrumb */}
+        {viewedUserProfile && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+            <Breadcrumb 
+              items={createBreadcrumbs.profile(viewedUserProfile.name || username)}
+              className="mb-4"
+            />
+          </div>
+        )}
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-8">
           {/* Left Column - User Information */}
@@ -112,8 +124,7 @@ export default function ProfilePage() {
                       className="w-32 h-32 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-4xl text-gray-600">👤</span>
+                    <div className="w-32 h-32 rounded-full bg-gray-300">
                     </div>
                   )}
                 </div>

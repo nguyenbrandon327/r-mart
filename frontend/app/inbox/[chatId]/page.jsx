@@ -316,26 +316,23 @@ export default function ChatPage({ params }) {
   const formatMessageTime = (timestamp, showDate = false) => {
     const date = new Date(timestamp);
     
-    // Convert to PST timezone
-    const pstOptions = {
-      timeZone: 'America/Los_Angeles', // PST/PDT timezone
+    const timeOptions = {
       hour: 'numeric',
       minute: '2-digit'
     };
     
     if (showDate) {
-      const pstDateOptions = {
-        timeZone: 'America/Los_Angeles',
+      const dateOptions = {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit'
       };
-      return date.toLocaleString('en-US', pstDateOptions);
+      return date.toLocaleString('en-US', dateOptions);
     }
     
-    return date.toLocaleString('en-US', pstOptions);
+    return date.toLocaleString('en-US', timeOptions);
   };
 
   // Check if we should show timestamp before this message
@@ -346,11 +343,10 @@ export default function ChatPage({ params }) {
     const currentTime = new Date(currentMessage.created_at);
     const previousTime = new Date(previousMessage.created_at);
     
-    // Check if it's a different day in PST
-    const pstDateOptions = { timeZone: 'America/Los_Angeles' };
-    const currentDatePST = currentTime.toLocaleDateString('en-US', pstDateOptions);
-    const previousDatePST = previousTime.toLocaleDateString('en-US', pstDateOptions);
-    const isDifferentDay = currentDatePST !== previousDatePST;
+    // Check if it's a different day
+    const currentDate = currentTime.toLocaleDateString('en-US');
+    const previousDate = previousTime.toLocaleDateString('en-US');
+    const isDifferentDay = currentDate !== previousDate;
     
     // Show timestamp if more than 5 minutes have passed OR it's a different day
     const timeDifference = (currentTime - previousTime) / (1000 * 60); // in minutes

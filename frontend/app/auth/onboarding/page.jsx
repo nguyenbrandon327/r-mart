@@ -122,10 +122,13 @@ export default function Onboarding() {
     locationType: '',
     campusLocationName: '',
     customAddress: '',
+    customCity: '',
+    customState: '',
     showLocationInProfile: false
   });
 
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [addressError, setAddressError] = useState(''); // Add address error state
   
   // Major dropdown states
   const [majorSearchTerm, setMajorSearchTerm] = useState('');
@@ -210,12 +213,21 @@ export default function Onboarding() {
   };
 
   // Geocoding function for off-campus addresses
-  const geocodeAddress = async (address) => {
+  const geocodeAddress = async (addressObj) => {
     try {
       setIsGeocoding(true);
       
+      // Concatenate address parts into a full address string
+      const addressParts = [
+        addressObj.address,
+        addressObj.city,
+        addressObj.state
+      ].filter(part => part && part.trim() !== '');
+      
+      const fullAddress = addressParts.join(', ');
+      
       // Using a free geocoding service - you might want to use Google Maps API or another service
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Riverside, CA')}`);
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`);
       const data = await response.json();
       
       if (data && data.length > 0) {
@@ -258,6 +270,7 @@ export default function Onboarding() {
     }
 
     setIsSubmitting(true);
+    setAddressError(''); // Clear any previous address errors
     
     try {
       // Complete onboarding with required fields
@@ -298,33 +311,30 @@ export default function Onboarding() {
         };
 
         // Handle different location types
-        if (locationData.locationType === 'dont_share') {
-          // For "Don't Share", set to UCR Main Campus and don't show in profile
-          locationPayload.locationType = 'on_campus';
-          const defaultLocation = CAMPUS_LOCATIONS.find(loc => loc.name.includes('UCR Main Campus'));
-          if (defaultLocation) {
-            locationPayload.campusLocationName = defaultLocation.name;
-          }
-          locationPayload.showLocationInProfile = false;
-        } else if (locationData.locationType === 'on_campus' && locationData.campusLocationName) {
+        if (locationData.locationType === 'on_campus' && locationData.campusLocationName) {
           locationPayload.locationType = 'on_campus';
           locationPayload.campusLocationName = locationData.campusLocationName;
         } else if (locationData.locationType === 'off_campus' && locationData.customAddress.trim()) {
           try {
-            const coords = await geocodeAddress(locationData.customAddress);
+            const coords = await geocodeAddress({
+              address: locationData.customAddress,
+              city: locationData.customCity,
+              state: locationData.customState
+            });
             locationPayload.locationType = 'off_campus';
-            locationPayload.customAddress = locationData.customAddress.trim();
+            // Concatenate address parts for storage
+            const addressParts = [
+              locationData.customAddress.trim(),
+              locationData.customCity.trim(),
+              locationData.customState.trim()
+            ].filter(part => part !== '');
+            locationPayload.customAddress = addressParts.join(', ');
             locationPayload.customLatitude = coords.latitude;
             locationPayload.customLongitude = coords.longitude;
           } catch (error) {
             console.error('Geocoding failed:', error);
-            toast.error('Could not verify address. Location will be set to default.');
-            // Fallback to UCR Main Campus
-            locationPayload.locationType = 'on_campus';
-            const defaultLocation = CAMPUS_LOCATIONS.find(loc => loc.name.includes('UCR Main Campus'));
-            if (defaultLocation) {
-              locationPayload.campusLocationName = defaultLocation.name;
-            }
+            setAddressError('Invalid address. Please check your address and try again.');
+            return; // Stop form submission and keep modal open
           }
         } else {
           // Fallback to UCR Main Campus if no valid location is provided
@@ -381,25 +391,34 @@ export default function Onboarding() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl p-8 w-full max-w-md"
+        className="bg-white rounded-2xl p-10 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Hey, {user?.name || 'there'}!</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Hey, {user?.name ? user.name.split(' ')[0] : 'there'}!</h1>
           <p className="text-gray-600">Let's set up your profile</p>
           
           {/* Progress indicator */}
           <div className="flex justify-center mt-6">
             <div className="flex space-x-2">
-              <div className={`w-3 h-3 rounded-full ${currentStep === 1 ? 'bg-blue-600' : currentStep > 1 ? 'bg-blue-200' : 'bg-gray-300'}`}></div>
-              <div className={`w-3 h-3 rounded-full ${currentStep === 2 ? 'bg-blue-600' : currentStep > 2 ? 'bg-blue-200' : 'bg-gray-300'}`}></div>
-              <div className={`w-3 h-3 rounded-full ${currentStep === 3 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+              <div 
+                className={`w-3 h-3 rounded-full ${currentStep > 1 ? 'bg-gray-300' : 'bg-gray-300'}`}
+                style={{ backgroundColor: currentStep === 1 ? '#003DA5' : currentStep > 1 ? '#b3c7f0' : '' }}
+              ></div>
+              <div 
+                className={`w-3 h-3 rounded-full ${currentStep > 2 ? 'bg-gray-300' : 'bg-gray-300'}`}
+                style={{ backgroundColor: currentStep === 2 ? '#003DA5' : currentStep > 2 ? '#b3c7f0' : '' }}
+              ></div>
+              <div 
+                className={`w-3 h-3 rounded-full bg-gray-300`}
+                style={{ backgroundColor: currentStep === 3 ? '#003DA5' : '' }}
+              ></div>
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-2">Step {currentStep} of 3</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="relative overflow-hidden" style={{ minHeight: '400px' }}>
+          <div className="relative" style={{ minHeight: '400px' }}>
             <AnimatePresence mode="wait" custom={currentStep}>
               {currentStep === 1 && (
                 <motion.div
@@ -424,7 +443,10 @@ export default function Onboarding() {
                     <select
                       value={formData.year}
                       onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                      style={{ '--tw-ring-color': '#003DA5' }}
+                      onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                      onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                       required
                     >
                       <option value="">Select your year</option>
@@ -446,9 +468,14 @@ export default function Onboarding() {
                           type="text"
                           value={formData.major || majorSearchTerm}
                           onChange={handleMajorSearchChange}
-                          onFocus={() => setIsMajorDropdownOpen(true)}
+                          onFocus={(e) => {
+                            setIsMajorDropdownOpen(true);
+                            e.target.style.borderColor = '#003DA5';
+                          }}
+                          onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                           placeholder="Search for your major..."
-                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                          style={{ '--tw-ring-color': '#003DA5' }}
                           required
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -554,9 +581,12 @@ export default function Onboarding() {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Tell us a bit about yourself..."
+                      placeholder="Tell us a bit about yourself!"
                       rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200 resize-none"
+                      style={{ '--tw-ring-color': '#003DA5' }}
+                      onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                      onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                     />
                   </div>
                 </motion.div>
@@ -590,11 +620,15 @@ export default function Onboarding() {
                           name="locationType"
                           value="on_campus"
                           checked={locationData.locationType === 'on_campus'}
-                          onChange={(e) => setLocationData({ ...locationData, locationType: e.target.value, customAddress: '', campusLocationName: '' })}
-                          className="h-4 w-4 text-blue-600"
+                          onChange={(e) => {
+                            setLocationData({ ...locationData, locationType: e.target.value, customAddress: '', customCity: '', customState: '', campusLocationName: '', showLocationInProfile: true });
+                            setAddressError(''); // Clear address error when changing location type
+                          }}
+                          className="h-4 w-4"
+                          style={{ accentColor: '#003DA5' }}
                         />
                         <label htmlFor="on_campus" className="ml-3 flex items-center">
-                          <Home className="w-4 h-4 mr-2 text-blue-600" />
+                          <Home className="w-4 h-4 mr-2" style={{ color: '#003DA5' }} />
                           On-Campus
                         </label>
                       </div>
@@ -605,35 +639,19 @@ export default function Onboarding() {
                           name="locationType"
                           value="off_campus"
                           checked={locationData.locationType === 'off_campus'}
-                          onChange={(e) => setLocationData({ ...locationData, locationType: e.target.value, campusLocationName: '', customAddress: '' })}
-                          className="h-4 w-4 text-blue-600"
+                          onChange={(e) => {
+                            setLocationData({ ...locationData, locationType: e.target.value, campusLocationName: '', customAddress: '', customCity: '', customState: '', showLocationInProfile: true });
+                            setAddressError(''); // Clear address error when changing location type
+                          }}
+                          className="h-4 w-4"
+                          style={{ accentColor: '#003DA5' }}
                         />
                         <label htmlFor="off_campus" className="ml-3 flex items-center">
-                          <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                          <MapPin className="w-4 h-4 mr-2" style={{ color: '#003DA5' }} />
                           Off-Campus
                         </label>
                       </div>
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          id="dont_share"
-                          name="locationType"
-                          value="dont_share"
-                          checked={locationData.locationType === 'dont_share'}
-                          onChange={(e) => setLocationData({ 
-                            ...locationData, 
-                            locationType: e.target.value, 
-                            campusLocationName: 'UCR Main Campus (default)', 
-                            customAddress: '',
-                            showLocationInProfile: false
-                          })}
-                          className="h-4 w-4 text-blue-600"
-                        />
-                        <label htmlFor="dont_share" className="ml-3 flex items-center">
-                          <X className="w-4 h-4 mr-2 text-gray-600" />
-                          Don't Share
-                        </label>
-                      </div>
+
                     </div>
                   </div>
 
@@ -645,7 +663,10 @@ export default function Onboarding() {
                       <select
                         value={locationData.campusLocationName}
                         onChange={(e) => setLocationData({ ...locationData, campusLocationName: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                        style={{ '--tw-ring-color': '#003DA5' }}
+                        onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                        onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                       >
                         <option value="">Select a residence hall</option>
                         {CAMPUS_LOCATIONS
@@ -660,19 +681,72 @@ export default function Onboarding() {
                   )}
 
                   {locationData.locationType === 'off_campus' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Enter your address
-                      </label>
-                      <input
-                        type="text"
-                        value={locationData.customAddress}
-                        onChange={(e) => setLocationData({ ...locationData, customAddress: e.target.value })}
-                        placeholder="123 Main St, Riverside, CA"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                      />
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Street Address
+                        </label>
+                        <input
+                          type="text"
+                          value={locationData.customAddress}
+                          onChange={(e) => {
+                            setLocationData({ ...locationData, customAddress: e.target.value });
+                            setAddressError(''); // Clear address error when user modifies address
+                          }}
+                          placeholder="123 Main St"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                          style={{ '--tw-ring-color': '#003DA5' }}
+                          onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                          onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            City
+                          </label>
+                          <input
+                            type="text"
+                            value={locationData.customCity}
+                            onChange={(e) => {
+                              setLocationData({ ...locationData, customCity: e.target.value });
+                              setAddressError(''); // Clear address error when user modifies city
+                            }}
+                            placeholder="City"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                            style={{ '--tw-ring-color': '#003DA5' }}
+                            onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            State
+                          </label>
+                          <input
+                            type="text"
+                            value={locationData.customState}
+                            onChange={(e) => {
+                              setLocationData({ ...locationData, customState: e.target.value });
+                              setAddressError(''); // Clear address error when user modifies state
+                            }}
+                            placeholder="State"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                            style={{ '--tw-ring-color': '#003DA5' }}
+                            onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                          />
+                        </div>
+                      </div>
+                      
                       {isGeocoding && (
-                        <p className="text-sm text-blue-600 mt-1">Verifying address...</p>
+                        <p className="text-sm mt-1" style={{ color: '#003DA5' }}>Verifying address...</p>
+                      )}
+                      
+                      {addressError && (
+                        <p className="text-sm mt-1 text-red-600">{addressError}</p>
                       )}
                     </div>
                   )}
@@ -685,29 +759,43 @@ export default function Onboarding() {
                         id="showLocation"
                         checked={locationData.showLocationInProfile}
                         onChange={(e) => setLocationData({ ...locationData, showLocationInProfile: e.target.checked })}
-                        className="h-4 w-4 text-blue-600 rounded"
+                        className="h-4 w-4 rounded"
+                        style={{ accentColor: '#003DA5' }}
                       />
                       <label htmlFor="showLocation" className="ml-3 text-sm text-gray-700">
-                        Show my general location in my profile (helps buyers find nearby items)
+                        Show my general location in my profile (ex. Dundee, Glen Mor, Off-Campus)
                       </label>
                     </div>
                   )}
 
-                  {/* Don't Share explanation */}
-                  {locationData.locationType === 'dont_share' && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600">
-                        Your location will be set to UCR Main Campus by default for app functionality, but won't be visible in your profile.
-                      </p>
+
+
+                  {/* Clear selection button */}
+                  {locationData.locationType && (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setLocationData({ 
+                          ...locationData, 
+                          locationType: '', 
+                          campusLocationName: '', 
+                          customAddress: '',
+                          customCity: '',
+                          customState: '',
+                          showLocationInProfile: false 
+                        })}
+                        className="text-sm text-gray-600 hover:text-gray-800 underline transition duration-200"
+                      >
+                        Clear selection
+                      </button>
                     </div>
                   )}
 
                   {/* General note */}
                   {!locationData.locationType && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        <strong>Note:</strong> You can skip this step and set your location later in your profile settings. 
-                        If no location is provided, you'll be set to UCR Main Campus by default.
+                    <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: '#f0f4ff' }}>
+                      <p className="text-sm" style={{ color: '#003DA5' }}>
+                        <strong>Note:</strong> If you don't select an option, your location will be set to UCR's campus for our location-based features. You can always update this later in your profile settings.
                       </p>
                     </div>
                   )}
@@ -718,7 +806,7 @@ export default function Onboarding() {
         </form>
 
         {/* Navigation buttons - moved outside form */}
-        <div className="flex justify-between pt-6">
+        <div className="flex justify-between pt-24">
           {currentStep === 1 ? (
             <div></div>
           ) : (
@@ -736,7 +824,10 @@ export default function Onboarding() {
             <button
               type="button"
               onClick={handleNext}
-              className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition duration-200"
+              className="flex items-center px-6 py-3 text-white rounded-lg font-medium transition duration-200"
+              style={{ backgroundColor: '#003DA5' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#002d7a'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#003DA5'}
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -746,7 +837,10 @@ export default function Onboarding() {
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 text-white rounded-lg font-medium transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: isSubmitting ? '#003DA5' : '#003DA5' }}
+              onMouseEnter={(e) => !isSubmitting && (e.target.style.backgroundColor = '#002d7a')}
+              onMouseLeave={(e) => !isSubmitting && (e.target.style.backgroundColor = '#003DA5')}
             >
               {isSubmitting ? 'Setting up your profile...' : 'Complete Setup'}
             </button>

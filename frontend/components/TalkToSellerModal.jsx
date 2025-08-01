@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquareTextIcon, XIcon } from 'lucide-react';
+import { MessageCircleMore, XIcon } from 'lucide-react';
 
 export default function TalkToSellerModal({ 
   onClose, 
@@ -45,7 +45,7 @@ export default function TalkToSellerModal({
 
         {/* MODAL HEADER */}
         <div className="flex items-center gap-2 mb-6">
-          <MessageSquareTextIcon className="h-6 w-6 text-primary" />
+          <MessageCircleMore className="h-6 w-6 text-primary" />
           <h3 className="font-bold text-xl">Message Seller</h3>
         </div>
 
@@ -101,7 +101,7 @@ export default function TalkToSellerModal({
                 </>
               ) : (
                 <>
-                  <MessageSquareTextIcon className="h-4 w-4 mr-2" />
+                  <MessageCircleMore className="h-4 w-4 mr-2" />
                   Send Message
                 </>
               )}

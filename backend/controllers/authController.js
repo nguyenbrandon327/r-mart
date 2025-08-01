@@ -309,6 +309,47 @@ export const resetPassword = async (req, res) => {
     }
 };
 
+export const resendVerificationCode = async (req, res) => {
+    try {
+        const user = req.user; // From protectRoute middleware
+        
+        // Check if user is already verified
+        if (user.isverified) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is already verified"
+            });
+        }
+        
+        // Generate new verification token
+        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Update user with new verification token and expiration
+        await sql`
+            UPDATE users 
+            SET verificationToken=${verificationToken}, 
+                verificationTokenExpiresAt=NOW() + INTERVAL '1 day'
+            WHERE id=${user.id}
+        `;
+        
+        // Send verification email
+        await sendVerificationEmail(user.email, verificationToken);
+        
+        res.status(200).json({
+            success: true,
+            message: "Verification code sent successfully"
+        });
+        
+    } catch (error) {
+        console.log("Error resending verification code:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error sending verification code",
+            error: error.message
+        });
+    }
+};
+
 export const checkAuth = async (req, res) => {
     try {
         // The protectRoute middleware already added the user to req
@@ -321,6 +362,7 @@ export const checkAuth = async (req, res) => {
                 email: req.user.email,
                 profile_pic: req.user.profile_pic,
                 description: req.user.description,
+                isVerified: req.user.isverified,
                 isOnboarded: req.user.isonboarded || false
             }
         });

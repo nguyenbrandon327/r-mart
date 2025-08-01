@@ -33,28 +33,20 @@ const LoginPage = () => {
 	};
 
 	return (
-		<motion.div
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.5 }}
-			className='flex flex-col max-w-4xl w-full bg-base-200 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden'
-		>
-			<div className="flex flex-col md:flex-row">
-				{/* Left side with image */}
-				<div className="w-full md:w-1/2 relative hidden md:block">
-					<div 
-						className="h-full bg-cover bg-center" 
-						style={{ backgroundImage: 'url("/login.jpg")' }}
-					/>
-				</div>
-
-				{/* Right side with login form */}
-				<div className='w-full md:w-1/2 p-8'>
+		<div className="flex flex-col md:flex-row h-screen w-full overflow-hidden">
+			{/* Left side with login form */}
+			<motion.div
+				initial={{ opacity: 0, x: -20 }}
+				animate={{ opacity: 1, x: 0 }}
+				transition={{ duration: 0.5 }}
+				className='w-full md:w-1/2 bg-base-100 p-8 flex flex-col justify-center'
+			>
+				<div className="max-w-md mx-auto w-full">
 					<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text'>
 						Welcome Back
 					</h2>
 
-					<form onSubmit={handleLogin}>
+					<form onSubmit={handleLogin} className="mb-8">
 						<Input
 							icon={Mail}
 							type='email'
@@ -88,17 +80,31 @@ const LoginPage = () => {
 							{isLoading ? <Loader className='w-6 h-6 animate-spin mx-auto' /> : "Login"}
 						</motion.button>
 					</form>
+
+					<div className='text-center'>
+						<p className='text-sm text-base-content/70'>
+							Don't have an account?{" "}
+							<Link href='/auth/signup' className='text-secondary hover:underline'>
+								Sign up
+							</Link>
+						</p>
+					</div>
 				</div>
-			</div>
-			<div className='px-8 py-4 bg-base-300 flex justify-center mt-auto'>
-				<p className='text-sm text-base-content/70'>
-					Don't have an account?{" "}
-					<Link href='/auth/signup' className='text-secondary hover:underline'>
-						Sign up
-					</Link>
-				</p>
-			</div>
-		</motion.div>
+			</motion.div>
+
+			{/* Right side with image */}
+			<motion.div
+				initial={{ opacity: 0, x: 20 }}
+				animate={{ opacity: 1, x: 0 }}
+				transition={{ duration: 0.5, delay: 0.2 }}
+				className="w-full md:w-1/2 relative hidden md:block"
+			>
+				<div 
+					className="h-full bg-cover bg-center" 
+					style={{ backgroundImage: 'url("/login.jpg")' }}
+				/>
+			</motion.div>
+		</div>
 	);
 };
 export default LoginPage;

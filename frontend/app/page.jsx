@@ -72,21 +72,38 @@ export default function HomePage() {
             background: 'linear-gradient(to right, rgba(0, 61, 165, 0.9) 0%, rgba(0, 61, 165, 0.5) 40%, rgba(0, 61, 165, 0.2) 60%, transparent 75%)'
           }}
         >
-          <div className="text-left text-white pl-16 md:pl-24 pr-8 md:pr-12 max-w-2xl ml-8 md:ml-16">
-            <h2 className="text-2xl md:text-3xl font-extrabold mb-3" dangerouslySetInnerHTML={{__html: "Made for students,<br/>by students"}}></h2>
-            <p className="text-base md:text-lg mb-4">Buy and sell with other verified UCR students</p>
-            <Link 
-              href="/landing"
-              className="btn btn-md"
-              style={{
-                backgroundColor: '#FFB81C',
-                borderColor: '#FFB81C',
-                color: '#fff'
-              }}
-            >
-              Learn more
-            </Link>
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-left text-white max-w-2xl">
+            <h2 className="text-2xl md:text-3xl font-extrabold mb-3" dangerouslySetInnerHTML={{__html: "Looking to declutter <br/>before Fall quarter?"}}></h2>
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <Link 
+                href={isAuthenticated ? "/add-listing" : "/auth/login"}
+                className="btn btn-md bg-white text-black border-white hover:bg-gray-100 hover:border-gray-100"
+              >
+                Sell Now
+              </Link>
+              <Link 
+                href="/landing"
+                className="text-white hover:text-gray-200 hover:underline transition-colors duration-200 text-sm"
+              >
+                Learn More
+              </Link>
+            </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Browse All Listings Button */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="flex justify-center">
+          <Link 
+            href="/all-products"
+            className="px-8 py-4 bg-gradient-to-r from-[#003DA5] to-[#0056d9] text-white font-semibold text-lg hover:from-[#002b7a] hover:to-[#0044b8] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            style={{ borderRadius: '0px' }}
+          >
+            Browse All Listings
+          </Link>
         </div>
       </div>
 
@@ -97,6 +114,7 @@ export default function HomePage() {
           icon="👁️"
           products={recentlyViewedProducts}
           loading={recentlyViewedLoading}
+          sourceContext="home"
         />
       )}
 
@@ -106,6 +124,7 @@ export default function HomePage() {
         icon="🔥"
         products={hotProducts}
         loading={hotProductsLoading}
+        sourceContext="home"
       />
 
       {/* Just Posted listings */}
@@ -114,6 +133,7 @@ export default function HomePage() {
         icon="⚡"
         products={recentProducts}
         loading={recentProductsLoading}
+        sourceContext="home"
       />
     </div>
   );

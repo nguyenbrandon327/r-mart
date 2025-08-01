@@ -5,7 +5,17 @@ import { useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { searchProducts, setFilters, clearFilters } from '../../store/slices/searchSlice';
 import SearchProductCard from '../../components/SearchProductCard';
-import { Filter as FilterIcon, X as XIcon } from 'lucide-react';
+import { 
+  Filter as FilterIcon, 
+  X as XIcon,
+  SparklesIcon,
+  MapPinIcon,
+  ClockIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ChevronDownIcon
+} from 'lucide-react';
+import Breadcrumb, { createBreadcrumbs } from '../../components/Breadcrumb';
 
 const categories = [
   'All',
@@ -44,6 +54,14 @@ const getCategoryLabel = (category) => {
   return categoryLabels[category] || category;
 };
 
+const sortOptions = [
+  { value: 'best_match', label: 'Best match', icon: SparklesIcon, description: 'Most relevant items' },
+  { value: 'distance', label: 'Distance', icon: MapPinIcon, description: 'Closest to you' },
+  { value: 'recent_first', label: 'Recent first', icon: ClockIcon, description: 'Newest listings' },
+  { value: 'price_low_high', label: 'Price: Low to high', icon: ArrowUpIcon, description: 'Cheapest first' },
+  { value: 'price_high_low', label: 'Price: High to low', icon: ArrowDownIcon, description: 'Most expensive first' }
+];
+
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
@@ -58,8 +76,11 @@ export default function SearchPage() {
     offset, 
     filters 
   } = useSelector((state) => state.search);
+  
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [showFilters, setShowFilters] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     category: '',
     minPrice: '',
@@ -118,6 +139,29 @@ export default function SearchPage() {
     }));
   };
 
+  const handleSortChange = (newSort) => {
+    if (newSort === 'distance' && !isAuthenticated) {
+      alert('Please log in to sort by distance');
+      return;
+    }
+    
+    const updatedFilters = {
+      ...localFilters,
+      sort: newSort
+    };
+    setLocalFilters(updatedFilters);
+    dispatch(setFilters(updatedFilters));
+    dispatch(searchProducts({ 
+      query, 
+      ...updatedFilters,
+      offset: 0 
+    }));
+    setIsDropdownOpen(false);
+  };
+
+  const currentSortOption = sortOptions.find(option => option.value === (filters.sort || 'best_match'));
+  const CurrentIcon = currentSortOption?.icon || SparklesIcon;
+
   const loadMore = () => {
     dispatch(searchProducts({ 
       query, 
@@ -131,6 +175,14 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-6">
+        {/* Breadcrumb */}
+        {query && (
+          <Breadcrumb 
+            items={createBreadcrumbs.search(query)}
+            className="mb-6"
+          />
+        )}
+        
         {/* Search Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold mb-2">
@@ -140,16 +192,76 @@ export default function SearchPage() {
             <p className="text-base-content/70">
               {total > 0 ? `Found ${total} products` : 'No products found'}
             </p>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="btn btn-sm btn-ghost gap-2"
-            >
-              <FilterIcon className="size-4" />
-              Filters
-              {hasActiveFilters && (
-                <span className="badge badge-primary badge-sm">{Object.values(filters).filter(Boolean).length}</span>
-              )}
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Enhanced Sort Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 bg-base-100 border border-base-300 rounded-lg hover:border-primary/50 transition-all duration-200 min-w-[180px] shadow-sm hover:shadow-md"
+                >
+                  <CurrentIcon className="size-4 text-primary" />
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-sm">{currentSortOption?.label}</div>
+                    <div className="text-xs text-base-content/60">{currentSortOption?.description}</div>
+                  </div>
+                  <ChevronDownIcon className={`size-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 overflow-hidden">
+                    {sortOptions.map((option) => {
+                      const OptionIcon = option.icon;
+                      const isDisabled = option.value === 'distance' && !isAuthenticated;
+                      const isSelected = (filters.sort || 'best_match') === option.value;
+                      
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => !isDisabled && handleSortChange(option.value)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors duration-150 ${
+                            isSelected 
+                              ? 'bg-primary/10 border-r-2 border-r-primary' 
+                              : 'hover:bg-base-200'
+                          } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          disabled={isDisabled}
+                        >
+                          <OptionIcon className={`size-4 ${isSelected ? 'text-primary' : 'text-base-content/60'}`} />
+                          <div className="flex-1">
+                            <div className={`font-medium text-sm ${isSelected ? 'text-primary' : ''}`}>
+                              {option.label}
+                              {isDisabled && ' (Login required)'}
+                            </div>
+                            <div className="text-xs text-base-content/60">{option.description}</div>
+                          </div>
+                          {isSelected && (
+                            <div className="size-2 bg-primary rounded-full"></div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* Click outside handler */}
+                {isDropdownOpen && (
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                )}
+              </div>
+              
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="btn btn-sm btn-ghost gap-2"
+              >
+                <FilterIcon className="size-4" />
+                Filters
+                {hasActiveFilters && (
+                  <span className="badge badge-primary badge-sm">{Object.values(filters).filter(Boolean).length}</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -166,7 +278,7 @@ export default function SearchPage() {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Category Filter */}
               <div>
                 <label className="label">
@@ -181,23 +293,6 @@ export default function SearchPage() {
                   {categories.slice(1).map((cat) => (
                     <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
                   ))}
-                </select>
-              </div>
-
-              {/* Sort Filter */}
-              <div>
-                <label className="label">
-                  <span className="label-text">Sort by</span>
-                </label>
-                <select
-                  value={localFilters.sort}
-                  onChange={(e) => handleFilterChange('sort', e.target.value)}
-                  className="select select-bordered w-full"
-                >
-                  <option value="best_match">Best match</option>
-                  <option value="recent_first">Recent first</option>
-                  <option value="price_low_high">Price: Low to high</option>
-                  <option value="price_high_low">Price: High to low</option>
                 </select>
               </div>
 
@@ -265,9 +360,7 @@ export default function SearchPage() {
             )}
             {filters.sort && filters.sort !== 'best_match' && (
               <div className="badge badge-primary gap-2">
-                Sort: {filters.sort === 'recent_first' ? 'Recent first' : 
-                       filters.sort === 'price_low_high' ? 'Price: Low to high' :
-                       filters.sort === 'price_high_low' ? 'Price: High to low' : filters.sort}
+                Sort: {sortOptions.find(opt => opt.value === filters.sort)?.label || filters.sort}
                 <button
                   onClick={() => {
                     dispatch(setFilters({ sort: 'best_match' }));

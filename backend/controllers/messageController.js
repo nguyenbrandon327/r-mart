@@ -147,7 +147,7 @@ export const getChats = async (req, res) => {
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id) as message_count,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id AND sender_id != ${currentUserId} AND seen_at IS NULL) as unread_count,
                 (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
-                (SELECT created_at AT TIME ZONE 'UTC' FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_at
+                (SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_at
             FROM chats c
             LEFT JOIN users u1 ON c.user1_id = u1.id
             LEFT JOIN users u2 ON c.user2_id = u2.id
@@ -238,21 +238,17 @@ export const getMessages = async (req, res) => {
             SELECT 
                 m.*,
                 u.name as sender_name,
-                u.profile_pic as sender_profile_pic,
-                m.created_at AT TIME ZONE 'UTC' as created_at_utc,
-                m.seen_at AT TIME ZONE 'UTC' as seen_at_utc
+                u.profile_pic as sender_profile_pic
             FROM messages m
             LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.chat_id = ${chatId}
             ORDER BY m.created_at ASC
         `;
 
-        // Convert timestamps to proper UTC format for frontend and decrypt text
+        // Decrypt message text
         const formattedMessages = messages.map(message => ({
             ...message,
-            text: safeDecrypt(message.text),
-            created_at: message.created_at_utc ? new Date(message.created_at_utc).toISOString() : message.created_at,
-            seen_at: message.seen_at_utc ? new Date(message.seen_at_utc).toISOString() : message.seen_at
+            text: safeDecrypt(message.text)
         }));
 
         res.status(200).json({
@@ -291,7 +287,7 @@ export const markMessagesAsSeen = async (req, res) => {
         // Mark all unseen messages from other users as seen
         const updatedMessages = await sql`
             UPDATE messages 
-            SET seen_at = NOW() AT TIME ZONE 'UTC'
+            SET seen_at = NOW()
             WHERE chat_id = ${chatId} 
             AND sender_id != ${currentUserId} 
             AND seen_at IS NULL
@@ -414,31 +410,27 @@ export const sendMessage = async (req, res) => {
             const completeMessage = await sql`
                 WITH new_message AS (
                     INSERT INTO messages (chat_id, sender_id, text, image, created_at)
-                    VALUES (${chatId}, ${senderId}, ${encryptedText}, ${imageURL}, NOW() AT TIME ZONE 'UTC')
+                    VALUES (${chatId}, ${senderId}, ${encryptedText}, ${imageURL}, NOW())
                     RETURNING *
                 ),
                 updated_chat AS (
                     UPDATE chats 
-                    SET last_message_at = NOW() AT TIME ZONE 'UTC'
+                    SET last_message_at = NOW()
                     WHERE id = ${chatId}
                     RETURNING id
                 )
                 SELECT 
                     m.*,
                     u.name as sender_name,
-                    u.profile_pic as sender_profile_pic,
-                    m.created_at AT TIME ZONE 'UTC' as created_at_utc,
-                    m.seen_at AT TIME ZONE 'UTC' as seen_at_utc
+                    u.profile_pic as sender_profile_pic
                 FROM new_message m
                 LEFT JOIN users u ON m.sender_id = u.id
             `;
 
-            // Format the timestamp for the response (consistent with getMessages)
+            // Format the message for the response
             const formattedMessage = {
                 ...completeMessage[0],
-                text: safeDecrypt(completeMessage[0].text),
-                created_at: completeMessage[0].created_at_utc ? new Date(completeMessage[0].created_at_utc).toISOString() : completeMessage[0].created_at,
-                seen_at: completeMessage[0].seen_at_utc ? new Date(completeMessage[0].seen_at_utc).toISOString() : completeMessage[0].seen_at
+                text: safeDecrypt(completeMessage[0].text)
             };
 
             // Optimized real-time functionality with socket.io

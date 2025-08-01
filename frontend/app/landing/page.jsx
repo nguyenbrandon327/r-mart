@@ -63,53 +63,85 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="hero min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 relative overflow-hidden">
-        {/* Photo Collage */}
+        {/* Photo Collage - Circling around hero content */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Left side photos */}
-          <img 
-            src="/landing/1.jpg" 
-            alt="Campus life" 
-            className="absolute top-20 left-8 w-72 h-60 object-cover rounded-sm shadow-lg border-4 border-white transform -rotate-12 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
-          <img 
-            src="/landing/2.jpg" 
-            alt="Student items" 
-            className="absolute top-96 left-4 w-64 h-48 object-cover rounded-sm shadow-lg border-4 border-white transform rotate-6 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
-          <img 
-            src="/landing/3.jpg" 
-            alt="Marketplace" 
-            className="absolute bottom-32 left-12 w-56 h-64 object-cover rounded-sm shadow-lg border-4 border-white transform -rotate-6 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
+          {/* Top row - circling around */}
+          <div className="absolute top-16 left-[30%] transform -translate-x-1/2 w-80 h-76 bg-white p-3 pb-8 shadow-lg transform -rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 2 }}>
+            <img 
+              src="/landing/1.jpg" 
+              alt="Campus life" 
+              className="w-full h-60 object-cover"
+            />
+          </div>
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-56 h-80 bg-white p-3 pb-8 shadow-lg transform rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/12.jpg" 
+              alt="UCR campus life" 
+              className="w-full h-64 object-cover"
+            />
+          </div>
+          <div className="absolute top-20 right-1/3 transform translate-x-1/2 w-60 h-84 bg-white p-3 pb-8 shadow-lg transform -rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/4.jpg" 
+              alt="UCR students" 
+              className="w-full h-68 object-cover"
+            />
+          </div>
           
-          {/* Right side photos */}
-          <img 
-            src="/landing/4.jpg" 
-            alt="UCR students" 
-            className="absolute top-32 right-6 w-40 h-52 object-cover rounded-sm shadow-lg border-4 border-white transform rotate-12 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
-          <img 
-            src="/landing/5.jpg" 
-            alt="Campus community" 
-            className="absolute top-80 right-12 w-60 h-40 object-cover rounded-sm shadow-lg border-4 border-white transform -rotate-3 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
-          <img 
-            src="/landing/7.jpg" 
-            alt="Campus community" 
-            className="absolute bottom-80 right-6 w-48 h-40 object-cover rounded-sm shadow-lg border-4 border-white transform rotate-12 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
-          <img 
-            src="/landing/6.jpg" 
-            alt="Student life" 
-            className="absolute bottom-24 right-8 w-44 h-56 object-cover rounded-sm shadow-lg border-4 border-white transform rotate-8 hover:scale-105 transition-transform duration-300"
-            style={{ zIndex: 1 }}
-          />
+          {/* Left side */}
+          <div className="absolute top-3/4 md:top-1/2 left-8 transform -translate-y-1/2 w-92 h-80 bg-white p-3 pb-8 shadow-lg transform rotate-6 hover:scale-105 transition-transform duration-300" style={{ zIndex: 3 }}>
+            <img 
+              src="/landing/2.jpg" 
+              alt="Student items" 
+              className="w-full h-64 object-cover"
+            />
+          </div>
+          <div className="absolute top-1/4 left-20 transform -translate-y-1/2 w-84 h-72 bg-white p-3 pb-8 shadow-lg transform rotate-32 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/10.jpg" 
+              alt="Campus activities" 
+              className="w-full h-56 object-cover"
+            />
+          </div>
+          
+          {/* Right side */}
+          <div className="absolute top-3/4 md:top-1/2 right-8 transform -translate-y-1/2 w-84 h-68 bg-white p-3 pb-8 shadow-lg transform -rotate-3 hover:scale-105 transition-transform duration-300" style={{ zIndex: 2 }}>
+            <img 
+              src="/landing/5.jpg" 
+              alt="Campus community" 
+              className="w-full h-52 object-cover"
+            />
+          </div>
+          <div className="absolute top-1/4 right-16 transform -translate-y-1/2 w-72 h-68 bg-white p-3 pb-8 shadow-lg transform rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/7.jpg" 
+              alt="Campus community" 
+              className="w-full h-52 object-cover"
+            />
+          </div>
+          
+          {/* Bottom row */}
+          <div className="absolute bottom-16 left-1/4 transform -translate-x-1/2 w-80 h-96 bg-white p-3 pb-8 shadow-lg transform -rotate-6 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/3.jpg" 
+              alt="Marketplace" 
+              className="w-full h-80 object-cover"
+            />
+          </div>
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-80 h-68 bg-white p-3 pb-8 shadow-lg transform -rotate-6 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/11.jpg" 
+              alt="Student community" 
+              className="w-full h-52 object-cover"
+            />
+          </div>
+          <div className="absolute bottom-20 right-1/4 transform translate-x-1/2 w-64 h-88 bg-white p-3 pb-8 shadow-lg transform rotate-3 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
+            <img 
+              src="/landing/6.jpg" 
+              alt="Student life" 
+              className="w-full h-72 object-cover"
+            />
+          </div>
         </div>
 
         <div className="hero-content text-center max-w-4xl relative z-10">
@@ -125,9 +157,6 @@ export default function LandingPage() {
               <Link href="/auth/signup" className="btn btn-primary btn-lg text-lg px-8">
                 Get Started
                 <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="/all-products" className="btn btn-outline btn-lg text-lg px-8">
-                Browse Items
               </Link>
             </div>
           </div>
@@ -204,7 +233,7 @@ export default function LandingPage() {
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="flex-1 flex justify-center lg:justify-start">
               <img 
-                src="/landing/9.jpg" 
+                src="/landing/9.png" 
                 alt="UCR students using marketplace" 
                 className="w-full max-w-sm aspect-square object-cover shadow-lg border-4 border-white"
               />
@@ -242,34 +271,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="footer footer-center p-10 bg-base-200 text-base-content">
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <img 
-              src="/logo-pic.png" 
-              alt="R'mart Logo" 
-              className="size-10 object-contain"
-            />
-            <span className="font-black font-gt-america-expanded tracking-tighter text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-              r'mart
-            </span>
-          </div>
-          <p className="text-base-content/70">
-            UCR's student-exclusive marketplace - built by students, for students.
-          </p>
-        </div>
-        <div>
-          <div className="grid grid-flow-col gap-4">
-            <Link href="/auth/login" className="link link-hover">Login</Link>
-            <Link href="/auth/signup" className="link link-hover">Sign Up</Link>
-            <Link href="/all-products" className="link link-hover">Browse</Link>
-          </div>
-        </div>
-        <div>
-          <p className="text-base-content/50">© 2024 R'Mart - All rights reserved.</p>
-        </div>
-      </footer>
+
     </div>
   );
 }

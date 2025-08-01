@@ -278,7 +278,6 @@ const chatSlice = createSlice({
           // Add basic chat info, will be enriched when getChats is called
           state.chats.unshift(action.payload);
         }
-        toast.success("Chat created successfully!");
       })
       .addCase(createChat.rejected, (state, action) => {
         state.error = action.payload;

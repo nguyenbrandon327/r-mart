@@ -1,4 +1,6 @@
 import { esClient, PRODUCT_INDEX } from '../config/elasticsearch.js';
+import { sql } from '../config/db.js';
+import { calculateDistance, getUserCoordinates } from '../utils/distanceCalculator.js';
 
 // Search products by title and description
 export const searchProducts = async (req, res) => {
@@ -10,6 +12,11 @@ export const searchProducts = async (req, res) => {
         success: false,
         message: 'Search query is required'
       });
+    }
+
+    // Handle distance-based search separately
+    if (sort === 'distance') {
+      return await searchProductsByDistance(req, res);
     }
 
     // Build the search query
@@ -95,6 +102,134 @@ export const searchProducts = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to search products',
+      error: error.message
+    });
+  }
+};
+
+// Search products with distance-based sorting
+const searchProductsByDistance = async (req, res) => {
+  try {
+    const { q, category, minPrice, maxPrice, maxDistance = 50, limit = 20, offset = 0 } = req.query;
+    const currentUserId = req.user?.id;
+
+    if (!currentUserId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required for distance-based searching"
+      });
+    }
+
+    // Get current user's location
+    const [currentUser] = await sql`
+      SELECT location_type, campus_location_name, custom_latitude, custom_longitude
+      FROM users 
+      WHERE id = ${currentUserId}
+    `;
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const userCoordinates = getUserCoordinates(currentUser);
+    if (!userCoordinates) {
+      return res.status(400).json({
+        success: false,
+        message: "User location not set. Please update your location in profile settings."
+      });
+    }
+
+    // First get products from database with location data
+    let products;
+    if (category) {
+      products = await sql`
+        SELECT p.*, 
+               u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+               u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
+        FROM products p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE p.is_sold = false AND p.category = ${category}
+      `;
+    } else {
+      products = await sql`
+        SELECT p.*, 
+               u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+               u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
+        FROM products p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE p.is_sold = false
+      `;
+    }
+
+    // Calculate distances and filter by maxDistance
+    const productsWithDistance = [];
+
+    for (const product of products) {
+      const sellerCoordinates = getUserCoordinates({
+        location_type: product.location_type,
+        campus_location_name: product.campus_location_name,
+        custom_latitude: product.custom_latitude,
+        custom_longitude: product.custom_longitude
+      });
+
+      if (sellerCoordinates) {
+        const distance = calculateDistance(
+          userCoordinates.latitude,
+          userCoordinates.longitude,
+          sellerCoordinates.latitude,
+          sellerCoordinates.longitude
+        );
+
+        if (distance <= maxDistance) {
+          productsWithDistance.push({
+            ...product,
+            distance: distance,
+            seller_location: product.location_type === 'on_campus' 
+              ? product.campus_location_name 
+              : 'Off-campus'
+          });
+        }
+      }
+    }
+
+    // Now filter by search query using JavaScript (since we need location data)
+    let filteredProducts = productsWithDistance.filter(product => {
+      const searchText = `${product.name} ${product.description}`.toLowerCase();
+      const queryLower = q.toLowerCase();
+      return searchText.includes(queryLower);
+    });
+
+    // Apply price filters
+    if (minPrice) {
+      filteredProducts = filteredProducts.filter(product => product.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      filteredProducts = filteredProducts.filter(product => product.price <= parseFloat(maxPrice));
+    }
+
+    // Sort by distance
+    filteredProducts.sort((a, b) => a.distance - b.distance);
+
+    // Apply pagination
+    const total = filteredProducts.length;
+    const paginatedProducts = filteredProducts.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: paginatedProducts,
+      total: total,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+  } catch (error) {
+    console.error('Error in searchProductsByDistance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to search products by distance',
       error: error.message
     });
   }

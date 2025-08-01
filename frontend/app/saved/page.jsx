@@ -7,6 +7,7 @@ import { BookmarkIcon } from 'lucide-react';
 import { fetchSavedProducts } from '../../store/slices/savedProductsSlice';
 import SavedProductGroup from '../../components/SavedProductGroup';
 import AuthGuard from '../../components/AuthGuard';
+import Breadcrumb, { createBreadcrumbs } from '../../components/Breadcrumb';
 
 export default function SavedPage() {
   const dispatch = useDispatch();
@@ -43,6 +44,12 @@ export default function SavedPage() {
   return (
     <AuthGuard>
       <div className="container mx-auto px-4 py-8">
+      {/* Breadcrumb */}
+      <Breadcrumb 
+        items={createBreadcrumbs.saved()}
+        className="mb-6"
+      />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center mb-2">
           <BookmarkIcon className="w-7 h-7 mr-2" />

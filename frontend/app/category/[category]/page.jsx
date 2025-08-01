@@ -26,6 +26,7 @@ import {
   ChevronDownIcon
 } from 'lucide-react';
 import AddProductModal from "../../../components/EditProductModal";
+import Breadcrumb, { createBreadcrumbs } from "../../../components/Breadcrumb";
 
 const categoryLabels = {
   'clothes': 'Clothes',
@@ -108,6 +109,12 @@ export default function CategoryPage({ params }) {
   
   return (
     <div>
+      {/* Breadcrumb */}
+      <Breadcrumb 
+        items={createBreadcrumbs.category(categoryLabel)}
+        className="mb-6"
+      />
+      
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center mb-2">

@@ -20,9 +20,9 @@ const initialState = {
 // Async thunks
 export const signup = createAsyncThunk(
   'auth/signup',
-  async ({ email, password, name }, { rejectWithValue }) => {
+  async ({ email, password, name, captchaToken }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/signup`, { email, password, name });
+      const response = await axios.post(`${API_URL}/signup`, { email, password, name, captchaToken });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data.message || "Error signing up");
@@ -98,6 +98,18 @@ export const resetPassword = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data.message || "Error resetting password");
+    }
+  }
+);
+
+export const resendVerificationCode = createAsyncThunk(
+  'auth/resendVerificationCode',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/resend-verification-code`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data.message || "Error resending verification code");
     }
   }
 );
@@ -218,6 +230,20 @@ const authSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(resetPassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Resend Verification Code
+      .addCase(resendVerificationCode.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(resendVerificationCode.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.message = action.payload.message;
+      })
+      .addCase(resendVerificationCode.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

@@ -102,7 +102,7 @@ async function initDB() {
         description TEXT,
         user_id INTEGER REFERENCES users(id),
         is_sold BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles')
       )
     `;
 
@@ -133,13 +133,13 @@ async function initDB() {
         year VARCHAR(50),
         major VARCHAR(255),
         isOnboarded BOOLEAN DEFAULT FALSE,
-        lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        lastLogin TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
         isVerified BOOLEAN DEFAULT FALSE,
         resetPasswordToken VARCHAR(255),
-        resetPasswordExpiresAt TIMESTAMP,
+        resetPasswordExpiresAt TIMESTAMPTZ,
         verificationToken VARCHAR(255),
-        verificationTokenExpiresAt TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        verificationTokenExpiresAt TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
         googleId VARCHAR(255)
       )
     `;
@@ -156,9 +156,9 @@ async function initDB() {
         user1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         user2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
+        updated_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
+        last_message_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
         UNIQUE(user1_id, user2_id, product_id)
       )
     `;
@@ -177,9 +177,9 @@ async function initDB() {
             sender_id INTEGER NOT NULL REFERENCES users(id),
             text TEXT,
             image TEXT,
-            seen_at TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            seen_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
+            updated_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles')
           )
         `;
 
@@ -195,7 +195,7 @@ async function initDB() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-        viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        viewed_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'),
         UNIQUE(user_id, product_id)
       )
     `;

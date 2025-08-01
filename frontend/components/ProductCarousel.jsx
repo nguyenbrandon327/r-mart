@@ -30,7 +30,8 @@ export default function ProductCarousel({
   icon, 
   products = [], 
   loading = false, 
-  className = "mb-12" 
+  className = "mb-12",
+  sourceContext = null
 }) {
   const carouselRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -133,14 +134,14 @@ export default function ProductCarousel({
 
           <div 
             ref={carouselRef} 
-            className="flex overflow-x-auto gap-6 pb-4 pt-2 px-2 scrollbar-optimized"
+            className="flex overflow-x-auto gap-5 pb-4 pt-2 px-2 scrollbar-optimized"
           >
             {products.map((product) => (
               <div 
                 key={product.id} 
-                className="flex-none w-[170px] sm:w-[220px] md:w-[260px] lg:w-[280px] xl:w-[300px]"
+                className="flex-none w-[160px] sm:w-[180px] md:w-[210px] lg:w-[235px] xl:w-[245px] 2xl:w-[255px]"
               >
-                <ProductCard product={product} />
+                <ProductCard product={product} sourceContext={sourceContext} />
               </div>
             ))}
           </div>

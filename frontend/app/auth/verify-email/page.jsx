@@ -8,10 +8,12 @@ import toast from "react-hot-toast";
 
 const EmailVerificationPage = () => {
 	const [code, setCode] = useState(["", "", "", "", "", ""]);
+	const [resendCooldown, setResendCooldown] = useState(0);
+	const [resendLoading, setResendLoading] = useState(false);
 	const inputRefs = useRef([]);
 	const router = useRouter();
 
-	const { isLoading, verifyEmail, clearError } = useAuthStore();
+	const { isLoading, verifyEmail, resendVerificationCode, clearError, clearMessage } = useAuthStore();
 
 	// Clear any existing errors when component mounts
 	useEffect(() => {
@@ -65,8 +67,8 @@ const EmailVerificationPage = () => {
 			}
 			toast.success("Email verified successfully");
 		} catch (error) {
-			// Don't show the error message, just keep the form as is
 			console.log(error);
+			toast.error("Invalid or expired verification code. Please try again.");
 		}
 	};
 
@@ -76,6 +78,35 @@ const EmailVerificationPage = () => {
 			handleSubmit(new Event("submit"));
 		}
 	}, [code]);
+
+	// Countdown timer for resend cooldown
+	useEffect(() => {
+		let interval = null;
+		if (resendCooldown > 0) {
+			interval = setInterval(() => {
+				setResendCooldown((prevCooldown) => prevCooldown - 1);
+			}, 1000);
+		} else if (resendCooldown === 0) {
+			clearInterval(interval);
+		}
+		return () => clearInterval(interval);
+	}, [resendCooldown]);
+
+	const handleResend = async () => {
+		if (resendCooldown > 0) return;
+		
+		setResendLoading(true);
+		try {
+			await resendVerificationCode();
+			toast.success("Verification code sent successfully!");
+			setResendCooldown(60); // 60 second cooldown
+			clearMessage();
+		} catch (error) {
+			toast.error(error.message || "Failed to resend verification code");
+		} finally {
+			setResendLoading(false);
+		}
+	};
 
 	return (
 		<div className='max-w-md w-full bg-base-200 rounded-2xl shadow-xl overflow-hidden'>
@@ -115,6 +146,27 @@ const EmailVerificationPage = () => {
 						{isLoading ? "Verifying..." : "Verify Email"}
 					</motion.button>
 				</form>
+				
+				<div className='mt-4 text-center'>
+					<p className='text-sm text-base-content/70 mb-3'>
+						Didn't receive the code?
+					</p>
+					<motion.button
+						whileHover={{ scale: resendCooldown === 0 ? 1.05 : 1 }}
+						whileTap={{ scale: resendCooldown === 0 ? 0.95 : 1 }}
+						onClick={handleResend}
+						disabled={resendCooldown > 0 || resendLoading}
+						className='btn btn-outline btn-sm disabled:opacity-50'
+					>
+						{resendLoading ? (
+							<span className="loading loading-spinner loading-sm"></span>
+						) : resendCooldown > 0 ? (
+							`Resend in ${resendCooldown}s`
+						) : (
+							"Resend Code"
+						)}
+					</motion.button>
+				</div>
 			</motion.div>
 		</div>
 	);
