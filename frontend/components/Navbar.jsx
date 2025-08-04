@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserIcon, LogOutIcon, HeartIcon, MessageCircleMore, UserCircleIcon, ChevronDownIcon, PlusIcon, SearchIcon, MenuIcon } from "lucide-react";
+import { UserIcon, LogOutIcon, HeartIcon, MessageCircleMore, UserCircleIcon, ChevronDownIcon, PlusIcon, SearchIcon, MenuIcon, SettingsIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import SearchBar from './SearchBar';
-import { useEffect } from 'react';
+import MobileSearchModal from './MobileSearchModal';
+import { useEffect, useState } from 'react';
 
 function Navbar() {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ function Navbar() {
   const isHomePage = pathname === "/";
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.chat);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   
   // Debug logging to track unread count changes
   useEffect(() => {
@@ -44,7 +46,7 @@ function Navbar() {
   };
 
   const handleMobileSearch = () => {
-    router.push('/search');
+    setIsMobileSearchOpen(true);
   };
 
   return (
@@ -169,9 +171,11 @@ function Navbar() {
                                 className="w-8 h-8 rounded-full object-cover"
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                                <UserCircleIcon className="size-6 text-base-content/70" />
-                              </div>
+                              <img
+                                src="/profile-pic.png"
+                                alt="Default profile picture"
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
                             )}
                           </div>
                         </div>
@@ -182,9 +186,15 @@ function Navbar() {
                           <span>Hello, {user.name}</span>
                         </li>
                         <li>
-                          <Link href={`/profile/${getUsername(user.email)}`} className="justify-between" onClick={closeDropdown}>
+                          <Link href={`/profile/${user.username || getUsername(user.email)}`} className="justify-between" onClick={closeDropdown}>
                             <span>Profile</span>
                             <UserIcon className="size-4" />
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href={`/settings`} className="justify-between" onClick={closeDropdown}>
+                            <span>Settings</span>
+                            <SettingsIcon className="size-4" />
                           </Link>
                         </li>
                         <li>
@@ -201,6 +211,12 @@ function Navbar() {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Search Modal */}
+      <MobileSearchModal 
+        isOpen={isMobileSearchOpen} 
+        onClose={() => setIsMobileSearchOpen(false)} 
+      />
     </div>
   );
 }

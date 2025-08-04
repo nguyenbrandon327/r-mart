@@ -16,6 +16,7 @@ const categories = [
   { value: 'rides', label: 'Rides' },
   { value: 'renting', label: 'Renting' },
   { value: 'merch', label: 'Merch' },
+  { value: 'tickets', label: 'Tickets' },
   { value: 'other', label: 'Other' },
   { value: 'in-searching-for', label: 'I\'m searching for' }
 ];
@@ -45,11 +46,11 @@ function SecondaryNavbar() {
   return (
     <div className="bg-base-200 py-2 px-4 shadow-sm sticky top-16 z-30">
       <div className="container mx-auto flex justify-center">
-        {/* Desktop view - show all categories */}
-        <div className="hidden lg:flex items-center overflow-x-auto hide-scrollbar max-w-full">
+        {/* Desktop view - show all categories with responsive sizing */}
+        <div className="hidden lg:flex items-center justify-center flex-wrap gap-0.5 xl:gap-1">
           <Link 
             href="/all-products"
-            className={`flex items-center whitespace-nowrap px-3 py-1.5 mx-1 rounded-md font-medium text-sm transition-colors ${
+            className={`flex items-center whitespace-nowrap px-2 py-1 xl:px-3 xl:py-1.5 rounded-md font-medium text-xs xl:text-sm transition-colors ${
               pathname === '/all-products' ? 'text-[#003DA5] font-bold' : 'hover:bg-base-300'
             }`}
           >
@@ -60,7 +61,7 @@ function SecondaryNavbar() {
             <Link
               key={category.value}
               href={`/category/${category.value}`}
-              className={`whitespace-nowrap px-3 py-1.5 mx-1 rounded-md font-medium text-sm transition-colors ${
+              className={`whitespace-nowrap px-2 py-1 xl:px-3 xl:py-1.5 rounded-md font-medium text-xs xl:text-sm transition-colors ${
                 pathname === `/category/${category.value}` ? 'text-[#003DA5] font-bold' : 'hover:bg-base-300'
               }`}
             >

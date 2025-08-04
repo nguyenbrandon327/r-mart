@@ -16,11 +16,11 @@ const router = express.Router();
 router.post("/create", protectRoute, createChat);
 router.get("/chats", protectRoute, getChats);
 router.get("/unread-count", protectRoute, getUnreadCount);
-router.delete("/chat/:id", protectRoute, deleteChat);
+router.delete("/chat/:ulid", protectRoute, deleteChat);
 
-// Message routes (now work with chat IDs)
-router.get("/chat/:id", protectRoute, getMessages);
-router.post("/chat/:id", protectRoute, sendMessage);
-router.put("/chat/:id/seen", protectRoute, markMessagesAsSeen);
+// Message routes (now work with chat ULIDs)
+router.get("/chat/:ulid", protectRoute, getMessages);
+router.post("/chat/:ulid", protectRoute, sendMessage);
+router.put("/chat/:ulid/seen", protectRoute, markMessagesAsSeen);
 
 export default router;

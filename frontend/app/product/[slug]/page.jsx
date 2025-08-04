@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProduct, deleteProduct, deleteProductImage, resetForm, populateFormData, fetchSellerOtherProducts, markProductAsSold, markProductAsAvailable } from "../../../store/slices/productSlice";
+import { fetchProduct, deleteProduct, resetForm, populateFormData, fetchSellerOtherProducts, markProductAsSold, markProductAsAvailable } from "../../../store/slices/productSlice";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageCircleMore, Trash2Icon, XIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import EditProductModal from "../../../components/EditProductModal";
 import TalkToSellerModal from "../../../components/TalkToSellerModal";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 import UserLink from "../../../components/UserLink";
 import ProductCarousel from "../../../components/ProductCarousel";
 import Breadcrumb, { createBreadcrumbs } from "../../../components/Breadcrumb";
@@ -73,7 +74,7 @@ function SaveButton({ productId }) {
 }
 
 export default function ProductPage({ params }) {
-  const { id } = params;
+  const { slug } = params;
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
@@ -84,11 +85,14 @@ export default function ProductPage({ params }) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [isContactingSeller, setIsContactingSeller] = useState(false);
   const [cameFromHomepage, setCameFromHomepage] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [markSoldLoading, setMarkSoldLoading] = useState(false);
+  const [markAvailableLoading, setMarkAvailableLoading] = useState(false);
   const viewRecordedRef = useRef(null); // Track which product we've recorded a view for
 
   useEffect(() => {
-    dispatch(fetchProduct(id));
-  }, [dispatch, id]);
+    dispatch(fetchProduct(slug));
+  }, [dispatch, slug]);
 
   // Check if user came from homepage
   useEffect(() => {
@@ -119,22 +123,22 @@ export default function ProductPage({ params }) {
   // Record product view when page loads
   useEffect(() => {
     // Only record view if we haven't already recorded it for this product
-    if (viewRecordedRef.current !== id) {
-      viewRecordedRef.current = id;
+    if (viewRecordedRef.current !== slug) {
+      viewRecordedRef.current = slug;
       // fire-and-forget – ignore failures
-      axios.post(`/api/products/${id}/view`, {}, { withCredentials: true }).catch(() => {});
+      axios.post(`/api/products/${slug}/view`, {}, { withCredentials: true }).catch(() => {});
     }
-  }, [id]);
+  }, [slug]);
 
   // Fetch seller's other products when current product loads
   useEffect(() => {
     if (currentProduct && currentProduct.user_id) {
       dispatch(fetchSellerOtherProducts({ 
         userId: currentProduct.user_id, 
-        excludeProductId: id 
+        excludeProductId: currentProduct.id 
       }));
     }
-  }, [dispatch, currentProduct, id]);
+  }, [dispatch, currentProduct]);
 
   const handleContactSeller = () => {
     if (!isAuthenticated) {
@@ -161,11 +165,11 @@ export default function ProductPage({ params }) {
       const messageData = new FormData();
       messageData.append('text', message);
       
-      await sendMessage(messageData, chatResult.id);
+      await sendMessage(messageData, chatResult.ulid);
       
       // Close modal and redirect to chat
       document.getElementById('talk_to_seller_modal')?.close();
-      router.push(`/inbox/${chatResult.id}`);
+      router.push(`/inbox/${chatResult.ulid}`);
     } catch (error) {
       console.error('Failed to create chat or send message:', error);
       toast.error('Failed to send message. Please try again.');
@@ -175,9 +179,15 @@ export default function ProductPage({ params }) {
   };
 
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      await dispatch(deleteProduct(id));
+    setDeleteLoading(true);
+    try {
+      await dispatch(deleteProduct(currentProduct.id));
       router.push("/");
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Failed to delete product. Please try again.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -186,21 +196,29 @@ export default function ProductPage({ params }) {
     document.getElementById("edit_product_modal").showModal();
   };
 
-  const handleDeleteImage = async (imageUrl) => {
-    if (confirm("Are you sure you want to delete this image?")) {
-      await dispatch(deleteProductImage({ productId: id, imageUrl }));
-    }
-  };
+
 
   const handleMarkAsSold = async () => {
-    if (confirm("Are you sure you want to mark this product as sold?")) {
-      await dispatch(markProductAsSold(id));
+    setMarkSoldLoading(true);
+    try {
+      await dispatch(markProductAsSold(currentProduct.id));
+    } catch (error) {
+      console.error('Error marking product as sold:', error);
+      toast.error('Failed to mark product as sold. Please try again.');
+    } finally {
+      setMarkSoldLoading(false);
     }
   };
 
   const handleMarkAsAvailable = async () => {
-    if (confirm("Are you sure you want to mark this product as available?")) {
-      await dispatch(markProductAsAvailable(id));
+    setMarkAvailableLoading(true);
+    try {
+      await dispatch(markProductAsAvailable(currentProduct.id));
+    } catch (error) {
+      console.error('Error marking product as available:', error);
+      toast.error('Failed to mark product as available. Please try again.');
+    } finally {
+      setMarkAvailableLoading(false);
     }
   };
 
@@ -388,6 +406,7 @@ export default function ProductPage({ params }) {
     'rides': 'Rides',
     'renting': 'Renting',
     'merch': 'Merch',
+    'tickets': 'Tickets',
     'other': 'Other',
     'in-searching-for': 'I\'m searching for'
   };
@@ -404,6 +423,45 @@ export default function ProductPage({ params }) {
         productName={currentProduct?.name}
         isLoading={isContactingSeller}
       />
+      
+      {/* Confirmation Modals */}
+      <ConfirmationModal
+        id="delete_product_modal"
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete Product"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={handleDelete}
+        onCancel={() => document.getElementById('delete_product_modal')?.close()}
+        isLoading={deleteLoading}
+      />
+      
+      <ConfirmationModal
+        id="mark_sold_modal"
+        title="Mark as Sold"
+        message="Are you sure you want to mark this product as sold? This will update the product status."
+        confirmText="Mark as Sold"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={handleMarkAsSold}
+        onCancel={() => document.getElementById('mark_sold_modal')?.close()}
+        isLoading={markSoldLoading}
+      />
+      
+      <ConfirmationModal
+        id="mark_available_modal"
+        title="Mark as Available"
+        message="Are you sure you want to mark this product as available? This will update the product status."
+        confirmText="Mark as Available"
+        cancelText="Cancel"
+        type="info"
+        onConfirm={handleMarkAsAvailable}
+        onCancel={() => document.getElementById('mark_available_modal')?.close()}
+        isLoading={markAvailableLoading}
+      />
+      
+
 
       {/* Breadcrumb */}
       {currentProduct && (
@@ -525,6 +583,7 @@ export default function ProductPage({ params }) {
                     name: currentProduct.user_name,
                     user_name: currentProduct.user_name,
                     user_email: currentProduct.user_email,
+                    user_username: currentProduct.user_username,
                     user_profile_pic: currentProduct.user_profile_pic
                   }}
                   showProfilePic={true}
@@ -547,15 +606,15 @@ export default function ProductPage({ params }) {
                 {currentProduct.is_sold ? (
                   <button 
                     className="btn btn-success"
-                    onClick={handleMarkAsAvailable}
-                    disabled={loading}
+                    onClick={() => document.getElementById('mark_available_modal')?.showModal()}
+                    disabled={markAvailableLoading}
                   >
-                    {loading ? (
+                    {markAvailableLoading ? (
                       <span className="loading loading-spinner loading-sm mr-1"></span>
                     ) : (
                       <HeartIcon className="h-5 w-5 mr-1" />
                     )}
-                    {loading ? 'Updating...' : 'Mark as Available'}
+                    {markAvailableLoading ? 'Updating...' : 'Mark as Available'}
                   </button>
                 ) : (
                   <button 
@@ -564,15 +623,15 @@ export default function ProductPage({ params }) {
                       borderColor: '#003DA5', 
                       color: '#003DA5' 
                     }}
-                    onClick={handleMarkAsSold}
-                    disabled={loading}
+                    onClick={() => document.getElementById('mark_sold_modal')?.showModal()}
+                    disabled={markSoldLoading}
                   >
-                    {loading ? (
+                    {markSoldLoading ? (
                       <span className="loading loading-spinner loading-sm mr-1"></span>
                     ) : (
                       <CheckIcon className="h-5 w-5 mr-1" />
                     )}
-                    {loading ? 'Updating...' : 'Mark as Sold'}
+                    {markSoldLoading ? 'Updating...' : 'Mark as Sold'}
                   </button>
                 )}
                 <button
@@ -584,7 +643,7 @@ export default function ProductPage({ params }) {
                 </button>
                 <button
                   className="btn btn-outline btn-error"
-                  onClick={handleDelete}
+                  onClick={() => document.getElementById('delete_product_modal')?.showModal()}
                 >
                   <Trash2Icon className="size-4 mr-2" />
                   Delete Product
@@ -596,15 +655,18 @@ export default function ProductPage({ params }) {
                 {isAuthenticated ? (
                   <SaveButton productId={currentProduct.id} />
                 ) : (
-                  <button className="btn btn-primary" disabled>
+                  <button 
+                    className="btn btn-primary flex justify-center items-center"
+                    onClick={() => router.push('/auth/login')}
+                  >
                     <HeartIcon className="h-5 w-5 mr-1" />
-                    Save
+                    <span>Save</span>
                   </button>
                 )}
                 <button 
                   className="btn btn-outline"
                   onClick={handleContactSeller}
-                  disabled={isContactingSeller || !isAuthenticated || currentProduct.is_sold}
+                  disabled={isContactingSeller || currentProduct.is_sold}
                 >
                   {isContactingSeller ? (
                     <span className="loading loading-spinner loading-sm mr-1"></span>

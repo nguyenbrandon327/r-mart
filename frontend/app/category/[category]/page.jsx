@@ -40,6 +40,7 @@ const categoryLabels = {
   'rides': 'Rides',
   'renting': 'Renting',
   'merch': 'Merch',
+  'tickets': 'Tickets',
   'other': 'Other',
   'in-searching-for': 'I\'m searching for'
 };
@@ -56,6 +57,7 @@ const categoryIcons = {
   'rides': BusIcon,
   'renting': KeyIcon,
   'merch': ShapesIcon,
+  'tickets': TagIcon,
   'other': TagIcon,
   'in-searching-for': SearchIcon
 };

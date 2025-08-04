@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { HomeIcon } from 'lucide-react';
 
 /**
  * Breadcrumb component using daisyUI breadcrumb classes
@@ -50,59 +49,58 @@ export default function Breadcrumb({ items = [], className = "" }) {
 export const createBreadcrumbs = {
   // Home > Category
   category: (categoryName) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: categoryName }
   ],
 
   // Home > Category > Product
   product: (categoryName, productName, categorySlug) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: categoryName, href: `/category/${categorySlug}` },
     { label: productName }
   ],
 
   // Home > Product (for direct navigation from homepage)
   productFromHome: (productName) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: productName }
   ],
 
   // Home > Search Results
   search: (query) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: 'Search Results' },
     { label: `"${query}"` }
   ],
 
   // Home > Profile > Username
   profile: (username) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
-    { label: 'Profile', href: '/profile' },
+    { label: 'Home', href: '/' },
     { label: username }
   ],
 
   // Home > Saved Items
   saved: () => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: 'Saved Items' }
   ],
 
   // Home > Inbox
   inbox: () => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: 'Inbox' }
   ],
 
   // Home > Inbox > Chat
   chat: (otherUserName) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     { label: 'Inbox', href: '/inbox' },
     { label: `Chat with ${otherUserName}` }
   ],
 
   // Custom breadcrumb builder
   custom: (items) => [
-    { label: 'Home', href: '/', icon: HomeIcon },
+    { label: 'Home', href: '/' },
     ...items
   ]
 };

@@ -1,11 +1,36 @@
 'use client';
 
 import Link from 'next/link';
+import { useSelector } from 'react-redux';
 
 export default function UserLink({ user, children, className = "", showProfilePic = false, profilePicSize = "w-10 h-10" }) {
-  // Extract username from email
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  // Extract username from email (fallback for backward compatibility)
   const getUsername = (email) => {
     return email ? email.split('@')[0] : '';
+  };
+
+  // Get the appropriate href based on authentication status
+  const getHref = (username) => {
+    return isAuthenticated ? `/profile/${username}` : '/auth/login';
+  };
+
+  // Get username from user object (prefers username field over email extraction)
+  const getUsernameFromUser = (user) => {
+    if (user.username) {
+      return user.username;
+    }
+    if (user.user_username) {
+      return user.user_username;
+    }
+    if (user.email) {
+      return getUsername(user.email);
+    }
+    if (user.user_email) {
+      return getUsername(user.user_email);
+    }
+    return null;
   };
 
   // Get profile picture URL or fallback
@@ -52,37 +77,26 @@ export default function UserLink({ user, children, className = "", showProfilePi
     </div>
   );
 
-  // If we have user data with email, create a profile link
-  if (user && user.email) {
-    const username = getUsername(user.email);
-    return (
-      <Link 
-        href={`/profile/${username}`}
-        className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  // If we have user_email (from product queries), create a profile link
-  if (user && user.user_email) {
-    const username = getUsername(user.user_email);
-    return (
-      <Link 
-        href={`/profile/${username}`}
-        className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
-      >
-        {content}
-      </Link>
-    );
+  // If we have user data, create a profile link
+  if (user && typeof user === 'object') {
+    const username = getUsernameFromUser(user);
+    if (username) {
+      return (
+        <Link 
+          href={getHref(username)}
+          className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
+        >
+          {content}
+        </Link>
+      );
+    }
   }
 
   // If we have a username string, create a profile link
   if (typeof user === 'string') {
     return (
       <Link 
-        href={`/profile/${user}`}
+        href={getHref(user)}
         className={`hover:text-blue-600 transition-colors ${showProfilePic ? '' : 'hover:underline'}`}
       >
         {content}

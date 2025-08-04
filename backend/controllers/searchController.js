@@ -32,7 +32,12 @@ export const searchProducts = async (req, res) => {
             }
           }
         ],
-        filter: []
+        filter: [
+          // Always exclude sold items
+          {
+            term: { is_sold: false }
+          }
+        ]
       }
     };
 
@@ -247,56 +252,71 @@ export const getSearchSuggestions = async (req, res) => {
       });
     }
 
-    // Use completion suggester for product names
-    const searchResult = await esClient.search({
-      index: PRODUCT_INDEX,
-      body: {
-        suggest: {
-          product_suggest: {
-            prefix: q,
-            completion: {
-              field: 'name.keyword',
-              size: 10,
-              skip_duplicates: true
-            }
-          }
-        },
-        _source: false
-      }
-    });
-
-    // If no completion suggestions, fall back to match query
-    if (!searchResult.suggest?.product_suggest?.[0]?.options?.length) {
-      const fallbackResult = await esClient.search({
+    // Try completion suggester first (if available), then fall back to match_phrase_prefix
+    try {
+      const completionResult = await esClient.search({
         index: PRODUCT_INDEX,
         body: {
-          query: {
-            match_phrase_prefix: {
-              name: {
-                query: q,
-                max_expansions: 10
+          suggest: {
+            product_suggest: {
+              prefix: q,
+              completion: {
+                field: 'name.suggest',
+                size: 10,
+                skip_duplicates: true
               }
             }
           },
-          size: 10,
-          _source: ['name']
+          _source: false
         }
       });
 
-      const suggestions = fallbackResult.hits.hits.map(hit => hit._source.name);
-      return res.status(200).json({
-        success: true,
-        suggestions: [...new Set(suggestions)] // Remove duplicates
-      });
+      if (completionResult.suggest?.product_suggest?.[0]?.options?.length > 0) {
+        const suggestions = completionResult.suggest.product_suggest[0].options.map(
+          option => option.text
+        );
+        
+        return res.status(200).json({
+          success: true,
+          suggestions
+        });
+      }
+    } catch (completionError) {
+      // If completion suggester fails, fall back to match_phrase_prefix
+      console.log('Completion suggester not available, using fallback method');
     }
 
-    const suggestions = searchResult.suggest.product_suggest[0].options.map(
-      option => option.text
-    );
+    // Fallback: Use match_phrase_prefix for autocomplete suggestions
+    const searchResult = await esClient.search({
+      index: PRODUCT_INDEX,
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                match_phrase_prefix: {
+                  name: {
+                    query: q,
+                    max_expansions: 10
+                  }
+                }
+              }
+            ],
+            filter: [
+              { term: { is_sold: false } }
+            ]
+          }
+        },
+        size: 10,
+        _source: ['name']
+      }
+    });
 
+    const suggestions = searchResult.hits.hits.map(hit => hit._source.name);
+    
     res.status(200).json({
       success: true,
-      suggestions
+      suggestions: [...new Set(suggestions)] // Remove duplicates
     });
 
   } catch (error) {
@@ -322,6 +342,8 @@ export const indexProduct = async (product) => {
         price: product.price,
         category: product.category,
         images: product.images,
+        slug: product.slug,
+        is_sold: product.is_sold || false,
         user_id: product.user_id,
         user_name: product.user_name,
         user_email: product.user_email,
@@ -349,6 +371,8 @@ export const updateProductIndex = async (product) => {
           price: product.price,
           category: product.category,
           images: product.images,
+          slug: product.slug,
+          is_sold: product.is_sold,
           updated_at: new Date()
         }
       }
@@ -386,6 +410,8 @@ export const syncProductsToElasticsearch = async (products) => {
         price: product.price,
         category: product.category,
         images: product.images,
+        slug: product.slug,
+        is_sold: product.is_sold || false,
         user_id: product.user_id,
         user_name: product.user_name,
         user_email: product.user_email,

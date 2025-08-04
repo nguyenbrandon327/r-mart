@@ -19,9 +19,10 @@ export default function NavigationWrapper({ children }) {
   const isProfilePage = pathname?.startsWith('/profile');
   const isAddListingPage = pathname?.startsWith('/add-listing');
   const isInboxPage = pathname?.startsWith('/inbox');
-  const isChatPage = pathname?.match(/^\/inbox\/\d+$/); // Matches /inbox/[chatId]
+  const isChatPage = pathname?.match(/^\/inbox\/[A-Z0-9]{26}$/); // Matches /inbox/[ulid]
   const isTermsPage = pathname?.startsWith('/terms');
   const isPrivacyPage = pathname?.startsWith('/privacy');
+  const isSettingsPage = pathname?.startsWith('/settings');
   const dispatch = useDispatch();
   const { isAuthenticated, socket } = useSelector((state) => state.auth);
   const { unreadCount } = useSelector((state) => state.chat);
@@ -70,7 +71,7 @@ export default function NavigationWrapper({ children }) {
       {!isAuthPage && !isLandingPage && !isAddListingPage && !isTermsPage && !isPrivacyPage && (
         <>
           <Navbar />
-          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isInboxPage && <SecondaryNavbar />}
+          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isInboxPage && !isSettingsPage && <SecondaryNavbar />}
         </>
       )}
       <main className={`flex-grow ${isAuthPage || isLandingPage || isAddListingPage || isTermsPage || isPrivacyPage || isChatPage ? "" : "container mx-auto px-4 py-6"}`}>

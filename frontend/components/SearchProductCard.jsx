@@ -16,6 +16,7 @@ function SearchProductCard({ product }) {
       'rides': 'Rides',
       'renting': 'Renting',
       'merch': 'Merch',
+      'tickets': 'Tickets',
       'other': 'Other',
       'in-searching-for': 'I\'m searching for'
     };
@@ -32,7 +33,7 @@ function SearchProductCard({ product }) {
   };
 
   return (
-    <Link href={`/product/${product.id}`}>
+    <Link href={`/product/${product.slug || product.id}`}>
       <div className="bg-transparent rounded-none cursor-pointer border-2 border-transparent hover:border-gray-500 transition-all duration-300 -m-1 p-1">
         {/* PRODUCT IMAGE */}
         <figure className="relative pt-[100%] mb-0 rounded-md overflow-hidden">

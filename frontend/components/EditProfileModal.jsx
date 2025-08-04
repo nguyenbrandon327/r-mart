@@ -675,7 +675,8 @@ function EditProfileModal() {
                         customAddress: '', 
                         customCity: '',
                         customState: '',
-                        campusLocationName: '' 
+                        campusLocationName: '',
+                        showLocationInProfile: true // Default to checked for on-campus
                       });
                       setAddressError(''); // Clear address error when changing location type
                     }}
@@ -700,7 +701,8 @@ function EditProfileModal() {
                         campusLocationName: '', 
                         customAddress: '', 
                         customCity: '',
-                        customState: ''
+                        customState: '',
+                        showLocationInProfile: true // Default to checked for off-campus
                       });
                       setAddressError(''); // Clear address error when changing location type
                     }}

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { BookmarkIcon } from 'lucide-react';
+import { HeartIcon } from 'lucide-react';
 import { fetchSavedProducts } from '../../store/slices/savedProductsSlice';
 import SavedProductGroup from '../../components/SavedProductGroup';
 import AuthGuard from '../../components/AuthGuard';
@@ -25,6 +25,7 @@ export default function SavedPage() {
           name: product.user_name,
           user_name: product.user_name,
           user_email: product.user_email,
+          user_username: product.user_username,
           user_profile_pic: product.user_profile_pic
         },
         products: []
@@ -52,7 +53,7 @@ export default function SavedPage() {
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center mb-2">
-          <BookmarkIcon className="w-7 h-7 mr-2" />
+          <HeartIcon className="w-7 h-7 mr-2" />
           Saved Products
         </h1>
         <p className="text-gray-600">
@@ -73,7 +74,7 @@ export default function SavedPage() {
       ) : savedProducts.length === 0 ? (
         <div className="flex flex-col justify-center items-center h-80 space-y-4">
           <div className="bg-base-200 rounded-full p-6">
-            <BookmarkIcon className="w-12 h-12" />
+            <HeartIcon className="w-12 h-12" />
           </div>
           <div className="text-center space-y-2">
             <h3 className="text-2xl font-semibold">No saved products</h3>

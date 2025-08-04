@@ -30,7 +30,7 @@ export default function ProductCarousel({
   icon, 
   products = [], 
   loading = false, 
-  className = "mb-12",
+  className = "mb-8",
   sourceContext = null
 }) {
   const carouselRef = useRef(null);

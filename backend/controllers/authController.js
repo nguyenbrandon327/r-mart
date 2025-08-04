@@ -118,6 +118,7 @@ export const verifyEmail = async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                username: user.username,
                 isVerified: true,
                 isOnboarded: user.isonboarded || false
             }
@@ -168,6 +169,7 @@ export const login = async (req, res) => {
                 id: user[0].id,
                 name: user[0].name,
                 email: user[0].email,
+                username: user[0].username,
                 profile_pic: user[0].profile_pic,
                 description: user[0].description,
                 isVerified: user[0].isverified,
@@ -360,6 +362,7 @@ export const checkAuth = async (req, res) => {
                 id: req.user.id,
                 name: req.user.name,
                 email: req.user.email,
+                username: req.user.username,
                 profile_pic: req.user.profile_pic,
                 description: req.user.description,
                 isVerified: req.user.isverified,

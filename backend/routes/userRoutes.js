@@ -11,7 +11,9 @@ import {
   completeOnboarding,
   completeOnboardingAll,
   updateUserLocation,
-  geocodeAddress
+  geocodeAddress,
+  checkUsernameAvailability,
+  updateUsername
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -41,5 +43,9 @@ router.put("/location", protectRoute, updateUserLocation);
 
 // Geocoding route
 router.post("/geocode", protectRoute, geocodeAddress);
+
+// Username routes
+router.post("/check-username", protectRoute, checkUsernameAvailability);
+router.put("/username", protectRoute, updateUsername);
 
 export default router; 

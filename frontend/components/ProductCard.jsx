@@ -17,6 +17,7 @@ function ProductCard({ product, sourceContext = null }) {
       'rides': 'Rides',
       'renting': 'Renting',
       'merch': 'Merch',
+      'tickets': 'Tickets',
       'other': 'Other',
       'in-searching-for': 'I\'m searching for'
     };
@@ -33,8 +34,8 @@ function ProductCard({ product, sourceContext = null }) {
   };
 
   const linkHref = sourceContext 
-    ? `/product/${product.id}?from=${sourceContext}` 
-    : `/product/${product.id}`;
+            ? `/product/${product.slug || product.id}?from=${sourceContext}`
+        : `/product/${product.slug || product.id}`;
 
   return (
     <Link href={linkHref}>

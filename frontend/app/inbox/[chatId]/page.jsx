@@ -62,7 +62,7 @@ const MessageContent = memo(({ message, isCurrentUser, onImageClick }) => {
 MessageContent.displayName = 'MessageContent';
 
 export default function ChatPage({ params }) {
-  const { chatId } = params;
+  const { chatId: chatULID } = params;
   const router = useRouter();
   const {
     chats,
@@ -88,8 +88,13 @@ export default function ChatPage({ params }) {
     removeChatFromUnread
   } = useChatStore();
 
+  // Helper function to extract username from email (same as UserLink component)
+  const getUsername = (email) => {
+    return email ? email.split('@')[0] : '';
+  };
+
   // Get messages for the current chat using selector
-  const messages = useSelector(state => selectMessagesForChat(state, parseInt(chatId)));
+  const messages = useSelector(state => selectMessagesForChat(state, chatULID));
 
   const { user: currentUser, socket } = useAuthStore();
   const messagesEndRef = useRef(null);
@@ -102,6 +107,7 @@ export default function ChatPage({ params }) {
   const [isTyping, setIsTyping] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
   const [enlargedImage, setEnlargedImage] = useState(null);
+  const [activeProductImage, setActiveProductImage] = useState(0);
 
   // Socket connection is now handled globally in NavigationWrapper
 
@@ -112,14 +118,14 @@ export default function ChatPage({ params }) {
 
   // Find the chat data from the chats list
   useEffect(() => {
-    if (chats.length > 0 && chatId) {
-      const foundChat = chats.find(chat => chat.id === parseInt(chatId));
+    if (chats.length > 0 && chatULID) {
+      const foundChat = chats.find(chat => chat.ulid === chatULID);
       if (foundChat) {
-        console.log('🔄 CHAT SELECTION: Found chat data:', foundChat.id);
+        console.log('🔄 CHAT SELECTION: Found chat data:', foundChat.ulid);
         setChatData(foundChat);
         // Only set selected chat if it's different from current
-        if (!selectedChat || selectedChat.id !== foundChat.id) {
-          console.log('🔄 CHAT SELECTION: Setting selected chat to:', foundChat.id, 'from previous:', selectedChat?.id);
+        if (!selectedChat || selectedChat.ulid !== foundChat.ulid) {
+          console.log('🔄 CHAT SELECTION: Setting selected chat to:', foundChat.ulid, 'from previous:', selectedChat?.ulid);
           setSelectedChat(foundChat);
         } else {
           console.log('🔄 CHAT SELECTION: Chat already selected, no change needed');
@@ -130,21 +136,21 @@ export default function ChatPage({ params }) {
         router.push('/inbox');
       }
     }
-  }, [chats, chatId, selectedChat?.id, router]); // Removed setSelectedChat, use selectedChat.id instead
+  }, [chats, chatULID, selectedChat?.ulid, router]); // Removed setSelectedChat, use selectedChat.ulid instead
 
   // Load messages when chat is selected and join chat room
   useEffect(() => {
-    if (selectedChat && selectedChat.id === parseInt(chatId)) {
-      console.log('📂 CHAT LOAD: Loading messages for chat:', selectedChat.id);
+    if (selectedChat && selectedChat.ulid === chatULID) {
+      console.log('📂 CHAT LOAD: Loading messages for chat:', selectedChat.ulid);
       clearMessages();
-      getMessages(selectedChat.id);
+      getMessages(selectedChat.ulid);
       
-      // Join the chat room for real-time features
+      // Join the chat room for real-time features (still using internal ID for socket rooms)
       joinChatRoom(selectedChat.id);
       
       // Mark messages as seen when entering the chat
       console.log('📂 CHAT LOAD: Marking messages as seen on chat enter');
-      markMessagesAsSeen(selectedChat.id);
+      markMessagesAsSeen(selectedChat.ulid);
       
       // Remove this chat from unread list since user is viewing it
       console.log('📂 CHAT LOAD: Removing chat from unread on enter');
@@ -163,24 +169,24 @@ export default function ChatPage({ params }) {
         }
       }
     };
-  }, [selectedChat, chatId]);
+  }, [selectedChat, chatULID]);
 
   // Auto-mark messages as seen when new messages arrive
   useEffect(() => {
     if (messages.length > 0 && selectedChat && isTabVisible) {
       console.log('👁️ CHAT PAGE: Auto-marking messages as seen:', {
         messagesCount: messages.length,
-        chatId: selectedChat.id,
+        chatULID: selectedChat.ulid,
         isTabVisible,
         lastMessage: messages[messages.length - 1]
       });
       // Mark messages as seen immediately if user is actively viewing the chat
-      markMessagesAsSeen(selectedChat.id);
+      markMessagesAsSeen(selectedChat.ulid);
       // Remove from unread list when messages are seen
       removeChatFromUnread(selectedChat.id);
-      console.log('➖ CHAT PAGE: Removed chat from unread:', selectedChat.id);
+      console.log('➖ CHAT PAGE: Removed chat from unread:', selectedChat.ulid);
     }
-  }, [messages.length, selectedChat?.id, isTabVisible]);
+  }, [messages.length, selectedChat?.ulid, isTabVisible]);
 
   // Subscribe to online users
   useEffect(() => {
@@ -303,7 +309,7 @@ export default function ChatPage({ params }) {
         formData.append('image', selectedImage);
       }
 
-      await sendMessage(formData, selectedChat.id);
+      await sendMessage(formData, selectedChat.ulid);
       setMessageText('');
       removeImage();
     } catch (error) {
@@ -425,7 +431,7 @@ export default function ChatPage({ params }) {
       // Mark messages as seen when user returns to the tab
       if (isVisible && selectedChat && messages.length > 0) {
         console.log('👀 TAB VISIBILITY: Marking messages as seen on return to tab');
-        markMessagesAsSeen(selectedChat.id);
+        markMessagesAsSeen(selectedChat.ulid);
         // Remove from unread list when messages are seen
         removeChatFromUnread(selectedChat.id);
       }
@@ -468,6 +474,22 @@ export default function ChatPage({ params }) {
     }
   }, [enlargedImage, handleCloseEnlargedImage]);
 
+  // Set the main displayed product image without opening gallery
+  const setMainProductImage = (index) => {
+    setActiveProductImage(index);
+  };
+
+  // Get product images or fallback
+  const getProductImages = () => {
+    if (chatData?.product_images && chatData.product_images.length > 0) {
+      return chatData.product_images;
+    } else if (chatData?.product_image) {
+      // Legacy support for old products with single image
+      return [chatData.product_image];
+    }
+    return [];
+  };
+
   if (!chatData) {
     return (
       <AuthGuard>
@@ -483,7 +505,7 @@ export default function ChatPage({ params }) {
       <div className="h-[calc(100vh-4.25rem)] bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto h-[calc(100vh-4.25rem)] flex bg-white">
         {/* LEFT COLUMN - Chat */}
-        <div className="flex-1 flex flex-col border-r border-base-content/10">
+        <div className="flex-1 flex flex-col lg:border-r border-base-content/10">
           {/* User Header */}
           <div className="p-4 border-b border-base-content/10 bg-base-100">
             <div className="flex items-center justify-between">
@@ -493,23 +515,29 @@ export default function ChatPage({ params }) {
                 </Link>
                 
                 <div className="relative">
-                  <div className="avatar">
-                    <div className="w-10 rounded-full">
-                      {chatData.other_user_profile_pic ? (
-                        <Image
-                          src={chatData.other_user_profile_pic}
-                          alt={chatData.other_user_name}
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                          <UserCircleIcon className="w-6 h-6 text-primary" />
-                        </div>
-                      )}
+                  <Link 
+                    href={`/profile/${chatData.other_user_username || getUsername(chatData.other_user_email)}`} 
+                    className="block"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="avatar">
+                      <div className="w-10 rounded-full">
+                        {chatData.other_user_profile_pic ? (
+                          <Image
+                            src={chatData.other_user_profile_pic}
+                            alt={chatData.other_user_name}
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <UserCircleIcon className="w-6 h-6 text-primary" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                   {/* Online Status Indicator */}
                   {isOnline(chatData.other_user_id) && (
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-base-100"></div>
@@ -517,7 +545,13 @@ export default function ChatPage({ params }) {
                 </div>
                 
                 <div className="flex-1">
-                  <h3 className="font-semibold text-base-content">{chatData.other_user_name}</h3>
+                  <Link 
+                    href={`/profile/${chatData.other_user_username || getUsername(chatData.other_user_email)}`} 
+                    className="font-semibold text-base-content hover:text-primary transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {chatData.other_user_name}
+                  </Link>
                   {currentChatTypingUsers.length > 0 ? (
                     <p className="text-sm text-primary animate-pulse">
                       typing...
@@ -677,42 +711,56 @@ export default function ChatPage({ params }) {
           </div>
         </div>
 
-        {/* RIGHT COLUMN - Product Information */}
-        <div className="w-80 bg-base-50 border-l border-base-content/10 overflow-y-auto">
+        {/* RIGHT COLUMN - Product Information (Hidden on mobile) */}
+        <div className="hidden lg:flex w-80 bg-base-50 border-l border-base-content/10 overflow-y-auto">
           {chatData.product_name ? (
             <div className="p-6">
               <h3 className="text-lg font-semibold text-base-content mb-4">Product Details</h3>
               
-              {/* Product Images */}
-              {chatData.product_images && chatData.product_images.length > 0 ? (
-                <div className="space-y-3 mb-4">
-                  {chatData.product_images.map((image, index) => (
-                    <div key={index} className="relative aspect-square">
+              {/* Product Images with Thumbnail Navigation */}
+              {(() => {
+                const images = getProductImages();
+                return images.length > 0 ? (
+                  <div className="mb-4">
+                    {/* Main Image */}
+                    <div className="mb-3 aspect-square">
                       <Image
-                        src={image}
-                        alt={`${chatData.product_name} - Image ${index + 1}`}
+                        src={images[activeProductImage]}
+                        alt={`${chatData.product_name} - Image ${activeProductImage + 1}`}
                         width={300}
                         height={300}
-                        className="rounded-lg object-cover w-full h-full"
+                        className="rounded-lg object-cover w-full h-full cursor-pointer"
+                        onClick={() => handleImageClick(images[activeProductImage])}
                       />
                     </div>
-                  ))}
-                </div>
-              ) : chatData.product_image ? (
-                <div className="mb-4 aspect-square">
-                  <Image
-                    src={chatData.product_image}
-                    alt={chatData.product_name}
-                    width={300}
-                    height={300}
-                    className="rounded-lg object-cover w-full h-full"
-                  />
-                </div>
-              ) : (
-                <div className="mb-4 bg-base-200 rounded-lg aspect-square flex items-center justify-center">
-                  <p className="text-base-content/40">No image available</p>
-                </div>
-              )}
+                    
+                    {/* Thumbnail Navigation - only show if multiple images */}
+                    {images.length > 1 && (
+                      <div className="flex flex-wrap gap-1 pb-2">
+                        {images.map((image, index) => (
+                          <div 
+                            key={index}
+                            className={`relative w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${index === activeProductImage ? 'border-primary' : 'border-transparent'}`}
+                            onClick={() => setMainProductImage(index)}
+                          >
+                            <Image
+                              src={image}
+                              alt={`${chatData.product_name} - Thumbnail ${index + 1}`}
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mb-4 bg-base-200 rounded-lg aspect-square flex items-center justify-center">
+                    <p className="text-base-content/40">No image available</p>
+                  </div>
+                );
+              })()}
               
               {/* Product Info */}
               <div className="space-y-3">
@@ -728,24 +776,6 @@ export default function ChatPage({ params }) {
                   </div>
                 )}
                 
-                {chatData.product_description && (
-                  <div>
-                    <h5 className="font-medium text-base-content mb-2">Description</h5>
-                    <p className="text-sm text-base-content/70 leading-relaxed">
-                      {chatData.product_description}
-                    </p>
-                  </div>
-                )}
-                
-                {chatData.product_category && (
-                  <div>
-                    <h5 className="font-medium text-base-content mb-1">Category</h5>
-                    <span className="badge badge-outline">
-                      {chatData.product_category}
-                    </span>
-                  </div>
-                )}
-                
                 {chatData.product_condition && (
                   <div>
                     <h5 className="font-medium text-base-content mb-1">Condition</h5>
@@ -757,10 +787,10 @@ export default function ChatPage({ params }) {
               </div>
               
               {/* View Full Details Button */}
-              {chatData.product_id && (
+              {chatData.product_slug && (
                 <div className="mt-6 pt-4 border-t border-base-content/10">
                   <Link 
-                    href={`/product/${chatData.product_id}`}
+                    href={`/product/${chatData.product_slug}`}
                     className="btn btn-outline btn-primary btn-sm w-full bg-white"
                   >
                     View Full Details

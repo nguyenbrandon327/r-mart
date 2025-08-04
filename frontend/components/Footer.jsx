@@ -22,7 +22,7 @@ export default function Footer() {
       
       <div>
         <div className="grid grid-flow-col gap-4">
-          <Link href="/" className="link link-hover">Homepage</Link>
+          <Link href="/" className="link link-hover">Home</Link>
           <Link href="/landing" className="link link-hover">About</Link>
           <Link href="/terms" className="link link-hover">Terms of Service</Link>
           <Link href="/privacy" className="link link-hover">Privacy Policy</Link>

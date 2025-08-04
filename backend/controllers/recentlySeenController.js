@@ -10,6 +10,21 @@ export const recordProductView = async (userId, productId) => {
   }
 
   try {
+    // Check if the user is the owner of the product
+    const product = await sql`
+      SELECT user_id FROM products WHERE id = ${productId}
+    `;
+    
+    if (product.length === 0) {
+      console.log("Product not found, skipping record");
+      return false;
+    }
+    
+    if (product[0].user_id === userId) {
+      console.log(`User ${userId} is the owner of product ${productId}, skipping recently viewed record`);
+      return false;
+    }
+
     // Try to update the view timestamp if the record already exists
     const updateResult = await sql`
       UPDATE recently_seen_products

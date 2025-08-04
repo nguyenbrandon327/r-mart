@@ -62,7 +62,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="hero min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 relative overflow-hidden">
+      <section className="hero min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 relative overflow-hidden" style={{ isolation: 'isolate' }}>
         {/* Photo Collage - Circling around hero content */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Top row - circling around */}
@@ -150,7 +150,14 @@ export default function LandingPage() {
               <span style={{ color: '#003da5' }}>Pass it </span>
               <span style={{ color: '#ffb81c' }}>on</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-base-content/80 font-medium">
+            <p className="text-xl md:text-2xl mb-8 font-medium text-white" style={{ 
+              textShadow: `
+                0 1px 2px rgba(0,0,0,0.5),
+                0 2px 4px rgba(0,0,0,0.3),
+                1px 1px 0 rgba(0,0,0,0.4),
+                -1px -1px 0 rgba(0,0,0,0.4)
+              `
+            }}>
               Sell secondhand items in your uni community.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -271,6 +278,53 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="py-20 bg-base-200/50">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-black mb-6 text-base-content">
+              Frequently Asked Questions
+            </h2>
+          </div>
+          <div className="space-y-4">
+            <div className="collapse collapse-arrow bg-base-100 shadow-lg">
+              <input type="radio" name="faq-accordion" defaultChecked />
+              <div className="collapse-title text-xl font-medium">
+                Who can join?
+              </div>
+              <div className="collapse-content">
+                <p className="text-base-content/80">
+                  Current UCR undergraduate, masters, phd students, and Alumni &lt; 1 year
+                </p>
+              </div>
+            </div>
+
+            <div className="collapse collapse-arrow bg-base-100 shadow-lg">
+              <input type="radio" name="faq-accordion" />
+              <div className="collapse-title text-xl font-medium">
+                What information is public and private?
+              </div>
+              <div className="collapse-content">
+                <p className="text-base-content/80">
+                  All listings are public. Listing pages contain the seller's username. Profile pages are only viewable by authenticated users (aka. other UCR students). Profile pages contain the seller's name, profile picture, description, year, major, and dorm name (which you can choose to hide).
+                </p>
+              </div>
+            </div>
+
+            <div className="collapse collapse-arrow bg-base-100 shadow-lg">
+              <input type="radio" name="faq-accordion" />
+              <div className="collapse-title text-xl font-medium">
+                Who can I contact for help, reporting, and other inquiries?
+              </div>
+              <div className="collapse-content">
+                <p className="text-base-content/80">
+                  brandon@ucrmart.com :)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
     </div>
   );

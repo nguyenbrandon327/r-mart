@@ -55,7 +55,7 @@ export default function AddListingPage() {
       // Auto redirect to home after 4 seconds
       setTimeout(() => {
         router.push('/');
-      }, 4500);
+      }, 4000);
     } catch (error) {
       console.error('Failed to add product:', error);
     }
@@ -419,6 +419,7 @@ export default function AddListingPage() {
                           <option value="rides">Rides</option>
                           <option value="renting">Renting</option>
                           <option value="merch">Merch</option>
+                          <option value="tickets">Tickets</option>
                           <option value="other">Other</option>
                           <option value="in-searching-for">I'm searching for</option>
                         </select>

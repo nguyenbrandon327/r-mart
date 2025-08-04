@@ -158,37 +158,37 @@ export const useChatStore = () => {
       }
     }, [dispatch]),
 
-    deleteChat: async (chatId) => {
+    deleteChat: async (chatULID) => {
       try {
-        await dispatch(deleteChatAction(chatId)).unwrap();
+        await dispatch(deleteChatAction(chatULID)).unwrap();
       } catch (error) {
         throw error;
       }
     },
 
-    getMessages: useCallback(async (chatId) => {
+    getMessages: useCallback(async (chatULID) => {
       try {
-        await dispatch(getMessagesAction(chatId)).unwrap();
+        await dispatch(getMessagesAction(chatULID)).unwrap();
       } catch (error) {
         throw error;
       }
     }, [dispatch]),
 
-    sendMessage: async (messageData, chatId) => {
-      if (!chatId) {
+    sendMessage: async (messageData, chatULID) => {
+      if (!chatULID) {
         throw new Error("No chat selected");
       }
       
       try {
-        await dispatch(sendMessageAction({ messageData, chatId })).unwrap();
+        await dispatch(sendMessageAction({ messageData, chatULID })).unwrap();
       } catch (error) {
         throw error;
       }
     },
 
-    markMessagesAsSeen: useCallback(async (chatId) => {
+    markMessagesAsSeen: useCallback(async (chatULID) => {
       try {
-        await dispatch(markMessagesAsSeenAction(chatId)).unwrap();
+        await dispatch(markMessagesAsSeenAction(chatULID)).unwrap();
       } catch (error) {
         throw error;
       }

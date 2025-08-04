@@ -47,7 +47,10 @@ export const getChats = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to fetch chats";
-      toast.error(errorMessage);
+      // Don't show toast for unauthorized errors - AuthGuard will handle redirects
+      if (error.response?.status !== 401) {
+        toast.error(errorMessage);
+      }
       return rejectWithValue(errorMessage);
     }
   }
@@ -55,10 +58,10 @@ export const getChats = createAsyncThunk(
 
 export const deleteChat = createAsyncThunk(
   'chat/deleteChat',
-  async (chatId, { rejectWithValue }) => {
+  async (chatULID, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_URL}/chat/${chatId}`);
-      return { chatId, message: response.data.message };
+      const response = await axios.delete(`${API_URL}/chat/${chatULID}`);
+      return { chatULID, message: response.data.message };
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to delete chat";
       toast.error(errorMessage);
@@ -69,13 +72,16 @@ export const deleteChat = createAsyncThunk(
 
 export const getMessages = createAsyncThunk(
   'chat/getMessages',
-  async (chatId, { rejectWithValue }) => {
+  async (chatULID, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/chat/${chatId}`);
+      const response = await axios.get(`${API_URL}/chat/${chatULID}`);
       return response.data.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to fetch messages";
-      toast.error(errorMessage);
+      // Don't show toast for unauthorized errors - AuthGuard will handle redirects
+      if (error.response?.status !== 401) {
+        toast.error(errorMessage);
+      }
       return rejectWithValue(errorMessage);
     }
   }
@@ -83,9 +89,9 @@ export const getMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async ({ messageData, chatId }, { rejectWithValue }) => {
+  async ({ messageData, chatULID }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/chat/${chatId}`, messageData, {
+      const response = await axios.post(`${API_URL}/chat/${chatULID}`, messageData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -101,9 +107,9 @@ export const sendMessage = createAsyncThunk(
 
 export const markMessagesAsSeen = createAsyncThunk(
   'chat/markMessagesAsSeen',
-  async (chatId, { rejectWithValue }) => {
+  async (chatULID, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${API_URL}/chat/${chatId}/seen`);
+      const response = await axios.put(`${API_URL}/chat/${chatULID}/seen`);
       return response.data.data;
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to mark messages as seen";
@@ -120,6 +126,10 @@ export const getUnreadCount = createAsyncThunk(
       return response.data.data; // Returns { unreadCount, chatsWithUnreadMessages }
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to get unread count";
+      // Don't show toast for unauthorized errors - user may not be logged in
+      if (error.response?.status !== 401) {
+        toast.error(errorMessage);
+      }
       return rejectWithValue(errorMessage);
     }
   }
@@ -312,8 +322,8 @@ const chatSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteChat.fulfilled, (state, action) => {
-        state.chats = state.chats.filter(chat => chat.id !== action.payload.chatId);
-        if (state.selectedChat?.id === action.payload.chatId) {
+        state.chats = state.chats.filter(chat => chat.ulid !== action.payload.chatULID);
+        if (state.selectedChat?.ulid === action.payload.chatULID) {
           state.selectedChat = null;
           state.messages = {}; // Clear messages for the deleted chat
         }
@@ -409,8 +419,11 @@ export const {
 } = chatSlice.actions;
 
 // Selector to get messages for a specific chat
-export const selectMessagesForChat = (state, chatId) => {
-  return state.chat.messages[chatId] || [];
+export const selectMessagesForChat = (state, chatULID) => {
+  // Find the chat by ULID and return its messages using the internal ID
+  const chat = state.chat.chats.find(c => c.ulid === chatULID);
+  if (!chat) return [];
+  return state.chat.messages[chat.id] || [];
 };
 
 export default chatSlice.reducer; 

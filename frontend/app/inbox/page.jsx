@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useChatStore, useAuthStore } from '../../store/hooks';
 import { useSocket } from '../../lib/socket';
 import { useRouter } from 'next/navigation';
-import { UserCircleIcon, MessageSquareIcon, Trash2Icon, ShoppingBagIcon, CheckIcon, Check } from 'lucide-react';
+import { UserCircleIcon, MessageSquareIcon, MessageCircleMore, ShoppingBagIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AuthGuard from '../../components/AuthGuard';
@@ -18,15 +18,18 @@ export default function InboxPage() {
     getChats,
     subscribeToOnlineUsers,
     unsubscribeFromOnlineUsers,
-    deleteChat,
     updateChatLastMessage,
     resetUnreadCount
   } = useChatStore();
 
   const { user: currentUser, socket } = useAuthStore();
   const router = useRouter();
-  const [deletingChatId, setDeletingChatId] = useState(null);
   const [timeUpdateTrigger, setTimeUpdateTrigger] = useState(0);
+
+  // Helper function to extract username from email (same as UserLink component)
+  const getUsername = (email) => {
+    return email ? email.split('@')[0] : '';
+  };
 
   // Debug logging to track chat updates
   useEffect(() => {
@@ -79,23 +82,8 @@ export default function InboxPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleChatClick = (chatId) => {
-    router.push(`/inbox/${chatId}`);
-  };
-
-  const handleDeleteChat = async (e, chatId) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
-    
-    if (confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
-      setDeletingChatId(chatId);
-      try {
-        await deleteChat(chatId);
-      } catch (error) {
-        console.error('Failed to delete chat:', error);
-      } finally {
-        setDeletingChatId(null);
-      }
-    }
+  const handleChatClick = (chatULID) => {
+    router.push(`/inbox/${chatULID}`);
   };
 
   const formatLastMessageTime = (timestamp) => {
@@ -155,7 +143,10 @@ export default function InboxPage() {
         
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-base-content">Messages</h1>
+          <div className="flex items-center gap-3">
+            <MessageCircleMore className="w-8 h-8 text-black" />
+            <h1 className="text-3xl font-bold text-base-content">Messages</h1>
+          </div>
           <p className="text-base-content/60 mt-1">Your conversations</p>
         </div>
 
@@ -182,28 +173,34 @@ export default function InboxPage() {
                 <div
                   key={chat.id}
                   className="p-4 hover:bg-base-200 cursor-pointer transition-colors group"
-                  onClick={() => handleChatClick(chat.id)}
+                  onClick={() => handleChatClick(chat.ulid)}
                 >
                   <div className="flex items-center gap-4">
                     {/* User Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className="avatar">
-                        <div className="w-14 rounded-full">
-                          {chat.other_user_profile_pic ? (
-                            <Image
-                              src={chat.other_user_profile_pic}
-                              alt={chat.other_user_name}
-                              width={56}
-                              height={56}
-                              className="rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                              <UserCircleIcon className="w-9 h-9 text-primary" />
-                            </div>
-                          )}
+                      <Link 
+                        href={`/profile/${chat.other_user_username || getUsername(chat.other_user_email)}`} 
+                        className="block"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="avatar">
+                          <div className="w-14 rounded-full">
+                            {chat.other_user_profile_pic ? (
+                              <Image
+                                src={chat.other_user_profile_pic}
+                                alt={chat.other_user_name}
+                                width={56}
+                                height={56}
+                                className="rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                                <UserCircleIcon className="w-9 h-9 text-primary" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                       {isOnline(chat.other_user_id) && (
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-base-100"></div>
                       )}
@@ -212,27 +209,19 @@ export default function InboxPage() {
                     {/* Chat Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-base-content truncate">
+                        <Link 
+                          href={`/profile/${chat.other_user_username || getUsername(chat.other_user_email)}`} 
+                          className="font-semibold text-base-content truncate hover:text-primary transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {chat.other_user_name}
-                        </h3>
+                        </Link>
                         <div className="flex items-center gap-2">
                           {chat.last_message_at && (
                             <span className="text-xs text-base-content/60 flex-shrink-0">
                               {formatLastMessageTime(chat.last_message_at)}
                             </span>
                           )}
-                          <button
-                            onClick={(e) => handleDeleteChat(e, chat.id)}
-                            disabled={deletingChatId === chat.id}
-                            className="btn btn-ghost btn-circle btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Delete chat"
-                          >
-                            {deletingChatId === chat.id ? (
-                              <span className="loading loading-spinner loading-xs"></span>
-                            ) : (
-                              <Trash2Icon className="w-3 h-3" />
-                            )}
-                          </button>
                         </div>
                       </div>
 

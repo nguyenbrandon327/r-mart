@@ -228,6 +228,16 @@ async function initDB() {
   } catch (error) {
     console.log("Error applying users table location fields migration", error);
   }
+
+  // Add username field to users table (migration)
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`;
+
+    console.log("Users table username field migration applied successfully");
+  } catch (error) {
+    console.log("Error applying users table username field migration", error);
+  }
 }
 
 initDB().then(async () => {

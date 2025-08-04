@@ -30,6 +30,7 @@ const categories = [
   'rides',
   'renting',
   'merch',
+  'tickets',
   'other',
   'in-searching-for'
 ];
@@ -47,6 +48,7 @@ const getCategoryLabel = (category) => {
     'rides': 'Rides',
     'renting': 'Renting',
     'merch': 'Merch',
+    'tickets': 'Tickets',
     'other': 'Other',
     'in-searching-for': 'I\'m searching for'
   };

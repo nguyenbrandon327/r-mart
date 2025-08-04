@@ -99,10 +99,10 @@ export default function HomePage() {
         <div className="flex justify-center">
           <Link 
             href="/all-products"
-            className="px-8 py-4 bg-gradient-to-r from-[#003DA5] to-[#0056d9] text-white font-semibold text-lg hover:from-[#002b7a] hover:to-[#0044b8] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="px-8 py-4 bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-lg hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             style={{ borderRadius: '0px' }}
           >
-            Browse All Listings
+            BROWSE ALL LISTINGS
           </Link>
         </div>
       </div>

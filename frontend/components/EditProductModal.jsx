@@ -269,6 +269,7 @@ function EditProductModal() {
                   <option value="rides">Rides</option>
                   <option value="renting">Renting</option>
                   <option value="merch">Merch</option>
+                  <option value="tickets">Tickets</option>
                   <option value="other">Other</option>
                   <option value="in-searching-for">I'm searching for</option>
                 </select>

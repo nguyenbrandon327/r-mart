@@ -33,7 +33,11 @@ export const productIndexConfig = {
         type: 'text',
         analyzer: 'text_analyzer',
         fields: {
-          keyword: { type: 'keyword' }
+          keyword: { type: 'keyword' },
+          suggest: { 
+            type: 'completion',
+            analyzer: 'standard'
+          }
         }
       },
       description: { 
@@ -43,6 +47,8 @@ export const productIndexConfig = {
       price: { type: 'float' },
       category: { type: 'keyword' },
       images: { type: 'keyword' },
+      slug: { type: 'keyword' },
+      is_sold: { type: 'boolean' },
       user_id: { type: 'keyword' },
       user_name: { type: 'text' },
       user_email: { type: 'keyword' },

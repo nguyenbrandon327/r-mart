@@ -26,11 +26,11 @@ router.get("/category/:category", getProductsByCategory);
 router.get("/hot", getHotProducts);
 router.get("/recent", getRecentProducts);
 router.get("/by-location", protectRoute, getProductsByLocation);
-router.get("/:id", checkAuth, getProduct);
+router.get("/:slug", checkAuth, getProduct);
 router.get("/seller/:userId/other/:excludeProductId", getSellerOtherProducts);
 
 // Record product view (public route with optional auth)
-router.post("/:id/view", checkAuth, recordView);
+router.post("/:slug/view", checkAuth, recordView);
 
 router.post("/", protectRoute, upload.array('productImages', 5), createProduct);
 router.put("/:id", protectRoute, upload.array('productImages', 5), updateProduct);

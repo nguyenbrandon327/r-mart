@@ -2,6 +2,7 @@ import { sql } from "../config/db.js";
 import { upload } from "../utils/s3.js";
 import { getReceiverSocketId, isUserInChatRoom, io } from "../socket/socket.js";
 import { encrypt, decrypt } from "../utils/crypto.js";
+import { generateUniqueChatULID } from "../utils/ulidUtils.js";
 
 // Helper function to safely decrypt messages (handles both encrypted and plain text)
 const safeDecrypt = (text) => {
@@ -38,7 +39,7 @@ export const createChat = async (req, res) => {
 
         // Check if other user exists
         const otherUser = await sql`
-            SELECT id, name, email FROM users WHERE id = ${otherUserId}
+            SELECT id, name, email, username FROM users WHERE id = ${otherUserId}
         `;
         
         if (otherUser.length === 0) {
@@ -92,18 +93,21 @@ export const createChat = async (req, res) => {
             });
         }
 
+        // Generate ULID for the new chat
+        const chatULID = await generateUniqueChatULID();
+
         // Create new chat
         let newChat;
         if (productId) {
             newChat = await sql`
-                INSERT INTO chats (user1_id, user2_id, product_id)
-                VALUES (${user1Id}, ${user2Id}, ${productId})
+                INSERT INTO chats (user1_id, user2_id, product_id, ulid)
+                VALUES (${user1Id}, ${user2Id}, ${productId}, ${chatULID})
                 RETURNING *
             `;
         } else {
             newChat = await sql`
-                INSERT INTO chats (user1_id, user2_id, product_id)
-                VALUES (${user1Id}, ${user2Id}, NULL)
+                INSERT INTO chats (user1_id, user2_id, product_id, ulid)
+                VALUES (${user1Id}, ${user2Id}, NULL, ${chatULID})
                 RETURNING *
             `;
         }
@@ -138,12 +142,24 @@ export const getChats = async (req, res) => {
                     ELSE u1.id
                 END as other_user_id,
                 CASE 
+                    WHEN c.user1_id = ${currentUserId} THEN u2.email
+                    ELSE u1.email
+                END as other_user_email,
+                CASE 
+                    WHEN c.user1_id = ${currentUserId} THEN u2.username
+                    ELSE u1.username
+                END as other_user_username,
+                CASE 
                     WHEN c.user1_id = ${currentUserId} THEN u2.profile_pic
                     ELSE u1.profile_pic
                 END as other_user_profile_pic,
                 p.name as product_name,
                 p.images[1] as product_image,
+                p.images as product_images,
                 p.price as product_price,
+                p.description as product_description,
+                p.category as product_category,
+                p.slug as product_slug,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id) as message_count,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id AND sender_id != ${currentUserId} AND seen_at IS NULL) as unread_count,
                 (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
@@ -179,13 +195,13 @@ export const getChats = async (req, res) => {
 // Delete a chat
 export const deleteChat = async (req, res) => {
     try {
-        const { id: chatId } = req.params;
+        const { ulid: chatULID } = req.params;
         const currentUserId = req.user.id;
 
         // Verify the chat exists and the user is part of it
         const chat = await sql`
             SELECT * FROM chats 
-            WHERE id = ${chatId} 
+            WHERE ulid = ${chatULID} 
             AND (user1_id = ${currentUserId} OR user2_id = ${currentUserId})
         `;
 
@@ -198,7 +214,7 @@ export const deleteChat = async (req, res) => {
 
         // Delete the chat (messages will be deleted due to CASCADE)
         await sql`
-            DELETE FROM chats WHERE id = ${chatId}
+            DELETE FROM chats WHERE ulid = ${chatULID}
         `;
 
         res.status(200).json({
@@ -217,13 +233,13 @@ export const deleteChat = async (req, res) => {
 // Get messages for a specific chat
 export const getMessages = async (req, res) => {
     try {
-        const { id: chatId } = req.params;
+        const { ulid: chatULID } = req.params;
         const currentUserId = req.user.id;
         
         // Verify the user is part of this chat
         const chat = await sql`
             SELECT * FROM chats 
-            WHERE id = ${chatId} 
+            WHERE ulid = ${chatULID} 
             AND (user1_id = ${currentUserId} OR user2_id = ${currentUserId})
         `;
 
@@ -233,6 +249,8 @@ export const getMessages = async (req, res) => {
                 message: "You don't have access to this chat"
             });
         }
+
+        const chatId = chat[0].id; // Get the internal ID for message queries
 
         const messages = await sql`
             SELECT 
@@ -267,13 +285,13 @@ export const getMessages = async (req, res) => {
 // Mark messages as seen
 export const markMessagesAsSeen = async (req, res) => {
     try {
-        const { id: chatId } = req.params;
+        const { ulid: chatULID } = req.params;
         const currentUserId = req.user.id;
         
         // Verify the user is part of this chat
         const chat = await sql`
             SELECT * FROM chats 
-            WHERE id = ${chatId} 
+            WHERE ulid = ${chatULID} 
             AND (user1_id = ${currentUserId} OR user2_id = ${currentUserId})
         `;
 
@@ -283,6 +301,8 @@ export const markMessagesAsSeen = async (req, res) => {
                 message: "You don't have access to this chat"
             });
         }
+
+        const chatId = chat[0].id; // Get the internal ID for message queries
 
         // Mark all unseen messages from other users as seen
         const updatedMessages = await sql`
@@ -356,13 +376,13 @@ export const getUnreadCount = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
     try {
-        const { id: chatId } = req.params;
+        const { ulid: chatULID } = req.params;
         const senderId = req.user.id;
         
         // Verify the user is part of this chat
         const chat = await sql`
             SELECT * FROM chats 
-            WHERE id = ${chatId} 
+            WHERE ulid = ${chatULID} 
             AND (user1_id = ${senderId} OR user2_id = ${senderId})
         `;
 
@@ -373,6 +393,8 @@ export const sendMessage = async (req, res) => {
             });
         }
 
+        const chatId = chat[0].id; // Get the internal ID for message queries
+        
         // Get the receiver ID
         const receiverId = chat[0].user1_id === senderId ? chat[0].user2_id : chat[0].user1_id;
         

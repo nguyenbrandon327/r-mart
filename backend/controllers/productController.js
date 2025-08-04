@@ -3,6 +3,7 @@ import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
 import { recordProductView } from "./recentlySeenController.js";
 import { indexProduct, updateProductIndex, deleteProductIndex } from "./searchController.js";
 import { calculateDistance, getUserCoordinates } from "../utils/distanceCalculator.js";
+import { generateUniqueSlug } from "../utils/slugUtils.js";
 import crypto from "crypto";
 
 // CRUD operations
@@ -35,7 +36,7 @@ export const getProducts = async (req, res) => {
         if (excludeRecentlyViewed === 'true' && userId) {
             // Exclude recently viewed products for authenticated users
             products = await sql`
-                SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id
                 WHERE p.is_sold = false AND p.id NOT IN (
@@ -47,7 +48,7 @@ export const getProducts = async (req, res) => {
             `;
         } else {
             products = await sql`
-                SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id
                 WHERE p.is_sold = false
@@ -81,9 +82,12 @@ export const createProduct = async (req, res) => {
     }
 
     try {
+        // Generate unique slug for the product
+        const slug = await generateUniqueSlug(name);
+        
         const newProduct = await sql`
-            INSERT INTO products (name, price, description, images, category, user_id)  
-            VALUES (${name}, ${price}, ${description}, ${images}, ${category}, ${req.user.id})
+            INSERT INTO products (name, price, description, images, category, user_id, slug)  
+            VALUES (${name}, ${price}, ${description}, ${images}, ${category}, ${req.user.id}, ${slug})
             RETURNING *
         `;
 
@@ -117,25 +121,43 @@ export const createProduct = async (req, res) => {
 };
 
 export const getProduct = async (req, res) => {
-    const { id } = req.params;
+    const { slug } = req.params;
 
     try {
-        const product = await sql `
-            SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
-            FROM products p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.id=${id}
-        `
+        // Try to find by slug first, then fallback to ID for backward compatibility
+        let product;
+        if (slug && isNaN(slug)) {
+            // It's a slug (non-numeric)
+            product = await sql `
+                SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
+                FROM products p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.slug=${slug}
+            `;
+        } else {
+            // It's an ID (numeric) - for backward compatibility
+            product = await sql `
+                SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
+                FROM products p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.id=${slug}
+            `;
+        }
         
         // Only record views for authenticated users
         // req.user will only exist if the user is logged in via protectRoute middleware
         console.log("Authentication status:", req.user ? `Authenticated as ${req.user.name} (ID: ${req.user.id})` : "Not authenticated");
         
-        if (req.user && req.user.id) {
-            console.log(`Recording product view: user=${req.user.id}, product=${id}`);
-            await recordProductView(req.user.id, id);
+        if (req.user && req.user.id && product.length > 0) {
+            // Don't record views if the user is viewing their own product
+            if (req.user.id === product[0].user_id) {
+                console.log(`Skipping view recording: user ${req.user.id} is viewing their own product ${product[0].id}`);
+            } else {
+                console.log(`Recording product view: user=${req.user.id}, product=${product[0].id}`);
+                await recordProductView(req.user.id, product[0].id);
+            }
         } else {
-            console.log("Skipping product view recording - user not authenticated");
+            console.log("Skipping product view recording - user not authenticated or product not found");
         }
         
         res.status(200).json({ success:true, data:product[0] });
@@ -217,9 +239,15 @@ export const updateProduct = async (req, res) => {
         });
       }
 
+      // Generate new slug if name changed
+      let slug = existingProduct[0].slug;
+      if (name !== existingProduct[0].name) {
+        slug = await generateUniqueSlug(name, id);
+      }
+
       const updateProduct = await sql`
         UPDATE products
-        SET name=${name}, price=${price}, description=${description}, images=${finalImages}, category=${category}
+        SET name=${name}, price=${price}, description=${description}, images=${finalImages}, category=${category}, slug=${slug}
         WHERE id=${id}
         RETURNING *
       `;
@@ -314,7 +342,7 @@ export const getProductsByCategory = async (req, res) => {
         switch (sort) {
             case 'recent_first':
                 products = await sql`
-                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
                     WHERE p.category=${category} AND p.is_sold = false
@@ -323,7 +351,7 @@ export const getProductsByCategory = async (req, res) => {
                 break;
             case 'price_low_high':
                 products = await sql`
-                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
                     WHERE p.category=${category} AND p.is_sold = false
@@ -332,7 +360,7 @@ export const getProductsByCategory = async (req, res) => {
                 break;
             case 'price_high_low':
                 products = await sql`
-                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
                     WHERE p.category=${category} AND p.is_sold = false
@@ -343,7 +371,7 @@ export const getProductsByCategory = async (req, res) => {
             default:
                 // For category pages, "best match" means newest with some randomization
                 products = await sql`
-                    SELECT p.*, u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic
+                    SELECT p.*, u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic
                     FROM products p
                     LEFT JOIN users u ON p.user_id = u.id
                     WHERE p.category=${category} AND p.is_sold = false
@@ -566,13 +594,33 @@ export const markProductAsAvailable = async (req, res) => {
 
 // ────────────────────────
 // Record a product view
-// Method: POST /api/products/:id/view
+// Method: POST /api/products/:slug/view
 // Public route (user may be unauthenticated)
 // ────────────────────────
 export const recordView = async (req, res) => {
-  const { id: productId } = req.params;
+  const { slug } = req.params;
   const userId = req.user?.id;                 // may be undefined
   const ipHash = req.ip ? crypto.createHash("sha256").update(req.ip).digest("hex") : null;
+  
+  // First get the product ID and owner ID from the slug
+  let productId, productOwnerId;
+  try {
+    const product = await sql`SELECT id, user_id FROM products WHERE slug = ${slug}`;
+    if (product.length === 0) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    productId = product[0].id;
+    productOwnerId = product[0].user_id;
+  } catch (error) {
+    console.error("Error finding product by slug:", error);
+    return res.status(500).json({ error: "Failed to find product" });
+  }
+
+  // Don't record views if the user is viewing their own product
+  if (userId && userId === productOwnerId) {
+    console.log(`Skipping view recording: user ${userId} is viewing their own product ${productId}`);
+    return res.sendStatus(204);
+  }
 
   try {
     await sql`
@@ -677,7 +725,7 @@ export const getProductsByLocation = async (req, res) => {
         // Base query to get products with user location data
         let baseQuery = sql`
             SELECT p.*, 
-                   u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+                   u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic,
                    u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
             FROM products p
             LEFT JOIN users u ON p.user_id = u.id
@@ -689,7 +737,7 @@ export const getProductsByLocation = async (req, res) => {
         if (category) {
             products = await sql`
                 SELECT p.*, 
-                       u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+                       u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic,
                        u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id
@@ -698,7 +746,7 @@ export const getProductsByLocation = async (req, res) => {
         } else {
             products = await sql`
                 SELECT p.*, 
-                       u.name as user_name, u.email as user_email, u.profile_pic as user_profile_pic,
+                       u.name as user_name, u.email as user_email, u.username as user_username, u.profile_pic as user_profile_pic,
                        u.location_type, u.campus_location_name, u.custom_latitude, u.custom_longitude
                 FROM products p
                 LEFT JOIN users u ON p.user_id = u.id

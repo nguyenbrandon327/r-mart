@@ -109,6 +109,7 @@ export default function Onboarding() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
+    username: '',
     year: '',
     major: '',
     description: ''
@@ -129,6 +130,11 @@ export default function Onboarding() {
 
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [addressError, setAddressError] = useState(''); // Add address error state
+  
+  // Username validation state
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameSuccess, setUsernameSuccess] = useState('');
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   
   // Major dropdown states
   const [majorSearchTerm, setMajorSearchTerm] = useState('');
@@ -204,11 +210,64 @@ export default function Onboarding() {
     setIsMajorDropdownOpen(true);
   };
 
+  // Username validation function
+  const checkUsernameAvailability = async (username) => {
+    if (!username || username.length < 3) {
+      setUsernameError('');
+      setUsernameSuccess('');
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    setUsernameError('');
+    setUsernameSuccess('');
+
+    try {
+      const response = await axios.post(`${API_URL}/check-username`, {
+        username: username
+      }, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        setUsernameSuccess('Username is available!');
+        setUsernameError('');
+      }
+    } catch (error) {
+      setUsernameError(error.response?.data?.message || 'Error checking username');
+      setUsernameSuccess('');
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  // Debounced username check
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.username.trim()) {
+        checkUsernameAvailability(formData.username.trim().toLowerCase());
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.username]);
+
   const validateStep1 = () => {
-    if (!formData.year || !formData.major.trim()) {
+    if (!formData.username.trim() || !formData.year || !formData.major.trim()) {
       toast.error('Please fill in all required fields');
       return false;
     }
+    
+    if (usernameError) {
+      toast.error('Please fix the username error before continuing');
+      return false;
+    }
+    
+    if (!usernameSuccess && formData.username.trim()) {
+      toast.error('Please wait for username validation to complete');
+      return false;
+    }
+    
     return true;
   };
 
@@ -273,6 +332,13 @@ export default function Onboarding() {
     setAddressError(''); // Clear any previous address errors
     
     try {
+      // First set the username
+      await axios.put(`${API_URL}/username`, {
+        username: formData.username.trim().toLowerCase()
+      }, {
+        withCredentials: true
+      });
+
       // Complete onboarding with required fields
       await axios.put(`${API_URL}/onboarding`, {
         year: formData.year,
@@ -436,6 +502,44 @@ export default function Onboarding() {
                 >
                   <h3 className="text-lg font-semibold text-gray-800 mb-6">Required Information</h3>
                   
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Username *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => {
+                        const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                        setFormData({ ...formData, username: value });
+                        // Clear previous messages when user starts typing
+                        if (usernameError || usernameSuccess) {
+                          setUsernameError('');
+                          setUsernameSuccess('');
+                        }
+                      }}
+                      placeholder="your_username"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200"
+                      style={{ '--tw-ring-color': '#003DA5' }}
+                      onFocus={(e) => e.target.style.borderColor = '#003DA5'}
+                      onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                      maxLength={30}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      3-30 characters, letters, numbers, and underscores only
+                    </p>
+                    {isCheckingUsername && (
+                      <p className="text-sm mt-1" style={{ color: '#003DA5' }}>Checking availability...</p>
+                    )}
+                    {usernameError && (
+                      <p className="text-sm mt-1 text-red-600">{usernameError}</p>
+                    )}
+                    {usernameSuccess && (
+                      <p className="text-sm mt-1 text-green-600">{usernameSuccess}</p>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       What year are you? *

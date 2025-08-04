@@ -29,7 +29,7 @@ const SavedProductItem = ({ product }) => {
 
   return (
     <div className="flex flex-col md:flex-row hover:bg-gray-50 transition-colors rounded-lg">
-      <Link href={`/product/${product.id}`} className="flex flex-col md:flex-row flex-1">
+      <Link href={`/product/${product.slug || product.id}`} className="flex flex-col md:flex-row flex-1">
         {/* Product image */}
         <div className="md:w-40 h-40 md:h-40 flex-shrink-0">
           <img

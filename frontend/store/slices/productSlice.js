@@ -99,9 +99,9 @@ export const deleteProduct = createAsyncThunk(
 
 export const fetchProduct = createAsyncThunk(
   'products/fetchProduct',
-  async (id, { rejectWithValue }) => {
+  async (slug, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/products/${id}`);
+      const response = await axios.get(`/api/products/${slug}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue("Something went wrong");

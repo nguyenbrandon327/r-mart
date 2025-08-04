@@ -8,7 +8,7 @@ export const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     
     const [user] = await sql`
-      SELECT u.id, u.name, u.email, u.profile_pic, u.description, u.year, u.major, u.created_at, u.isVerified,
+      SELECT u.id, u.name, u.email, u.username, u.profile_pic, u.description, u.year, u.major, u.created_at, u.isVerified,
              u.location_type, u.show_location_in_profile, u.campus_location_name, u.custom_address,
              u.custom_latitude, u.custom_longitude
       FROM users u
@@ -62,13 +62,13 @@ export const getUserByUsername = async (req, res) => {
   try {
     const { username } = req.params;
     
-    // Find user by email pattern (username@domain)
+    // Find user by username
     const users = await sql`
-      SELECT u.id, u.name, u.email, u.profile_pic, u.description, u.year, u.major, u.created_at,
+      SELECT u.id, u.name, u.email, u.username, u.profile_pic, u.description, u.year, u.major, u.created_at,
              u.location_type, u.show_location_in_profile, u.campus_location_name, u.custom_address,
              u.custom_latitude, u.custom_longitude
       FROM users u
-      WHERE u.email LIKE ${username + '@%'}
+      WHERE u.username = ${username}
       LIMIT 1
     `;
     
@@ -152,7 +152,7 @@ export const updateUserProfile = async (req, res) => {
         description = ${description ? description.trim() : null},
         major = ${major ? major.trim() : null}
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, major, year, created_at, isVerified,
+      RETURNING id, name, email, username, profile_pic, description, major, year, created_at, isVerified,
                 location_type, show_location_in_profile, campus_location_name, custom_address,
                 custom_latitude, custom_longitude
     `;
@@ -232,7 +232,7 @@ export const uploadProfilePic = async (req, res) => {
       UPDATE users 
       SET profile_pic = ${profilePicUrl}
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified,
+      RETURNING id, name, email, username, profile_pic, description, year, major, created_at, isVerified,
                 location_type, show_location_in_profile, campus_location_name, custom_address,
                 custom_latitude, custom_longitude
     `;
@@ -304,7 +304,7 @@ export const deleteProfilePic = async (req, res) => {
       UPDATE users 
       SET profile_pic = NULL
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, year, major, created_at, isVerified,
+      RETURNING id, name, email, username, profile_pic, description, year, major, created_at, isVerified,
                 location_type, show_location_in_profile, campus_location_name, custom_address,
                 custom_latitude, custom_longitude
     `;
@@ -374,7 +374,7 @@ export const updateOnboardingStep1 = async (req, res) => {
         year = ${year},
         major = ${major.trim()}
       WHERE id = ${userId}
-      RETURNING id, name, email, year, major, profile_pic, description, isOnboarded
+      RETURNING id, name, email, username, year, major, profile_pic, description, isOnboarded
     `;
     
     if (!updatedUser) {
@@ -421,7 +421,7 @@ export const completeOnboarding = async (req, res) => {
       UPDATE users 
       SET isOnboarded = true
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, year, major, isOnboarded, created_at, isVerified
+      RETURNING id, name, email, username, profile_pic, description, year, major, isOnboarded, created_at, isVerified
     `;
     
     res.status(200).json({
@@ -469,7 +469,7 @@ export const completeOnboardingAll = async (req, res) => {
         major = ${major.trim()},
         isOnboarded = true
       WHERE id = ${userId}
-      RETURNING id, name, email, profile_pic, description, year, major, isOnboarded, created_at, isVerified
+      RETURNING id, name, email, username, profile_pic, description, year, major, isOnboarded, created_at, isVerified
     `;
     
     if (!updatedUser) {
@@ -571,7 +571,7 @@ export const updateUserLocation = async (req, res) => {
 
     // Get the updated user
     const [updatedUser] = await sql`
-      SELECT u.id, u.name, u.email, u.profile_pic, u.description, u.year, u.major, u.created_at, u.isVerified,
+      SELECT u.id, u.name, u.email, u.username, u.profile_pic, u.description, u.year, u.major, u.created_at, u.isVerified,
              u.location_type, u.show_location_in_profile, u.campus_location_name, u.custom_address,
              u.custom_latitude, u.custom_longitude, u.isOnboarded
       FROM users u
@@ -620,6 +620,117 @@ export const updateUserLocation = async (req, res) => {
     });
   }
 }; 
+
+// Check username availability
+export const checkUsernameAvailability = async (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username || !username.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is required"
+      });
+    }
+
+    // Validate username format (alphanumeric and underscores only, 3-30 characters)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+    if (!usernameRegex.test(username.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be 3-30 characters long and contain only letters, numbers, and underscores"
+      });
+    }
+
+    // Check if username already exists
+    const [existingUser] = await sql`
+      SELECT id FROM users WHERE username = ${username.trim().toLowerCase()}
+    `;
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "Username is already taken"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Username is available"
+    });
+  } catch (error) {
+    console.error('Username availability check error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error checking username availability",
+      error: error.message
+    });
+  }
+};
+
+// Update username during onboarding
+export const updateUsername = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { username } = req.body;
+    
+    if (!username || !username.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is required"
+      });
+    }
+
+    // Validate username format
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+    if (!usernameRegex.test(username.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be 3-30 characters long and contain only letters, numbers, and underscores"
+      });
+    }
+
+    // Check if username already exists (excluding current user)
+    const [existingUser] = await sql`
+      SELECT id FROM users WHERE username = ${username.trim().toLowerCase()} AND id != ${userId}
+    `;
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "Username is already taken"
+      });
+    }
+
+    // Update username
+    const [updatedUser] = await sql`
+      UPDATE users 
+      SET username = ${username.trim().toLowerCase()}
+      WHERE id = ${userId}
+      RETURNING id, name, email, username, profile_pic, description, year, major, isOnboarded, created_at, isVerified
+    `;
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Username updated successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Username update error:', error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating username",
+      error: error.message
+    });
+  }
+};
 
 // Geocode address using Nominatim API
 export const geocodeAddress = async (req, res) => {

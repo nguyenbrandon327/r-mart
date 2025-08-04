@@ -101,6 +101,32 @@ export const updateUserLocation = createAsyncThunk(
   }
 );
 
+// Check username availability
+export const checkUsernameAvailability = createAsyncThunk(
+  'user/checkUsernameAvailability',
+  async (username, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/check-username`, { username });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Error checking username availability");
+    }
+  }
+);
+
+// Update username
+export const updateUsername = createAsyncThunk(
+  'user/updateUsername',
+  async (username, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/username`, { username });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Error updating username");
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -225,6 +251,39 @@ const userSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(updateUserLocation.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Check username availability
+      .addCase(checkUsernameAvailability.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(checkUsernameAvailability.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.message = action.payload.message;
+      })
+      .addCase(checkUsernameAvailability.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Update username
+      .addCase(updateUsername.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUsername.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentUserProfile = action.payload.user;
+        // Also update viewedUserProfile if it's the same user
+        if (state.viewedUserProfile && state.viewedUserProfile.id === action.payload.user.id) {
+          state.viewedUserProfile = action.payload.user;
+        }
+        state.message = action.payload.message;
+      })
+      .addCase(updateUsername.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

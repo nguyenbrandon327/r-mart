@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from 'react-redux';
+import Link from 'next/link';
 import { 
   PackageIcon, 
   ShoppingBagIcon,
@@ -24,6 +25,21 @@ const sortOptions = [
   { value: 'price_low_high', label: 'Price: Low to high', icon: ArrowUpIcon, description: 'Cheapest first' },
   { value: 'price_high_low', label: 'Price: High to low', icon: ArrowDownIcon, description: 'Most expensive first' }
 ];
+
+// Helper function to convert category names to URL slugs
+const getCategorySlug = (categoryName) => {
+  const categoryMap = {
+    'Clothes': 'clothes',
+    'Tech': 'tech',
+    'Textbooks': 'textbooks',
+    'Furniture': 'furniture',
+    'Kitchen': 'kitchen',
+    'Vehicles': 'vehicles',
+    'Housing': 'housing',
+    'Merch': 'merch'
+  };
+  return categoryMap[categoryName] || categoryName.toLowerCase();
+};
 
 export default function AllProductsPage() {
   const dispatch = useDispatch();
@@ -161,9 +177,12 @@ export default function AllProductsPage() {
                     <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
                       {slide.leftHalf.category}
                     </h3>
-                    <button className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs">
+                    <Link 
+                      href={`/category/${getCategorySlug(slide.leftHalf.category)}`}
+                      className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs"
+                    >
                       Shop Now
-                    </button>
+                    </Link>
                   </div>
                 </div>
                 
@@ -178,9 +197,12 @@ export default function AllProductsPage() {
                     <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
                       {slide.rightHalf.category}
                     </h3>
-                    <button className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs">
+                    <Link 
+                      href={`/category/${getCategorySlug(slide.rightHalf.category)}`}
+                      className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs"
+                    >
                       Shop Now
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
