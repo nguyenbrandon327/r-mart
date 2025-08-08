@@ -1,8 +1,10 @@
 {
-  "/profile/[username]/page": "app/profile/[username]/page.js",
   "/page": "app/page.js",
-  "/add-listing/page": "app/add-listing/page.js",
-  "/product/[slug]/page": "app/product/[slug]/page.js",
+  "/terms/page": "app/terms/page.js",
   "/landing/page": "app/landing/page.js",
-  "/category/[category]/page": "app/category/[category]/page.js"
+  "/privacy/page": "app/privacy/page.js",
+  "/saved/page": "app/saved/page.js",
+  "/product/[slug]/page": "app/product/[slug]/page.js",
+  "/profile/[username]/page": "app/profile/[username]/page.js",
+  "/inbox/page": "app/inbox/page.js"
 }

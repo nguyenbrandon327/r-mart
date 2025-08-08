@@ -44,8 +44,8 @@ export default function UserLink({ user, children, className = "", showProfilePi
   };
 
   // Profile picture component
-  const ProfilePicture = ({ user, size }) => {
-    const profilePic = getProfilePicture(user);
+  const ProfilePicture = ({ user, size, forceDefault = false }) => {
+    const profilePic = forceDefault ? null : getProfilePicture(user);
     const userName = getUserName(user);
     
     if (profilePic) {
@@ -57,13 +57,32 @@ export default function UserLink({ user, children, className = "", showProfilePi
         />
       );
     } else {
-      // Fallback to initials
-      const initials = userName.charAt(0).toUpperCase();
+      // Fallback to default profile picture
       return (
-        <div className={`${size} rounded-full bg-blue-500 flex items-center justify-center text-white font-medium`}>
-          {initials}
-        </div>
+        <img
+          src="/profile-pic.png"
+          alt={`${userName}'s profile`}
+          className={`${size} rounded-full object-cover`}
+        />
       );
+    }
+  };
+
+  // Get display text based on authentication status
+  const getDisplayText = () => {
+    if (children) return children;
+    
+    if (isAuthenticated) {
+      // For authenticated users, show both username and name
+      const username = getUsernameFromUser(user);
+      const name = getUserName(user);
+      if (username && name && username !== name) {
+        return `${name} (@${username})`;
+      }
+      return name;
+    } else {
+      // For non-authenticated users, show only username
+      return `@${getUsernameFromUser(user) || getUserName(user)}`;
     }
   };
 
@@ -71,9 +90,13 @@ export default function UserLink({ user, children, className = "", showProfilePi
   const content = (
     <div className={`flex items-center gap-3 ${className}`}>
       {showProfilePic && (
-        <ProfilePicture user={user} size={profilePicSize} />
+        <ProfilePicture 
+          user={user} 
+          size={profilePicSize} 
+          forceDefault={!isAuthenticated}
+        />
       )}
-      <span className="text-base font-medium">{children || getUserName(user)}</span>
+      <span className="text-base font-medium">{getDisplayText()}</span>
     </div>
   );
 

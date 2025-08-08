@@ -50,12 +50,14 @@ export const createBreadcrumbs = {
   // Home > Category
   category: (categoryName) => [
     { label: 'Home', href: '/' },
+    { label: 'All Listings', href: '/all-products' },
     { label: categoryName }
   ],
 
-  // Home > Category > Product
+  // All Products > Category > Product
   product: (categoryName, productName, categorySlug) => [
     { label: 'Home', href: '/' },
+    { label: 'All Listings', href: '/all-products' },
     { label: categoryName, href: `/category/${categorySlug}` },
     { label: productName }
   ],
@@ -91,12 +93,7 @@ export const createBreadcrumbs = {
     { label: 'Inbox' }
   ],
 
-  // Home > Inbox > Chat
-  chat: (otherUserName) => [
-    { label: 'Home', href: '/' },
-    { label: 'Inbox', href: '/inbox' },
-    { label: `Chat with ${otherUserName}` }
-  ],
+ 
 
   // Custom breadcrumb builder
   custom: (items) => [

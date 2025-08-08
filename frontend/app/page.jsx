@@ -60,7 +60,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero Banner */}
-      <div className="relative w-screen h-76 md:h-88 lg:h-96 mb-12 overflow-hidden shadow-lg -mt-6 -ml-[50vw] left-1/2">
+      <div className="relative w-screen h-64 sm:h-72 md:h-80 lg:h-96 mb-8 sm:mb-12 overflow-hidden shadow-lg -mt-6 -ml-[50vw] left-1/2">
         <img 
           src="/banner1.png" 
           className="w-full h-full object-cover" 
@@ -69,41 +69,45 @@ export default function HomePage() {
         <div 
           className="absolute inset-0 flex items-center"
           style={{
-            background: 'linear-gradient(to right, rgba(0, 61, 165, 0.9) 0%, rgba(0, 61, 165, 0.5) 40%, rgba(0, 61, 165, 0.2) 60%, transparent 75%)'
+            background: 'linear-gradient(to right, rgba(0, 61, 165, 0.9) 0%, rgba(0, 61, 165, 0.6) 30%, rgba(0, 61, 165, 0.3) 50%, transparent 70%)'
           }}
         >
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-left text-white max-w-2xl">
-            <h2 className="text-2xl md:text-3xl font-extrabold mb-3" dangerouslySetInnerHTML={{__html: "Looking to declutter <br/>before Fall quarter?"}}></h2>
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <Link 
-                href={isAuthenticated ? "/add-listing" : "/auth/login"}
-                className="btn btn-md bg-white text-black border-white hover:bg-gray-100 hover:border-gray-100"
-              >
-                Sell Now
-              </Link>
-              <Link 
-                href="/landing"
-                className="text-white hover:text-gray-200 hover:underline transition-colors duration-200 text-sm"
-              >
-                Learn More
-              </Link>
-            </div>
+          <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+            <div className="text-left text-white max-w-xs sm:max-w-md md:max-w-2xl">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold mb-2 sm:mb-3 leading-tight" 
+                  dangerouslySetInnerHTML={{__html: "Looking to declutter <br/>before Fall quarter?"}}></h2>
+              <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 items-start xs:items-center">
+                <Link 
+                  href={isAuthenticated ? "/add-listing" : "/auth/login"}
+                  className="btn btn-sm sm:btn-md bg-white text-black border-white hover:bg-gray-100 hover:border-gray-100 text-xs sm:text-sm font-semibold px-4 sm:px-6"
+                >
+                  Sell Now
+                </Link>
+                <Link 
+                  href="/landing"
+                  className="text-white hover:text-gray-200 hover:underline transition-colors duration-200 text-xs sm:text-sm"
+                >
+                  Learn More
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Browse All Listings Button */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-        <div className="flex justify-center">
-          <Link 
-            href="/all-products"
-            className="px-8 py-4 bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-lg hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-            style={{ borderRadius: '0px' }}
-          >
-            BROWSE ALL LISTINGS
-          </Link>
+        
+        {/* Browse All Listings Button - Bottom Right */}
+        <div className="absolute bottom-2 sm:bottom-4 w-full">
+          <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+            <div className="flex justify-center sm:justify-end">
+              <Link 
+                href="/all-products"
+                className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-sm sm:text-base md:text-lg hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                style={{ borderRadius: '0px' }}
+              >
+                <span className="hidden sm:inline">BROWSE ALL LISTINGS</span>
+                <span className="sm:hidden">BROWSE ALL</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 

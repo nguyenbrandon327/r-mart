@@ -82,7 +82,7 @@ export default function ProfilePage() {
             {/* Breadcrumb */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
               <Breadcrumb 
-                items={createBreadcrumbs.profile(viewedUserProfile.name || username)}
+                items={createBreadcrumbs.profile(username)}
                 className="mb-4"
               />
             </div>
@@ -127,6 +127,9 @@ export default function ProfilePage() {
                   <h1 className="text-2xl font-bold text-gray-900 mb-2">
                     {isOwnProfile ? viewedUserProfile.name : viewedUserProfile.name?.split(' ')[0]}
                   </h1>
+                  <p className="text-gray-500 text-sm mb-4">
+                    @{viewedUserProfile.username}
+                  </p>
                   
                   {viewedUserProfile.description ? (
                     <p className="text-gray-700 mb-6 text-sm leading-relaxed">

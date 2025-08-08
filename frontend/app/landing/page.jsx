@@ -190,7 +190,7 @@ export default function LandingPage() {
               <img 
                 src="/landing/8.jpg" 
                 alt="UCR students marketplace" 
-                className="w-full max-w-md h-80 object-cover shadow-lg border-4 border-white"
+                className="w-full max-w-lg md:max-w-md h-80 object-cover shadow-lg border-4 border-white"
               />
             </div>
           </div>
@@ -306,7 +306,7 @@ export default function LandingPage() {
               </div>
               <div className="collapse-content">
                 <p className="text-base-content/80">
-                  All listings are public. Listing pages contain the seller's username. Profile pages are only viewable by authenticated users (aka. other UCR students). Profile pages contain the seller's name, profile picture, description, year, major, and dorm name (which you can choose to hide).
+                  All listings are public. Listing pages contain the seller's username. Profile pages are only viewable by authenticated users (aka. other UCR students). Profile pages contain the seller's name, pronouns, profile picture, description, year, major, and dorm name (which you can choose to hide).
                 </p>
               </div>
             </div>

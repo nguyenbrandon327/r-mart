@@ -55,11 +55,7 @@ export const useAuthStore = () => {
 
     // Actions
     signup: async ({ email, password, name, captchaToken }) => {
-      try {
-        await dispatch(signupAction({ email, password, name, captchaToken })).unwrap();
-      } catch (error) {
-        throw error;
-      }
+      return await dispatch(signupAction({ email, password, name, captchaToken }));
     },
 
     login: async (email, password) => {

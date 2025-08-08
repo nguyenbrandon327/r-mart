@@ -18,11 +18,19 @@ export default function SignUpPage() {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [agreedToTerms, setAgreedToTerms] = useState(false);
 	const [termsError, setTermsError] = useState("");
+	const [nameError, setNameError] = useState("");
+	const [passwordError, setPasswordError] = useState("");
+	const [passwordMatchError, setPasswordMatchError] = useState("");
 	const [captchaToken, setCaptchaToken] = useState("");
 	const [captchaError, setCaptchaError] = useState("");
 	const router = useRouter();
 
-	const { signup, error, isLoading, isAuthenticated } = useAuthStore();
+	const { signup, error, isLoading, isAuthenticated, clearError } = useAuthStore();
+
+	// Clear any existing errors when component mounts (only once)
+	useEffect(() => {
+		clearError();
+	}, []); // Empty dependency array - only run once on mount
 
 	// Redirect if authentication state changes to true
 	useEffect(() => {
@@ -37,9 +45,24 @@ export default function SignUpPage() {
 		// Clear any existing errors
 		setTermsError("");
 		setCaptchaError("");
+		setNameError("");
+		setPasswordError("");
+		setPasswordMatchError("");
+
+		// Validate first name and last name
+		if (!firstName.trim() || !lastName.trim()) {
+			setNameError("Please enter both your first name and last name.");
+			return;
+		}
+
+		// Validate password length
+		if (password.length < 6) {
+			setPasswordError("Password must be at least 6 characters long.");
+			return;
+		}
 
 		if (password !== confirmPassword) {
-			alert("Passwords do not match. Please try again.");
+			setPasswordMatchError("Passwords do not match. Please try again.");
 			return;
 		}
 
@@ -53,13 +76,14 @@ export default function SignUpPage() {
 			return;
 		}
 
-		try {
-			const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-			await signup({ email, password, name: fullName, captchaToken });
+		const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+		const result = await signup({ email, password, name: fullName, captchaToken });
+		
+		// Check if signup was successful
+		if (result.type === 'auth/signup/fulfilled') {
 			router.push("/auth/verify-email");
-		} catch (error) {
-			console.log(error);
 		}
+		// If rejected, the error will be set in the Redux state and displayed automatically
 	};
 
 	const onCaptchaChange = (token) => {
@@ -67,7 +91,7 @@ export default function SignUpPage() {
 		setCaptchaError("");
 	};
 	return (
-		<div className="flex flex-col md:flex-row h-screen w-full overflow-hidden">
+		<div className="flex flex-col md:flex-row min-h-screen w-full">
 			{/* Left side with image */}
 			<motion.div
 				initial={{ opacity: 0, x: -20 }}
@@ -86,7 +110,7 @@ export default function SignUpPage() {
 				initial={{ opacity: 0, x: 20 }}
 				animate={{ opacity: 1, x: 0 }}
 				transition={{ duration: 0.5 }}
-				className='w-full md:w-1/2 bg-base-100 p-8 flex flex-col justify-center'
+				className='w-full md:w-1/2 bg-base-100 p-4 sm:p-6 md:p-8 flex flex-col justify-center min-h-screen md:min-h-0'
 			>
 				<div className="max-w-md mx-auto w-full">
 					<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text'>
@@ -100,16 +124,23 @@ export default function SignUpPage() {
 								type='text'
 								placeholder='First Name'
 								value={firstName}
-								onChange={(e) => setFirstName(e.target.value)}
+								onChange={(e) => {
+									setFirstName(e.target.value);
+									setNameError("");
+								}}
 							/>
 							<Input
 								icon={User}
 								type='text'
 								placeholder='Last Name'
 								value={lastName}
-								onChange={(e) => setLastName(e.target.value)}
+								onChange={(e) => {
+									setLastName(e.target.value);
+									setNameError("");
+								}}
 							/>
 						</div>
+						{nameError && <p className='text-error font-semibold mt-2'>{nameError}</p>}
 						<Input
 							icon={Mail}
 							type='email'
@@ -122,15 +153,24 @@ export default function SignUpPage() {
 							type='password'
 							placeholder='Password'
 							value={password}
-							onChange={(e) => setPassword(e.target.value)}
+							onChange={(e) => {
+								setPassword(e.target.value);
+								setPasswordError("");
+								setPasswordMatchError("");
+							}}
 						/>
 						<Input
 							icon={Lock}
 							type='password'
 							placeholder='Confirm Password'
 							value={confirmPassword}
-							onChange={(e) => setConfirmPassword(e.target.value)}
+							onChange={(e) => {
+								setConfirmPassword(e.target.value);
+								setPasswordMatchError("");
+							}}
 						/>
+						{passwordError && <p className='text-error font-semibold mt-2'>{passwordError}</p>}
+						{passwordMatchError && <p className='text-error font-semibold mt-2'>{passwordMatchError}</p>}
 						{error && <p className='text-error font-semibold mt-2'>{error}</p>}
 
 						{/* Terms and Privacy Agreement */}

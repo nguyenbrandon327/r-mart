@@ -258,6 +258,11 @@ export default function Onboarding() {
       return false;
     }
     
+    if (formData.username.trim().length < 3) {
+      toast.error('Username must be at least 3 characters long');
+      return false;
+    }
+    
     if (usernameError) {
       toast.error('Please fix the username error before continuing');
       return false;
@@ -328,6 +333,19 @@ export default function Onboarding() {
       return;
     }
 
+    // Validate housing information if location type is selected
+    if (locationData.locationType === 'on_campus' && !locationData.campusLocationName) {
+      toast.error('Please select a residence hall');
+      return;
+    }
+
+    if (locationData.locationType === 'off_campus') {
+      if (!locationData.customAddress.trim() || !locationData.customCity.trim() || !locationData.customState.trim()) {
+        toast.error('Please fill in all address fields for off-campus housing');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setAddressError(''); // Clear any previous address errors
     
@@ -364,7 +382,8 @@ export default function Onboarding() {
       if (formData.description.trim()) {
         await axios.put(`${API_URL}/profile`, {
           name: user.name, // Keep existing name
-          description: formData.description.trim()
+          description: formData.description.trim(),
+          major: formData.major // Include major to prevent it from being set to null
         }, {
           withCredentials: true
         });
@@ -640,7 +659,7 @@ export default function Onboarding() {
                   }}
                   className="absolute inset-0 space-y-4"
                 >
-                  <h3 className="text-lg font-semibold text-gray-800 mb-6">Optional Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-6">Customize your profile (Optional)</h3>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -685,7 +704,7 @@ export default function Onboarding() {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Tell us a bit about yourself!"
+                      placeholder="Hobbies, interests, anything! Tell us a bit about yourself :)"
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition duration-200 resize-none"
                       style={{ '--tw-ring-color': '#003DA5' }}
@@ -762,7 +781,7 @@ export default function Onboarding() {
                   {locationData.locationType === 'on_campus' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select your residence hall
+                        Select your residence hall *
                       </label>
                       <select
                         value={locationData.campusLocationName}
@@ -788,7 +807,7 @@ export default function Onboarding() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Street Address
+                          Street Address *
                         </label>
                         <input
                           type="text"
@@ -808,7 +827,7 @@ export default function Onboarding() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            City
+                            City *
                           </label>
                           <input
                             type="text"
@@ -827,7 +846,7 @@ export default function Onboarding() {
                         
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            State
+                            State *
                           </label>
                           <input
                             type="text"

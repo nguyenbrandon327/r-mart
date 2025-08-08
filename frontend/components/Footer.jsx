@@ -32,7 +32,7 @@ export default function Footer() {
       <div>
         <div className="flex items-center gap-4">
           <a 
-            href="https://instagram.com" 
+            href="https://www.instagram.com/ucrmart/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="link link-hover"
@@ -41,7 +41,7 @@ export default function Footer() {
             <Instagram className="w-6 h-6" />
           </a>
           <a 
-            href="https://linkedin.com" 
+            href="https://www.linkedin.com/company/ucrmart/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="link link-hover"

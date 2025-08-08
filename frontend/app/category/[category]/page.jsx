@@ -86,7 +86,7 @@ export default function CategoryPage({ params }) {
       }
       dispatch(fetchProductsByLocation({ 
         category, 
-        maxDistance: 50, // Use a large default distance
+        maxDistance: 100, // Use a large default distance
         sort: 'distance' 
       }));
     } else {

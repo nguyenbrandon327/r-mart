@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../../../store";
+import { useSelector } from 'react-redux';
 import toast from "react-hot-toast";
 
 const EmailVerificationPage = () => {
@@ -14,11 +15,34 @@ const EmailVerificationPage = () => {
 	const router = useRouter();
 
 	const { isLoading, verifyEmail, resendVerificationCode, clearError, clearMessage } = useAuthStore();
+	const { user, isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
 
 	// Clear any existing errors when component mounts
 	useEffect(() => {
 		clearError();
 	}, [clearError]);
+
+	// Access control: redirect users who shouldn't be on this page
+	useEffect(() => {
+		// Don't do anything while checking auth
+		if (isCheckingAuth) return;
+
+		// Redirect to login if not authenticated
+		if (!isAuthenticated) {
+			router.push('/auth/login');
+			return;
+		}
+
+		// Redirect if user is already verified
+		if (user && user.isVerified) {
+			if (user.isOnboarded) {
+				router.push('/');
+			} else {
+				router.push('/auth/onboarding');
+			}
+			return;
+		}
+	}, [isAuthenticated, user, isCheckingAuth, router]);
 
 	const handleChange = (index, value) => {
 		// Clear errors when user starts typing
@@ -55,7 +79,7 @@ const EmailVerificationPage = () => {
 		}
 	};
 
-	const handleSubmit = async (e) => {
+	const handleSubmit = async (e, isManualSubmit = true) => {
 		e.preventDefault();
 		const verificationCode = code.join("");
 		try {
@@ -68,14 +92,17 @@ const EmailVerificationPage = () => {
 			toast.success("Email verified successfully");
 		} catch (error) {
 			console.log(error);
-			toast.error("Invalid or expired verification code. Please try again.");
+			// Only show error toast for manual submissions
+			if (isManualSubmit) {
+				toast.error("Invalid or expired verification code. Please try again.");
+			}
 		}
 	};
 
 	// Auto submit when all fields are filled
 	useEffect(() => {
 		if (code.every((digit) => digit !== "")) {
-			handleSubmit(new Event("submit"));
+			handleSubmit(new Event("submit"), false); // Pass false to indicate auto-submit
 		}
 	}, [code]);
 
@@ -107,6 +134,15 @@ const EmailVerificationPage = () => {
 			setResendLoading(false);
 		}
 	};
+
+	// Show loading while checking auth or if user shouldn't be here
+	if (isCheckingAuth || !isAuthenticated || (user && user.isVerified)) {
+		return (
+			<div className="flex justify-center items-center h-screen" data-theme="light">
+				<div className="loading loading-spinner loading-lg"></div>
+			</div>
+		);
+	}
 
 	return (
 		<div className='max-w-md w-full bg-base-200 rounded-2xl shadow-xl overflow-hidden'>

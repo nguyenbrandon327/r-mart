@@ -83,10 +83,6 @@ export const useSocket = () => {
         // Handle unread count and notifications for messages from others
         if (!isFromCurrentUser && !isViewingThisChat) {
           dispatch(addChatToUnread({ chatId: messageChatId }));
-          toast.success('New message received!', {
-            icon: '💬',
-            duration: 3000,
-          });
         }
       });
 

@@ -39,7 +39,7 @@ export const fetchProductsByCategory = createAsyncThunk(
 
 export const fetchProductsByLocation = createAsyncThunk(
   'products/fetchProductsByLocation',
-  async ({ category, maxDistance = 10, sort = 'distance' }, { rejectWithValue }) => {
+  async ({ category, maxDistance = 50, sort = 'distance' }, { rejectWithValue }) => {
     try {
       const params = new URLSearchParams({ 
         ...(category && { category }),

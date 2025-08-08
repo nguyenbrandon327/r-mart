@@ -13,7 +13,12 @@ const LoginPage = () => {
 	const [password, setPassword] = useState("");
 	const router = useRouter();
 
-	const { login, isLoading, error, isAuthenticated } = useAuthStore();
+	const { login, isLoading, error, isAuthenticated, clearError } = useAuthStore();
+
+	// Clear any existing errors when component mounts
+	useEffect(() => {
+		clearError();
+	}, [clearError]);
 
 	// Redirect if authentication state changes to true
 	useEffect(() => {
@@ -33,13 +38,13 @@ const LoginPage = () => {
 	};
 
 	return (
-		<div className="flex flex-col md:flex-row h-screen w-full overflow-hidden">
+		<div className="flex flex-col md:flex-row min-h-screen w-full">
 			{/* Left side with login form */}
 			<motion.div
 				initial={{ opacity: 0, x: -20 }}
 				animate={{ opacity: 1, x: 0 }}
 				transition={{ duration: 0.5 }}
-				className='w-full md:w-1/2 bg-base-100 p-8 flex flex-col justify-center'
+				className='w-full md:w-1/2 bg-base-100 p-4 sm:p-6 md:p-8 flex flex-col justify-center min-h-screen md:min-h-0'
 			>
 				<div className="max-w-md mx-auto w-full">
 					<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text'>

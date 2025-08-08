@@ -47,7 +47,9 @@ export default function AllProductsPage() {
   const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
+  // Desktop slides (2 categories per slide)
   const slides = [
     {
       id: 1,
@@ -95,12 +97,26 @@ export default function AllProductsPage() {
     }
   ];
 
+  // Mobile slides (1 category per slide)
+  const mobileSlides = [
+    { id: 1, category: "Clothes", image: "/clothes-hero.jpg" },
+    { id: 2, category: "Tech", image: "/tech-hero.jpg" },
+    { id: 3, category: "Textbooks", image: "/books-hero.jpg" },
+    { id: 4, category: "Furniture", image: "/furniture-hero.jpg" },
+    { id: 5, category: "Housing", image: "/housing-hero.jpg" },
+    { id: 6, category: "Kitchen", image: "/kitchen-hero.jpg" },
+    { id: 7, category: "Merch", image: "/merch-hero.jpg" },
+    { id: 8, category: "Vehicles", image: "/vehicles-hero.jpg" }
+  ];
+
+  const currentSlides = isMobile ? mobileSlides : slides;
+
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setCurrentSlide((prev) => (prev + 1) % currentSlides.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    setCurrentSlide((prev) => (prev - 1 + currentSlides.length) % currentSlides.length);
   };
 
   const goToSlide = (index) => {
@@ -116,6 +132,25 @@ export default function AllProductsPage() {
     setIsDropdownOpen(false);
   };
 
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint in Tailwind
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Reset slide when switching between mobile/desktop to prevent out-of-bounds
+  useEffect(() => {
+    if (currentSlide >= currentSlides.length) {
+      setCurrentSlide(0);
+    }
+  }, [isMobile, currentSlide, currentSlides.length]);
+
   useEffect(() => {
     // Only fetch when auth check is complete
     if (!isCheckingAuth) {
@@ -126,7 +161,7 @@ export default function AllProductsPage() {
           return;
         }
         dispatch(fetchProductsByLocation({ 
-          maxDistance: 50, // Use a large default distance for all products
+          maxDistance: 100, // Use a large default distance for all products
           sort: 'distance' 
         }));
               } else {
@@ -139,11 +174,11 @@ export default function AllProductsPage() {
   // Auto-rotate slides every 7 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % currentSlides.length);
     }, 7000);
 
     return () => clearInterval(interval);
-  }, [slides.length]);
+  }, [currentSlides.length]);
 
   return (
     <div>
@@ -156,7 +191,7 @@ export default function AllProductsPage() {
       {/* Hero Carousel */}
       <div className="relative w-full h-72 md:h-80 lg:h-88 mb-12 rounded-lg overflow-hidden shadow-lg">
         <div className="carousel w-full h-full">
-          {slides.map((slide, index) => (
+          {currentSlides.map((slide, index) => (
             <div 
               key={slide.id}
               className={`carousel-item relative w-full h-full transition-transform duration-500 ease-in-out`}
@@ -165,54 +200,77 @@ export default function AllProductsPage() {
                 transform: `translateX(${(index - currentSlide) * 100}%)`
               }}
             >
-              <div className="w-full h-full flex">
-                {/* Left Half */}
-                <div className="relative w-1/2 h-full">
+              {isMobile ? (
+                /* Mobile: Single category per slide */
+                <div className="relative w-full h-full">
                   <img 
-                    src={slide.leftHalf.image} 
+                    src={slide.image} 
                     className="w-full h-full object-cover" 
-                    alt={slide.leftHalf.category}
+                    alt={slide.category}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
                     <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
-                      {slide.leftHalf.category}
+                      {slide.category}
                     </h3>
                     <Link 
-                      href={`/category/${getCategorySlug(slide.leftHalf.category)}`}
+                      href={`/category/${getCategorySlug(slide.category)}`}
                       className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs"
                     >
                       Shop Now
                     </Link>
                   </div>
                 </div>
-                
-                {/* Right Half */}
-                <div className="relative w-1/2 h-full">
-                  <img 
-                    src={slide.rightHalf.image} 
-                    className="w-full h-full object-cover" 
-                    alt={slide.rightHalf.category}
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
-                    <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
-                      {slide.rightHalf.category}
-                    </h3>
-                    <Link 
-                      href={`/category/${getCategorySlug(slide.rightHalf.category)}`}
-                      className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs"
-                    >
-                      Shop Now
-                    </Link>
+              ) : (
+                /* Desktop: Two categories per slide */
+                <div className="w-full h-full flex">
+                  {/* Left Half */}
+                  <div className="relative w-1/2 h-full">
+                    <img 
+                      src={slide.leftHalf.image} 
+                      className="w-full h-full object-cover" 
+                      alt={slide.leftHalf.category}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
+                      <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
+                        {slide.leftHalf.category}
+                      </h3>
+                      <Link 
+                        href={`/category/${getCategorySlug(slide.leftHalf.category)}`}
+                        className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs"
+                      >
+                        Shop Now
+                      </Link>
+                    </div>
+                  </div>
+                  
+                  {/* Right Half */}
+                  <div className="relative w-1/2 h-full">
+                    <img 
+                      src={slide.rightHalf.image} 
+                      className="w-full h-full object-cover" 
+                      alt={slide.rightHalf.category}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
+                      <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
+                        {slide.rightHalf.category}
+                      </h3>
+                      <Link 
+                        href={`/category/${getCategorySlug(slide.rightHalf.category)}`}
+                        className="btn btn-sm px-4 py-1 bg-white text-black hover:bg-gray-100 border-none rounded-none text-xs"
+                      >
+                        Shop Now
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
         
         {/* Carousel Indicators */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-          {slides.map((_, index) => (
+          {currentSlides.map((_, index) => (
             <button 
               key={index}
               onClick={() => goToSlide(index)}

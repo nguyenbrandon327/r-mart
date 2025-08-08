@@ -162,7 +162,13 @@ export const getChats = async (req, res) => {
                 p.slug as product_slug,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id) as message_count,
                 (SELECT COUNT(*) FROM messages WHERE chat_id = c.id AND sender_id != ${currentUserId} AND seen_at IS NULL) as unread_count,
-                (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+                (SELECT 
+                    CASE 
+                        WHEN text IS NOT NULL AND text != '' THEN text
+                        WHEN image IS NOT NULL THEN 'Image'
+                        ELSE 'Message'
+                    END 
+                FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
                 (SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_at
             FROM chats c
             LEFT JOIN users u1 ON c.user1_id = u1.id

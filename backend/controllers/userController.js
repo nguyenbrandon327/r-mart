@@ -732,7 +732,7 @@ export const updateUsername = async (req, res) => {
   }
 };
 
-// Geocode address using Nominatim API
+// Geocode address using Google Maps API
 export const geocodeAddress = async (req, res) => {
   try {
     const { address } = req.body;
@@ -744,17 +744,20 @@ export const geocodeAddress = async (req, res) => {
       });
     }
 
-    // Make request to Nominatim with proper headers
+    // Check if Google Maps API key is configured
+    if (!process.env.GOOGLE_MAPS_API_KEY) {
+      console.error('Google Maps API key not configured');
+      return res.status(500).json({
+        success: false,
+        message: "Geocoding service not configured"
+      });
+    }
+
+    // Make request to Google Maps Geocoding API
     const encodedAddress = encodeURIComponent(address.trim());
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
     
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'R-Mart App (contact: your-email@example.com)', // Replace with your actual contact
-        'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.9'
-      }
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -762,12 +765,35 @@ export const geocodeAddress = async (req, res) => {
 
     const data = await response.json();
     
-    if (data && data.length > 0) {
+    // Check if the API request was successful
+    if (data.status !== 'OK') {
+      if (data.status === 'ZERO_RESULTS') {
+        return res.status(404).json({
+          success: false,
+          message: "No coordinates found for this address"
+        });
+      } else if (data.status === 'REQUEST_DENIED') {
+        console.error('Google Maps API request denied:', data.error_message);
+        return res.status(500).json({
+          success: false,
+          message: "Geocoding service unavailable"
+        });
+      } else {
+        console.error('Google Maps API error:', data.status, data.error_message);
+        return res.status(500).json({
+          success: false,
+          message: "Error geocoding address"
+        });
+      }
+    }
+    
+    if (data.results && data.results.length > 0) {
+      const location = data.results[0].geometry.location;
       return res.status(200).json({
         success: true,
         coordinates: {
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon)
+          latitude: location.lat,
+          longitude: location.lng
         }
       });
     } else {
