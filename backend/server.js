@@ -17,8 +17,8 @@ import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
-import { initializeElasticsearch } from "./config/elasticsearch.js";
-import { syncExistingProducts } from "./utils/syncElasticsearch.js";
+import { initializeMeiliSearch } from "./config/meilisearch.js";
+import { syncExistingProducts } from "./utils/syncMeilisearch.js";
 
 dotenv.config();
 
@@ -298,17 +298,17 @@ async function initDB() {
 
 initDB().then(async () => {
   try {
-    // Initialize Elasticsearch
-    await initializeElasticsearch();
+    // Initialize MeiliSearch
+    await initializeMeiliSearch();
     
     // Optionally sync existing products on startup
-    if (process.env.SYNC_ELASTICSEARCH_ON_STARTUP === 'true') {
-
+    if (process.env.SYNC_MEILISEARCH_ON_STARTUP === 'true') {
+      console.log('🔄 Syncing existing products to MeiliSearch...');
       await syncExistingProducts();
     }
   } catch (error) {
-    console.error('Elasticsearch initialization error:', error);
-    // Continue server startup even if Elasticsearch fails
+    console.error('❌ MeiliSearch initialization error:', error);
+    // Continue server startup even if MeiliSearch fails
   }
   
   server.listen(PORT, () => {

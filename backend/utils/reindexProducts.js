@@ -1,8 +1,8 @@
 import { sql } from '../config/db.js';
-import { syncProductsToElasticsearch } from '../controllers/searchController.js';
+import { syncProductsToMeiliSearch } from '../controllers/searchController.js';
 
 /**
- * Re-index all products in Elasticsearch with updated slug information
+ * Re-index all products in MeiliSearch with updated slug information
  */
 async function reindexAllProducts() {
   try {
@@ -16,18 +16,18 @@ async function reindexAllProducts() {
       ORDER BY p.id
     `;
     
-    console.log(`Found ${products.length} products to re-index`);
+    console.log(`📦 Found ${products.length} products to re-index`);
     
     if (products.length === 0) {
-      console.log('No products found to re-index');
+      console.log('ℹ️  No products found to re-index');
       return;
     }
     
-    // Re-sync all products to Elasticsearch
-    await syncProductsToElasticsearch(products);
+    // Re-sync all products to MeiliSearch
+    await syncProductsToMeiliSearch(products);
     
     console.log('✅ Successfully re-indexed all products with slug information!');
-    console.log('Search results will now include product slugs for proper URL generation.');
+    console.log('🔍 Search results will now include product slugs for proper URL generation.');
     
   } catch (error) {
     console.error('❌ Failed to re-index products:', error);
@@ -35,15 +35,16 @@ async function reindexAllProducts() {
   }
 }
 
-// Run the re-indexing if this file is executed directly
-if (process.argv[1] === new URL(import.meta.url).pathname) {
+// Run the re-indexing if this file is executed directly  
+if (process.argv[1] === new URL(import.meta.url).pathname || process.argv[1].endsWith('reindexProducts.js')) {
+  console.log('🚀 Starting MeiliSearch product re-indexing from command line...');
   reindexAllProducts()
     .then(() => {
-      console.log('Re-indexing completed successfully!');
+      console.log('🎉 Re-indexing completed successfully!');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('Re-indexing failed:', error);
+      console.error('💥 Re-indexing failed:', error);
       process.exit(1);
     });
 }

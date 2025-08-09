@@ -91,14 +91,14 @@ export const createProduct = async (req, res) => {
 
 
 
-        // Get user info for Elasticsearch
+        // Get user info for MeiliSearch
         const userInfo = await sql`
             SELECT name, email, profile_pic 
             FROM users 
             WHERE id = ${req.user.id}
         `;
         
-        // Index product in Elasticsearch
+        // Index product in MeiliSearch
         try {
             await indexProduct({
                 ...newProduct[0],
@@ -107,7 +107,7 @@ export const createProduct = async (req, res) => {
                 user_profile_pic: userInfo[0].profile_pic
             });
         } catch (esError) {
-            // Failed to index product in Elasticsearch - continue even if indexing fails
+            // Failed to index product in MeiliSearch - continue even if indexing fails
         }
 
         res.status(201).json({ success:true, data: newProduct[0] });
@@ -240,7 +240,7 @@ export const updateProduct = async (req, res) => {
         RETURNING *
       `;
       
-      // Update product in Elasticsearch
+      // Update product in MeiliSearch
       try {
         await updateProductIndex({
           id: updateProduct[0].id,
@@ -251,7 +251,7 @@ export const updateProduct = async (req, res) => {
           images: updateProduct[0].images
         });
       } catch (esError) {
-        // Failed to update product in Elasticsearch - continue even if indexing fails
+        // Failed to update product in MeiliSearch - continue even if indexing fails
       }
   
       res.status(200).json({ success: true, data: updateProduct[0] });
@@ -300,11 +300,11 @@ export const deleteProduct = async (req, res) => {
         WHERE id=${id}
       `;
       
-      // Delete product from Elasticsearch
+      // Delete product from MeiliSearch
       try {
         await deleteProductIndex(id);
       } catch (esError) {
-        // Failed to delete product from Elasticsearch - continue even if deletion fails
+        // Failed to delete product from MeiliSearch - continue even if deletion fails
       }
   
       res.status(200).json({

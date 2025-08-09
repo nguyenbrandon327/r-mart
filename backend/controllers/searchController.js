@@ -1,11 +1,20 @@
-import { esClient, PRODUCT_INDEX } from '../config/elasticsearch.js';
+import { meiliClient, PRODUCT_INDEX, getProductsIndex } from '../config/meilisearch.js';
 import { sql } from '../config/db.js';
 import { calculateDistance, getUserCoordinates } from '../utils/distanceCalculator.js';
 
-// Search products by title and description
+// Search products using AI-powered hybrid search
 export const searchProducts = async (req, res) => {
   try {
-    const { q, category, minPrice, maxPrice, sort = 'best_match', limit = 20, offset = 0 } = req.query;
+    const { 
+      q, 
+      category, 
+      minPrice, 
+      maxPrice, 
+      sort = 'best_match', 
+      limit = 20, 
+      offset = 0,
+      semanticRatio = 0.5     // ratio for hybrid search (0 = pure keyword, 1 = pure semantic)
+    } = req.query;
 
     if (!q || q.trim() === '') {
       return res.status(400).json({
@@ -19,90 +28,100 @@ export const searchProducts = async (req, res) => {
       return await searchProductsByDistance(req, res);
     }
 
-    // Build the search query
-    const searchQuery = {
-      bool: {
-        must: [
-          {
-            multi_match: {
-              query: q,
-              fields: ['name^2', 'description'], // name field has double weight
-              type: 'best_fields',
-              fuzziness: 'AUTO'
-            }
-          }
-        ],
-        filter: [
-          // Always exclude sold items
-          {
-            term: { is_sold: false }
-          }
-        ]
-      }
-    };
+    const index = getProductsIndex();
 
+    // Build filter string for MeiliSearch
+    const filters = ['is_sold = false'];
+    
     // Add category filter if provided
     if (category) {
-      searchQuery.bool.filter.push({
-        term: { category: category }
-      });
+      filters.push(`category = "${category}"`);
     }
 
     // Add price range filter if provided
-    if (minPrice || maxPrice) {
-      const rangeFilter = { range: { price: {} } };
-      if (minPrice) rangeFilter.range.price.gte = parseFloat(minPrice);
-      if (maxPrice) rangeFilter.range.price.lte = parseFloat(maxPrice);
-      searchQuery.bool.filter.push(rangeFilter);
+    if (minPrice && maxPrice) {
+      filters.push(`price >= ${parseFloat(minPrice)} AND price <= ${parseFloat(maxPrice)}`);
+    } else if (minPrice) {
+      filters.push(`price >= ${parseFloat(minPrice)}`);
+    } else if (maxPrice) {
+      filters.push(`price <= ${parseFloat(maxPrice)}`);
     }
 
-    // Determine sort order
-    let sortOrder;
+    // Determine sort order for MeiliSearch
+    let sortArray = [];
     switch (sort) {
       case 'recent_first':
-        sortOrder = [{ created_at: 'desc' }];
+        sortArray = ['created_at:desc'];
         break;
       case 'price_low_high':
-        sortOrder = [{ price: 'asc' }];
+        sortArray = ['price:asc'];
         break;
       case 'price_high_low':
-        sortOrder = [{ price: 'desc' }];
+        sortArray = ['price:desc'];
         break;
       case 'best_match':
       default:
-        sortOrder = [
-          { _score: 'desc' },
-          { created_at: 'desc' }
-        ];
+        // MeiliSearch uses relevance by default, we can add created_at as secondary sort
+        sortArray = ['created_at:desc'];
         break;
     }
 
-    // Execute the search
-    const searchResult = await esClient.search({
-      index: PRODUCT_INDEX,
-      body: {
-        query: searchQuery,
-        from: parseInt(offset),
-        size: parseInt(limit),
-        sort: sortOrder
+    // Execute the search with AI-powered hybrid capabilities
+    const searchOptions = {
+      filter: filters.join(' AND '),
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      attributesToRetrieve: ['*'],
+      attributesToHighlight: ['name', 'description'],
+      showRankingScore: true,
+      showRankingScoreDetails: true,
+      // Always use hybrid search combining keyword and semantic
+      hybrid: {
+        semanticRatio: parseFloat(semanticRatio),
+        embedder: 'default'
       }
-    });
+    };
 
-    // Format the response
-    const products = searchResult.hits.hits.map(hit => ({
-      ...hit._source,
-      _score: hit._score
-    }));
+    // Add sort only if not best_match (MeiliSearch handles relevance automatically)
+    if (sort !== 'best_match') {
+      searchOptions.sort = sortArray;
+    }
+
+    const searchResult = await index.search(q, searchOptions);
+
+    // Format the response to include ranking scores and search metadata
+    const products = searchResult.hits.map(hit => {
+      // Remove MeiliSearch-specific fields and add score information
+      const product = { ...hit };
+      delete product._formatted;
+      
+      // Include ranking information for debugging and optimization
+      if (hit._rankingScore !== undefined) {
+        product._searchScore = hit._rankingScore;
+      }
+      if (hit._rankingScoreDetails) {
+        product._scoreDetails = hit._rankingScoreDetails;
+      }
+      
+      return product;
+    });
 
     res.status(200).json({
       success: true,
       data: products,
-      total: searchResult.hits.total.value,
+      total: searchResult.estimatedTotalHits,
       limit: parseInt(limit),
-      offset: parseInt(offset)
+      offset: parseInt(offset),
+      searchMetadata: {
+        hybridSearch: true,
+        semanticRatio: parseFloat(semanticRatio),
+        processingTimeMs: searchResult.processingTimeMs,
+        query: q
+      }
     });
 
   } catch (error) {
+    console.error('Search error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to search products',
@@ -230,6 +249,7 @@ const searchProductsByDistance = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Distance search error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to search products by distance',
@@ -250,73 +270,27 @@ export const getSearchSuggestions = async (req, res) => {
       });
     }
 
-    // Try completion suggester first (if available), then fall back to match_phrase_prefix
-    try {
-      const completionResult = await esClient.search({
-        index: PRODUCT_INDEX,
-        body: {
-          suggest: {
-            product_suggest: {
-              prefix: q,
-              completion: {
-                field: 'name.suggest',
-                size: 10,
-                skip_duplicates: true
-              }
-            }
-          },
-          _source: false
-        }
-      });
+    const index = getProductsIndex();
 
-      if (completionResult.suggest?.product_suggest?.[0]?.options?.length > 0) {
-        const suggestions = completionResult.suggest.product_suggest[0].options.map(
-          option => option.text
-        );
-        
-        return res.status(200).json({
-          success: true,
-          suggestions
-        });
-      }
-    } catch (completionError) {
-      // If completion suggester fails, fall back to match_phrase_prefix
-    }
-
-    // Fallback: Use match_phrase_prefix for autocomplete suggestions
-    const searchResult = await esClient.search({
-      index: PRODUCT_INDEX,
-      body: {
-        query: {
-          bool: {
-            must: [
-              {
-                match_phrase_prefix: {
-                  name: {
-                    query: q,
-                    max_expansions: 10
-                  }
-                }
-              }
-            ],
-            filter: [
-              { term: { is_sold: false } }
-            ]
-          }
-        },
-        size: 10,
-        _source: ['name']
-      }
+    // Use MeiliSearch search with specific settings for suggestions
+    const searchResult = await index.search(q, {
+      limit: 10,
+      filter: 'is_sold = false',
+      attributesToRetrieve: ['name'],
+      attributesToHighlight: [],
+      showMatchesPosition: false
     });
 
-    const suggestions = searchResult.hits.hits.map(hit => hit._source.name);
+    // Extract unique product names as suggestions
+    const suggestions = [...new Set(searchResult.hits.map(hit => hit.name))].slice(0, 10);
     
     res.status(200).json({
       success: true,
-      suggestions: [...new Set(suggestions)] // Remove duplicates
+      suggestions: suggestions
     });
 
   } catch (error) {
+    console.error('Suggestions error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get search suggestions',
@@ -325,108 +299,115 @@ export const getSearchSuggestions = async (req, res) => {
   }
 };
 
-// Index a product in Elasticsearch
+// Index a product in MeiliSearch
 export const indexProduct = async (product) => {
   try {
-    await esClient.index({
-      index: PRODUCT_INDEX,
+    const index = getProductsIndex();
+    
+    const document = {
       id: product.id.toString(),
-      body: {
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        images: product.images,
-        slug: product.slug,
-        is_sold: product.is_sold || false,
-        user_id: product.user_id,
-        user_name: product.user_name,
-        user_email: product.user_email,
-        created_at: product.created_at,
-        updated_at: product.updated_at || product.created_at
-      }
-    });
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      images: product.images,
+      slug: product.slug,
+      is_sold: product.is_sold || false,
+      user_id: product.user_id,
+      user_name: product.user_name,
+      user_email: product.user_email,
+      created_at: new Date(product.created_at).getTime() / 1000, // Convert to timestamp for sorting
+      updated_at: new Date(product.updated_at || product.created_at).getTime() / 1000
+    };
+
+    await index.addDocuments([document]);
   } catch (error) {
+    console.error('Index product error:', error);
     throw error;
   }
 };
 
-// Update a product in Elasticsearch
+// Update a product in MeiliSearch
 export const updateProductIndex = async (product) => {
   try {
-    await esClient.update({
-      index: PRODUCT_INDEX,
+    const index = getProductsIndex();
+    
+    const document = {
       id: product.id.toString(),
-      body: {
-        doc: {
-          name: product.name,
-          description: product.description,
-          price: product.price,
-          category: product.category,
-          images: product.images,
-          slug: product.slug,
-          is_sold: product.is_sold,
-          updated_at: new Date()
-        }
-      }
-    });
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      images: product.images,
+      slug: product.slug,
+      is_sold: product.is_sold,
+      updated_at: new Date().getTime() / 1000
+    };
+
+    await index.addDocuments([document], { primaryKey: 'id' });
   } catch (error) {
+    console.error('Update product index error:', error);
     throw error;
   }
 };
 
-// Delete a product from Elasticsearch
+// Delete a product from MeiliSearch
 export const deleteProductIndex = async (productId) => {
   try {
-    await esClient.delete({
-      index: PRODUCT_INDEX,
-      id: productId.toString()
-    });
+    const index = getProductsIndex();
+    await index.deleteDocument(productId.toString());
   } catch (error) {
+    console.error('Delete product index error:', error);
     throw error;
   }
 };
 
-// Sync all products from database to Elasticsearch
-export const syncProductsToElasticsearch = async (products) => {
+// Sync all products from database to MeiliSearch
+export const syncProductsToMeiliSearch = async (products) => {
   try {
-    const body = products.flatMap(product => [
-      { index: { _index: PRODUCT_INDEX, _id: product.id.toString() } },
-      {
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        images: product.images,
-        slug: product.slug,
-        is_sold: product.is_sold || false,
-        user_id: product.user_id,
-        user_name: product.user_name,
-        user_email: product.user_email,
-        created_at: product.created_at,
-        updated_at: product.updated_at || product.created_at
+    const index = getProductsIndex();
+    
+    console.log(`⚙️  Preparing ${products.length} products for MeiliSearch...`);
+    
+    const documents = products.map(product => ({
+      id: product.id.toString(),
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      images: product.images,
+      slug: product.slug,
+      is_sold: product.is_sold || false,
+      user_id: product.user_id,
+      user_name: product.user_name,
+      user_email: product.user_email,
+      created_at: new Date(product.created_at).getTime() / 1000, // Convert to timestamp
+      updated_at: new Date(product.updated_at || product.created_at).getTime() / 1000
+    }));
+
+    console.log(`📤 Sending ${documents.length} documents to MeiliSearch...`);
+    
+    // Add documents in batches (MeiliSearch handles batching automatically)
+    const task = await index.addDocuments(documents, { primaryKey: 'id' });
+    
+    console.log(`⏳ Waiting for MeiliSearch task ${task.taskUid} to complete...`);
+    
+    // Wait for the task to complete
+    const completedTask = await index.waitForTask(task.taskUid);
+    
+    if (completedTask.status === 'succeeded') {
+      console.log(`✅ Successfully synced ${documents.length} products to MeiliSearch`);
+      console.log(`📊 Task completed in ${completedTask.duration || 'unknown'} time`);
+    } else {
+      console.error(`❌ MeiliSearch task failed with status: ${completedTask.status}`);
+      if (completedTask.error) {
+        console.error('❌ Task error details:', completedTask.error);
       }
-    ]);
-
-    const bulkResponse = await esClient.bulk({ refresh: true, body });
-
-    if (bulkResponse.errors) {
-      const erroredDocuments = [];
-      bulkResponse.items.forEach((action, i) => {
-        const operation = Object.keys(action)[0];
-        if (action[operation].error) {
-          erroredDocuments.push({
-            status: action[operation].status,
-            error: action[operation].error,
-            operation: body[i * 2],
-            document: body[i * 2 + 1]
-          });
-        }
-      });
+      throw new Error(`MeiliSearch sync failed: ${completedTask.status}`);
     }
+    
   } catch (error) {
+    console.error('❌ Sync products error:', error);
     throw error;
   }
-}; 
+};

@@ -4,7 +4,7 @@ import { checkAuth } from '../utils/checkAuth.js';
 
 const router = express.Router();
 
-// Search products (with optional auth for distance sorting)
+// Search products using AI-powered hybrid search (with optional auth for distance sorting)
 router.get('/products', checkAuth, searchProducts);
 
 // Get search suggestions (autocomplete)
