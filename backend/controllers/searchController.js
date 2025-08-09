@@ -103,7 +103,6 @@ export const searchProducts = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in searchProducts:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to search products',
@@ -231,7 +230,6 @@ const searchProductsByDistance = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in searchProductsByDistance:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to search products by distance',
@@ -283,7 +281,6 @@ export const getSearchSuggestions = async (req, res) => {
       }
     } catch (completionError) {
       // If completion suggester fails, fall back to match_phrase_prefix
-      console.log('Completion suggester not available, using fallback method');
     }
 
     // Fallback: Use match_phrase_prefix for autocomplete suggestions
@@ -320,7 +317,6 @@ export const getSearchSuggestions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in getSearchSuggestions:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get search suggestions',
@@ -351,9 +347,7 @@ export const indexProduct = async (product) => {
         updated_at: product.updated_at || product.created_at
       }
     });
-    console.log(`Product ${product.id} indexed in Elasticsearch`);
   } catch (error) {
-    console.error('Error indexing product:', error);
     throw error;
   }
 };
@@ -377,9 +371,7 @@ export const updateProductIndex = async (product) => {
         }
       }
     });
-    console.log(`Product ${product.id} updated in Elasticsearch`);
   } catch (error) {
-    console.error('Error updating product index:', error);
     throw error;
   }
 };
@@ -391,9 +383,7 @@ export const deleteProductIndex = async (productId) => {
       index: PRODUCT_INDEX,
       id: productId.toString()
     });
-    console.log(`Product ${productId} deleted from Elasticsearch`);
   } catch (error) {
-    console.error('Error deleting product from index:', error);
     throw error;
   }
 };
@@ -435,12 +425,8 @@ export const syncProductsToElasticsearch = async (products) => {
           });
         }
       });
-      console.error('Failed to sync some products:', erroredDocuments);
-    } else {
-      console.log(`Successfully synced ${products.length} products to Elasticsearch`);
     }
   } catch (error) {
-    console.error('Error syncing products to Elasticsearch:', error);
     throw error;
   }
 }; 

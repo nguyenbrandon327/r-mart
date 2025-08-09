@@ -14,7 +14,6 @@ const safeDecrypt = (text) => {
         try {
             return decrypt(text);
         } catch (error) {
-            console.log('Failed to decrypt message, returning as plain text:', error.message);
             return text;
         }
     }
@@ -117,7 +116,6 @@ export const createChat = async (req, res) => {
             data: newChat[0]
         });
     } catch (error) {
-        console.log("Error in createChat", error);
         res.status(500).json({
             success: false, 
             message: "Failed to create chat"
@@ -190,7 +188,6 @@ export const getChats = async (req, res) => {
             data: formattedChats
         });
     } catch (error) {
-        console.log("Error in getChats", error);
         res.status(500).json({
             success: false, 
             message: "Failed to fetch chats"
@@ -228,7 +225,6 @@ export const deleteChat = async (req, res) => {
             message: "Chat deleted successfully"
         });
     } catch (error) {
-        console.log("Error in deleteChat", error);
         res.status(500).json({
             success: false, 
             message: "Failed to delete chat"
@@ -280,7 +276,6 @@ export const getMessages = async (req, res) => {
             data: formattedMessages
         });
     } catch (error) {
-        console.log("Error in getMessages", error);
         res.status(500).json({
             success: false, 
             message: "Failed to fetch messages"
@@ -335,7 +330,6 @@ export const markMessagesAsSeen = async (req, res) => {
             message: "Messages marked as seen"
         });
     } catch (error) {
-        console.log("Error in markMessagesAsSeen", error);
         res.status(500).json({
             success: false, 
             message: "Failed to mark messages as seen"
@@ -372,7 +366,6 @@ export const getUnreadCount = async (req, res) => {
             }
         });
     } catch (error) {
-        console.log("Error in getUnreadCount", error);
         res.status(500).json({
             success: false,
             message: "Failed to get unread count"
@@ -471,26 +464,16 @@ export const sendMessage = async (req, res) => {
             const user1SocketId = getReceiverSocketId(user1Id.toString());
             const user2SocketId = getReceiverSocketId(user2Id.toString());
             
-            console.log(`Optimized message emission for chat ${chatId}:`, {
-                user1Id,
-                user1InRoom: isUserInChatRoom(user1Id, chatId),
-                user1SocketId,
-                user2Id,
-                user2InRoom: isUserInChatRoom(user2Id, chatId),
-                user2SocketId,
-                senderId
-            });
+
             
             // Send to user1 if: online, not sender, and NOT actively in chat room
             if (user1SocketId && user1Id !== senderId && !isUserInChatRoom(user1Id, chatId)) {
                 io.to(user1SocketId).emit("newMessage", formattedMessage);
-                console.log(`Sent notification to user1 (${user1Id}) - not in room`);
             }
             
             // Send to user2 if: online, not sender, and NOT actively in chat room  
             if (user2SocketId && user2Id !== senderId && !isUserInChatRoom(user2Id, chatId)) {
                 io.to(user2SocketId).emit("newMessage", formattedMessage);
-                console.log(`Sent notification to user2 (${user2Id}) - not in room`);
             }
     
             res.status(201).json({
@@ -499,7 +482,6 @@ export const sendMessage = async (req, res) => {
             });
         });
     } catch (error) {
-        console.log("Error in sendMessage", error);
         res.status(500).json({
             success: false, 
             message: "Failed to send message"

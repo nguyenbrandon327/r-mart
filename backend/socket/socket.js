@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3001"], 
+    origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ["http://localhost:3001"], 
     credentials: true,
   },
 });
@@ -30,7 +30,6 @@ const typingUsers = {};
 const activeChatUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) userSocketMap[userId] = socket.id;
@@ -77,7 +76,7 @@ io.on("connection", (socket) => {
       }
       activeChatUsers[chatId].add(userId);
       
-      console.log(`User ${userId} joined chat room: chat_${chatId}`);
+
     }
   });
 
@@ -94,7 +93,7 @@ io.on("connection", (socket) => {
         }
       }
       
-      console.log(`User ${userId} left chat room: chat_${chatId}`);
+
       
       // Remove from typing users when leaving chat
       if (typingUsers[chatId] && typingUsers[chatId][userId]) {
@@ -112,7 +111,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("A user disconnected", socket.id);
     delete userSocketMap[userId];
     
     // Clean up active chat users

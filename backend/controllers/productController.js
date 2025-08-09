@@ -56,10 +56,8 @@ export const getProducts = async (req, res) => {
             `;
         }
         
-        console.log("fetched products", excludeRecentlyViewed === 'true' && userId ? "(excluding recently viewed)" : "", `sorted by: ${sort}`);
         res.status(200).json({success:true, data:products});
     } catch (error) {
-        console.log("Error in getProducts", error);
         res.status(500).json({success: false, message: "Failed to fetch products"});
     }
 };
@@ -91,7 +89,7 @@ export const createProduct = async (req, res) => {
             RETURNING *
         `;
 
-        console.log("Product created successfully", newProduct);
+
 
         // Get user info for Elasticsearch
         const userInfo = await sql`
@@ -109,13 +107,11 @@ export const createProduct = async (req, res) => {
                 user_profile_pic: userInfo[0].profile_pic
             });
         } catch (esError) {
-            console.error("Failed to index product in Elasticsearch:", esError);
-            // Continue even if indexing fails
+            // Failed to index product in Elasticsearch - continue even if indexing fails
         }
 
         res.status(201).json({ success:true, data: newProduct[0] });
     } catch (error) {
-        console.log("Error in createProduct", error);
         res.status(500).json({success: false, message: "Failed to create product"});
     }
 };
@@ -146,23 +142,15 @@ export const getProduct = async (req, res) => {
         
         // Only record views for authenticated users
         // req.user will only exist if the user is logged in via protectRoute middleware
-        console.log("Authentication status:", req.user ? `Authenticated as ${req.user.name} (ID: ${req.user.id})` : "Not authenticated");
-        
         if (req.user && req.user.id && product.length > 0) {
             // Don't record views if the user is viewing their own product
-            if (req.user.id === product[0].user_id) {
-                console.log(`Skipping view recording: user ${req.user.id} is viewing their own product ${product[0].id}`);
-            } else {
-                console.log(`Recording product view: user=${req.user.id}, product=${product[0].id}`);
+            if (req.user.id !== product[0].user_id) {
                 await recordProductView(req.user.id, product[0].id);
             }
-        } else {
-            console.log("Skipping product view recording - user not authenticated or product not found");
         }
         
         res.status(200).json({ success:true, data:product[0] });
     } catch (error) {
-        console.log("Error in getProduct", error);
         res.status(500).json({success: false, message: "Failed to fetch product"});
     }
 };
@@ -263,13 +251,11 @@ export const updateProduct = async (req, res) => {
           images: updateProduct[0].images
         });
       } catch (esError) {
-        console.error("Failed to update product in Elasticsearch:", esError);
-        // Continue even if indexing fails
+        // Failed to update product in Elasticsearch - continue even if indexing fails
       }
   
       res.status(200).json({ success: true, data: updateProduct[0] });
     } catch (error) {
-      console.log("Error in updateProduct function", error);
       res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
@@ -318,8 +304,7 @@ export const deleteProduct = async (req, res) => {
       try {
         await deleteProductIndex(id);
       } catch (esError) {
-        console.error("Failed to delete product from Elasticsearch:", esError);
-        // Continue even if deletion fails
+        // Failed to delete product from Elasticsearch - continue even if deletion fails
       }
   
       res.status(200).json({
@@ -327,7 +312,6 @@ export const deleteProduct = async (req, res) => {
         message: "Product deleted successfully",
       });
     } catch (error) {
-      console.log("Error in deleteProduct function", error);
       res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
@@ -380,10 +364,8 @@ export const getProductsByCategory = async (req, res) => {
                 break;
         }
         
-        console.log(`Fetched ${products.length} products for category: ${category} with sort: ${sort}`);
         res.status(200).json({success: true, data: products});
     } catch (error) {
-        console.log("Error in getProductsByCategory", error);
         res.status(500).json({success: false, message: "Failed to fetch products by category"});
     }
 };
@@ -450,7 +432,6 @@ export const deleteProductImage = async (req, res) => {
             message: "Image deleted successfully"
         });
     } catch (error) {
-        console.log("Error in deleteProductImage", error);
         res.status(500).json({
             success: false,
             message: "Failed to delete product image"
@@ -472,10 +453,8 @@ export const getSellerOtherProducts = async (req, res) => {
             LIMIT 10
         `;
         
-        console.log(`Fetched ${products.length} other products for seller ${userId}, excluding product ${excludeProductId}`);
         res.status(200).json({success: true, data: products});
     } catch (error) {
-        console.log("Error in getSellerOtherProducts", error);
         res.status(500).json({success: false, message: "Failed to fetch seller's other products"});
     }
 };
@@ -521,14 +500,12 @@ export const markProductAsSold = async (req, res) => {
             RETURNING *
         `;
         
-        console.log(`Product ${id} marked as sold by user ${req.user.id}`);
         res.status(200).json({
             success: true,
             message: "Product marked as sold successfully",
             data: updatedProduct[0]
         });
     } catch (error) {
-        console.log("Error in markProductAsSold", error);
         res.status(500).json({
             success: false,
             message: "Failed to mark product as sold"
@@ -577,14 +554,12 @@ export const markProductAsAvailable = async (req, res) => {
             RETURNING *
         `;
         
-        console.log(`Product ${id} marked as available by user ${req.user.id}`);
         res.status(200).json({
             success: true,
             message: "Product marked as available successfully",
             data: updatedProduct[0]
         });
     } catch (error) {
-        console.log("Error in markProductAsAvailable", error);
         res.status(500).json({
             success: false,
             message: "Failed to mark product as available"
@@ -612,13 +587,11 @@ export const recordView = async (req, res) => {
     productId = product[0].id;
     productOwnerId = product[0].user_id;
   } catch (error) {
-    console.error("Error finding product by slug:", error);
     return res.status(500).json({ error: "Failed to find product" });
   }
 
   // Don't record views if the user is viewing their own product
   if (userId && userId === productOwnerId) {
-    console.log(`Skipping view recording: user ${userId} is viewing their own product ${productId}`);
     return res.sendStatus(204);
   }
 
@@ -633,7 +606,6 @@ export const recordView = async (req, res) => {
 
     return res.sendStatus(204);
   } catch (e) {
-    console.error("recordView error", e);
     return res.status(500).json({ error: "failed to record view" });
   }
 };
@@ -659,7 +631,6 @@ export const getHotProducts = async (req, res) => {
 
     return res.status(200).json({ success: true, data: hotProducts });
   } catch (err) {
-    console.error("getHotProducts error", err);
     return res.status(500).json({ success: false, message: "Failed to fetch hot products" });
   }
 };
@@ -679,10 +650,8 @@ export const getRecentProducts = async (req, res) => {
             LIMIT ${limit}
         `;
         
-        console.log(`Fetched ${recentProducts.length} recently posted products`);
         res.status(200).json({success: true, data: recentProducts});
     } catch (error) {
-        console.log("Error in getRecentProducts", error);
         res.status(500).json({success: false, message: "Failed to fetch recent products"});
     }
 };
@@ -804,7 +773,6 @@ export const getProductsByLocation = async (req, res) => {
                 productsWithDistance.sort((a, b) => a.distance - b.distance);
         }
         
-        console.log(`Fetched ${productsWithDistance.length} products within ${maxDistance} miles${category ? ` for category: ${category}` : ''} with sort: ${sort}`);
         res.status(200).json({
             success: true, 
             data: productsWithDistance,
@@ -814,7 +782,6 @@ export const getProductsByLocation = async (req, res) => {
             }
         });
     } catch (error) {
-        console.log("Error in getProductsByLocation", error);
         res.status(500).json({
             success: false, 
             message: "Failed to fetch products by location"

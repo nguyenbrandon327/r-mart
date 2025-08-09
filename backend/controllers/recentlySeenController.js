@@ -2,10 +2,7 @@ import { sql } from "../config/db.js";
 
 // Record that a product was viewed by a user
 export const recordProductView = async (userId, productId) => {
-  console.log(`Attempting to record view: userId=${userId}, productId=${productId}`);
-  
   if (!userId || !productId) {
-    console.log("Missing userId or productId, skipping record");
     return false;
   }
 
@@ -16,12 +13,10 @@ export const recordProductView = async (userId, productId) => {
     `;
     
     if (product.length === 0) {
-      console.log("Product not found, skipping record");
       return false;
     }
     
     if (product[0].user_id === userId) {
-      console.log(`User ${userId} is the owner of product ${productId}, skipping recently viewed record`);
       return false;
     }
 
@@ -33,7 +28,7 @@ export const recordProductView = async (userId, productId) => {
       RETURNING *
     `;
 
-    console.log(`Update result: ${updateResult.length > 0 ? 'Record updated' : 'No existing record'}`);
+
 
     // If no existing record was found, insert a new one
     if (updateResult.length === 0) {
@@ -44,12 +39,11 @@ export const recordProductView = async (userId, productId) => {
         SET viewed_at = CURRENT_TIMESTAMP
         RETURNING *
       `;
-      console.log(`Insert completed, rows: ${insertResult.length}`);
+
     }
 
     return true;
   } catch (error) {
-    console.error("Error recording product view:", error);
     return false;
   }
 };
@@ -75,7 +69,6 @@ export const getRecentlyViewedProducts = async (req, res) => {
       data: recentlyViewedProducts
     });
   } catch (error) {
-    console.error("Error fetching recently viewed products:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch recently viewed products"
@@ -98,7 +91,6 @@ export const clearRecentlyViewedProducts = async (req, res) => {
       message: "Recently viewed products cleared successfully"
     });
   } catch (error) {
-    console.error("Error clearing recently viewed products:", error);
     res.status(500).json({
       success: false,
       message: "Failed to clear recently viewed products"

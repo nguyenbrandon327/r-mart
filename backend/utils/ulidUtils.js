@@ -35,7 +35,6 @@ export async function generateUniqueChatULID() {
       
       attempts++;
     } catch (error) {
-      console.error('Error checking ULID uniqueness:', error);
       // On error, return the ULID anyway as collisions are extremely rare
       return chatULID;
     }
@@ -51,16 +50,12 @@ export async function generateUniqueChatULID() {
  */
 export async function populateExistingChatULIDs() {
   try {
-    console.log('Starting to populate existing chat ULIDs...');
-    
     // Get all chats without ULIDs
     const chats = await sql`
       SELECT id FROM chats 
       WHERE ulid IS NULL OR ulid = ''
       ORDER BY id
     `;
-    
-    console.log(`Found ${chats.length} chats without ULIDs`);
     
     for (const chat of chats) {
       const chatULID = await generateUniqueChatULID();
@@ -71,13 +66,11 @@ export async function populateExistingChatULIDs() {
         WHERE id = ${chat.id}
       `;
       
-      console.log(`Generated ULID "${chatULID}" for chat ID: ${chat.id}`);
+
     }
     
-    console.log('Successfully populated all chat ULIDs');
     return true;
   } catch (error) {
-    console.error('Error populating existing chat ULIDs:', error);
     throw error;
   }
 }

@@ -110,7 +110,7 @@ export const WELCOME_EMAIL_TEMPLATE = `
     <p>Hello {name},</p>
     <p>Welcome to R'Mart - the exclusive marketplace for UCR students!</p>
     <div style="text-align: center; margin: 30px 0;">
-      <img src="cid:scotty" alt="Scotty the Highlander" style="max-width: 150px;">
+      <img src="cid:scotty" alt="Scotty the Highlander" style="max-width: 250px;">
     </div>
     <p>We're excited to have you join our community! Here's what you can do on R'Mart:</p>
     <ul style="padding-left: 20px;">

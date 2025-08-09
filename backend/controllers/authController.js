@@ -6,7 +6,6 @@ import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
-    console.log("Signup request received:", req.body);
     const { email, password, name} = req.body;
 
     try {
@@ -14,27 +13,22 @@ export const signup = async (req, res) => {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
-        console.log("Checking if user exists");
         const userAlreadyExists = await sql`
             SELECT * FROM users WHERE email=${email}
         `;
-        console.log("User exists check result:", userAlreadyExists);
 
         if (userAlreadyExists.length > 0) {
             return res.status(400).json({ success: false, message: "User already exists" });
         }
 
-        console.log("Hashing password");
         const hashedPassword = await bcrypt.hash(password, 10);
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
         
-        console.log("Inserting user into database");
         const result = await sql`
             INSERT INTO users (name, email, password, verificationToken, verificationTokenExpiresAt)
             VALUES (${name}, ${email}, ${hashedPassword}, ${verificationToken}, NOW() + INTERVAL '1 day')
             RETURNING id
         `;
-        console.log("Insert result:", result);
         
         const insertedId = result[0]?.id;
         
@@ -43,18 +37,15 @@ export const signup = async (req, res) => {
                 SELECT id FROM users WHERE email = ${email}
             `;            
             if (insertedUser && insertedUser.id) {
-                console.log("Setting JWT cookie");
                 generateTokenAndSetCookie(res, insertedUser.id);
                 
-                console.log("Sending successful response");
                 return res.status(201).json({ 
                     success: true, 
-                    message: "User created successfully",
+                    message: "User created successfully. Please check your email for verification code.",
                     user: {
                         id: insertedUser.id,
                         name,
-                        email,
-                        verificationToken
+                        email
                     }
                 });
             } else {
@@ -67,20 +58,19 @@ export const signup = async (req, res) => {
 
             return res.status(201).json({ 
                 success: true, 
-                message: "User created successfully",
+                message: "User created successfully. Please check your email for verification code.",
                 user: {
                     id: insertedId,
                     name,
-                    email,
-                    verificationToken
+                    email
                 }
             });
         }
     } catch (error) {
+        console.error('Signup error:', error.message, error.stack);
         res.status(400).json({ 
             success: false, 
-            message: "Error signing up", 
-            error: error.message,
+            message: "Unable to create account. Please try again."
         });
     }
 };
@@ -125,10 +115,10 @@ export const verifyEmail = async (req, res) => {
         });
             
     } catch (error) {
+        console.error('Email verification error:', error.message, error.stack);
         res.status(400).json({
             success: false,
-            message: "Error verifying email",
-            error: error.message
+            message: "Unable to verify email. Please try again."
         });
     }
 };
@@ -179,11 +169,10 @@ export const login = async (req, res) => {
             }
         });
     } catch (error) {
-        console.log("Error logging in function:", error);
+        console.error('Login error:', error.message, error.stack);
         res.status(400).json({
             success: false,
-            message: "Error logging in",
-            error: error.message
+            message: "Unable to log in. Please check your credentials and try again."
         });
     }
 };
@@ -206,7 +195,7 @@ export const forgotPassword = async (req, res) => {
         if (!user || user.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "User not found"
+                message: "If an account with that email exists, a password reset email has been sent."
             });
         }
 
@@ -228,11 +217,10 @@ export const forgotPassword = async (req, res) => {
             message: "Password reset email sent successfully"
         });
     } catch (error) {
-        console.log("Error sending forgot password email:", error);
+        console.error('Forgot password error:', error.message, error.stack);
         res.status(400).json({
             success: false,
-            message: "Error sending forgot password email",
-            error: error.message
+            message: "Unable to process password reset request. Please try again."
         });
     }
 };
@@ -242,7 +230,7 @@ export const resetPassword = async (req, res) => {
         const {token} = req.params;
         const {password} = req.body;
         
-        console.log('Reset password attempt:', { token, hasPassword: !!password });
+
         
         // Check token details
         const tokenDetails = await sql`
@@ -251,20 +239,13 @@ export const resetPassword = async (req, res) => {
             WHERE resetPasswordToken=${token}
         `;
         
-        if (tokenDetails.length > 0) {
-            console.log('Token found for user:', tokenDetails[0].email);
-            console.log('Token expiration:', tokenDetails[0].resetpasswordexpiresat);
-            console.log('Current time:', tokenDetails[0].current_time);
-            console.log('Is expired:', tokenDetails[0].resetpasswordexpiresat < tokenDetails[0].current_time);
-        } else {
-            console.log('No token found in database matching:', token);
-        }
+
         
         const user = await sql`
             SELECT * FROM users WHERE resetPasswordToken=${token}
         `;
         
-        console.log('User found:', user.length > 0 ? 'Yes' : 'No');
+
         
         if (!user || user.length === 0) {
             return res.status(400).json({
@@ -275,7 +256,6 @@ export const resetPassword = async (req, res) => {
         
         // Check if token is expired separately
         const isExpired = user[0].resetpasswordexpiresat < tokenDetails[0].current_time;
-        console.log('Is token expired check:', isExpired);
         
         if (isExpired) {
             return res.status(400).json({
@@ -302,11 +282,10 @@ export const resetPassword = async (req, res) => {
             message: "Password reset successfully"
         });
     } catch (error) {
-        console.log("Error resetting password:", error);
+        console.error('Password reset error:', error.message, error.stack);
         res.status(400).json({
             success: false,
-            message: "Error resetting password",
-            error: error.message
+            message: "Unable to reset password. Please try again or request a new reset link."
         });
     }
 };
@@ -343,11 +322,10 @@ export const resendVerificationCode = async (req, res) => {
         });
         
     } catch (error) {
-        console.log("Error resending verification code:", error);
+        console.error('Resend verification error:', error.message, error.stack);
         res.status(500).json({
             success: false,
-            message: "Error sending verification code",
-            error: error.message
+            message: "Unable to resend verification code. Please try again."
         });
     }
 };
@@ -370,10 +348,10 @@ export const checkAuth = async (req, res) => {
             }
         });
     } catch (error) {
-        console.log("Error in checkAuth", error);
+        console.error('Auth check error:', error.message, error.stack);
         res.status(500).json({
             success: false,
-            message: "Error checking authentication"
+            message: "Unable to verify authentication. Please try again."
         });
     }
 };

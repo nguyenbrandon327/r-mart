@@ -25,9 +25,29 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
+// Environment validation
+const requiredEnvVars = ['JWT_SECRET', 'PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
+}
+
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Promise Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3001',
+  origin: process.env.CLIENT_URL || 'http://localhost:3001',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -38,7 +58,7 @@ app.use(
     contentSecurityPolicy: false,
   })
 ); 
-app.use(morgan("dev")); 
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev')); 
 
 app.use(async (req, res, next) => {
   try {
@@ -64,7 +84,6 @@ app.use(async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log("Arcjet error", error);
     next(error);
   }
 });
@@ -89,7 +108,22 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+// Test database connection
+async function testDBConnection() {
+  try {
+    await sql`SELECT 1 as test`;
+    console.log('✅ Database connection successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    throw error;
+  }
+}
+
 async function initDB() {
+  // Test database connection first
+  await testDBConnection();
+  
   // Initialize products
   try {
     await sql`
@@ -106,9 +140,9 @@ async function initDB() {
       )
     `;
 
-    console.log("Products table initialized successfully");
+
   } catch (error) {
-    console.log("Error initializing products table", error);
+    console.error('❌ Error initializing products table:', error);
   }
   
   // Add is_sold column to existing products table (migration)
@@ -116,9 +150,9 @@ async function initDB() {
     await sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_sold BOOLEAN DEFAULT FALSE
     `;
-    console.log("Products table migration (is_sold column) applied successfully");
+
   } catch (error) {
-    console.log("Error applying products table migration", error);
+    console.error('❌ Error applying products table migration:', error);
   }
   // Initialize users
   try {
@@ -144,9 +178,9 @@ async function initDB() {
       )
     `;
 
-    console.log("Users table initialized successfully");
+
   } catch (error) {
-    console.log("Error initializing users table", error);
+    console.error('❌ Error initializing users table:', error);
   }
   // Initialize chats
   try {
@@ -163,9 +197,9 @@ async function initDB() {
       )
     `;
 
-    console.log("Chats table initialized successfully");
+
   } catch (error) {
-    console.log("Error initializing chats table", error);
+    console.error('❌ Error initializing chats table:', error);
   }
 
   // Initialize messages
@@ -183,9 +217,9 @@ async function initDB() {
           )
         `;
 
-    console.log("Messages table initialized successfully");
+
   } catch (error) {
-    console.log("Error initializing messages table", error);
+    console.error('❌ Error initializing messages table:', error);
   }
   
   // Initialize recently seen products
@@ -200,9 +234,9 @@ async function initDB() {
       )
     `;
 
-    console.log("Recently seen products table initialized successfully");
+
   } catch (error) {
-    console.log("Error initializing recently seen products table", error);
+    console.error('❌ Error initializing recently seen products table:', error);
   }
 
 
@@ -224,9 +258,9 @@ async function initDB() {
       WHERE location_type IS NULL
     `;
 
-    console.log("Users table location fields migration applied successfully");
+
   } catch (error) {
-    console.log("Error applying users table location fields migration", error);
+    console.error('❌ Error applying users table location fields migration:', error);
   }
 
   // Add username field to users table (migration)
@@ -234,9 +268,31 @@ async function initDB() {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE`;
     await sql`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`;
 
-    console.log("Users table username field migration applied successfully");
+
   } catch (error) {
-    console.log("Error applying users table username field migration", error);
+    console.error('❌ Error applying users table username field migration:', error);
+  }
+
+  // Add performance indexes (migration)
+  try {
+    // Core product indexes for better query performance
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_category_sold ON products(category, is_sold)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_user_id_sold ON products(user_id, is_sold)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_created_at ON products(created_at)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_slug ON products(slug)`;
+    
+    // Message performance indexes
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_chat_id_created ON messages(chat_id, created_at)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_sender_seen ON messages(sender_id, seen_at)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_chats_users ON chats(user1_id, user2_id)`;
+    
+    // User-related indexes
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON users(email)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_recently_seen_user_viewed ON recently_seen_products(user_id, viewed_at)`;
+
+    console.log('✅ Performance indexes created successfully');
+  } catch (error) {
+    console.error('❌ Error creating performance indexes:', error);
   }
 }
 
@@ -247,7 +303,7 @@ initDB().then(async () => {
     
     // Optionally sync existing products on startup
     if (process.env.SYNC_ELASTICSEARCH_ON_STARTUP === 'true') {
-      console.log('Syncing existing products to Elasticsearch...');
+
       await syncExistingProducts();
     }
   } catch (error) {
@@ -256,6 +312,33 @@ initDB().then(async () => {
   }
   
   server.listen(PORT, () => {
-    console.log("Server is running on port " + PORT);
+    console.log(`🚀 Server started on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:3001'}`);
   });
 });
+
+// Graceful shutdown handling
+const gracefulShutdown = (signal) => {
+  console.log(`📡 Received ${signal}. Starting graceful shutdown...`);
+  
+  server.close((err) => {
+    if (err) {
+      console.error('❌ Error during server shutdown:', err);
+      process.exit(1);
+    }
+    
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
+  
+  // Force close server after 30 seconds
+  setTimeout(() => {
+    console.error('❌ Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 30000);
+};
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
