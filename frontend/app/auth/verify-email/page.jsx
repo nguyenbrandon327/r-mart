@@ -91,7 +91,6 @@ const EmailVerificationPage = () => {
 			}
 			toast.success("Email verified successfully");
 		} catch (error) {
-			console.log(error);
 			// Only show error toast for manual submissions
 			if (isManualSubmit) {
 				toast.error("Invalid or expired verification code. Please try again.");

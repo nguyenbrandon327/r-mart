@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Instagram, Linkedin } from 'lucide-react';
 
 export default function Footer() {
@@ -6,17 +7,19 @@ export default function Footer() {
     <footer className="footer footer-center p-10 bg-base-200 text-base-content">
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <img 
+          <Image 
             src="/logo-pic.png" 
             alt="R'mart Logo" 
-            className="size-10 object-contain"
+            width={40}
+            height={40}
+            className="object-contain"
           />
           <span className="font-black font-gt-america-expanded tracking-tighter text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
             r'mart
           </span>
         </div>
         <p className="text-base-content/70">
-          UCR's student-exclusive marketplace - built by students, for students.
+          A student-first secondhand marketplace - built by students, for students.
         </p>
       </div>
       

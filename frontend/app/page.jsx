@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
+import Image from 'next/image';
 import axios from 'axios';
 import ProductCarousel from "../components/ProductCarousel";
 import { fetchRecentlyViewedProducts } from '../store/slices/recentlyViewedSlice';
@@ -61,10 +62,13 @@ export default function HomePage() {
     <div>
       {/* Hero Banner */}
       <div className="relative w-screen h-64 sm:h-72 md:h-80 lg:h-96 mb-8 sm:mb-12 overflow-hidden shadow-lg -mt-6 -ml-[50vw] left-1/2">
-        <img 
+        <Image 
           src="/banner1.png" 
-          className="w-full h-full object-cover" 
           alt="Made for students, by students"
+          fill
+          className="object-cover" 
+          sizes="100vw"
+          priority
         />
         <div 
           className="absolute inset-0 flex items-center"
@@ -73,19 +77,19 @@ export default function HomePage() {
           }}
         >
           <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-            <div className="text-left text-white max-w-xs sm:max-w-md md:max-w-2xl">
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold mb-2 sm:mb-3 leading-tight" 
+            <div className="text-center sm:text-left text-white max-w-full sm:max-w-xs md:max-w-md lg:max-w-2xl mx-auto sm:mx-0">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold mb-3 sm:mb-4 leading-tight" 
                   dangerouslySetInnerHTML={{__html: "Looking to declutter <br/>before Fall quarter?"}}></h2>
-              <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 items-start xs:items-center">
+              <div className="flex flex-row gap-2 sm:gap-3 items-center justify-center sm:justify-start">
                 <Link 
                   href={isAuthenticated ? "/add-listing" : "/auth/login"}
-                  className="btn btn-sm sm:btn-md bg-white text-black border-white hover:bg-gray-100 hover:border-gray-100 text-xs sm:text-sm font-semibold px-4 sm:px-6"
+                  className="btn btn-md sm:btn-lg bg-white text-black border-white hover:bg-gray-100 hover:border-gray-100 text-sm sm:text-base font-semibold px-6 sm:px-8"
                 >
                   Sell Now
                 </Link>
                 <Link 
                   href="/landing"
-                  className="text-white hover:text-gray-200 hover:underline transition-colors duration-200 text-xs sm:text-sm"
+                  className="text-white hover:text-gray-200 hover:underline transition-colors duration-200 text-sm sm:text-base"
                 >
                   Learn More
                 </Link>
@@ -100,7 +104,7 @@ export default function HomePage() {
             <div className="flex justify-center sm:justify-end">
               <Link 
                 href="/all-products"
-                className="px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-sm sm:text-base md:text-lg hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="px-6 py-3 sm:px-6 sm:py-3 md:px-10 md:py-5 bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-base sm:text-base md:text-xl hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                 style={{ borderRadius: '0px' }}
               >
                 <span className="hidden sm:inline">BROWSE ALL LISTINGS</span>

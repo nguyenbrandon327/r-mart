@@ -195,12 +195,9 @@ const chatSlice = createSlice({
     },
     updateChatLastMessage: (state, action) => {
       const { chatId, message, timestamp, isFromCurrentUser = false } = action.payload;
-      console.log('💬 REDUX: updateChatLastMessage called:', { chatId, message, timestamp, isFromCurrentUser });
-      console.log('💬 REDUX: Current chats before update:', state.chats.length);
       
       const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
       if (chatIndex !== -1) {
-        console.log('💬 REDUX: Found chat at index:', chatIndex);
         state.chats[chatIndex].last_message = message;
         state.chats[chatIndex].last_message_at = timestamp;
         
@@ -208,51 +205,29 @@ const chatSlice = createSlice({
         const updatedChat = state.chats[chatIndex];
         state.chats.splice(chatIndex, 1);
         state.chats.unshift(updatedChat);
-        console.log('💬 REDUX: Moved chat to top, new order:', state.chats.map(c => c.id));
-      } else {
-        console.log('💬 REDUX: Chat not found with ID:', chatId);
       }
     },
     addChatToUnread: (state, action) => {
       const { chatId } = action.payload;
-      console.log('🔴 REDUX: addChatToUnread called for chat:', chatId);
-      console.log('🔴 REDUX: Current unread chats before:', [...state.chatsWithUnreadMessages]);
-      console.log('🔴 REDUX: Current unread count before:', state.unreadCount);
       
       // Find the chat and increment its unread count
       const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
       if (chatIndex !== -1) {
-        const oldCount = state.chats[chatIndex].unread_count;
         state.chats[chatIndex].unread_count = parseInt(state.chats[chatIndex].unread_count || 0) + 1;
-        console.log('🔴 REDUX: Updated chat unread count from', oldCount, 'to', state.chats[chatIndex].unread_count);
-      } else {
-        console.log('🔴 REDUX: Chat not found for unread update:', chatId);
       }
       
       // Add to global unread list if not already there
       if (!state.chatsWithUnreadMessages.includes(chatId)) {
         state.chatsWithUnreadMessages.push(chatId);
         state.unreadCount = state.chatsWithUnreadMessages.length;
-        console.log('🔴 REDUX: Added to unread. New count:', state.unreadCount);
-        console.log('🔴 REDUX: New unread chats:', [...state.chatsWithUnreadMessages]);
-      } else {
-        console.log('🔴 REDUX: Chat already in unread list, but incremented individual count');
       }
-      
-      console.log('🔴 REDUX: Final state - unreadCount:', state.unreadCount, 'chatsWithUnreadMessages:', [...state.chatsWithUnreadMessages]);
     },
     removeChatFromUnread: (state, action) => {
       const { chatId } = action.payload;
-      console.log('🟢 REDUX: removeChatFromUnread called for chat:', chatId);
-      console.log('🟢 REDUX: Current unread chats before:', [...state.chatsWithUnreadMessages]);
       const index = state.chatsWithUnreadMessages.indexOf(chatId);
       if (index !== -1) {
         state.chatsWithUnreadMessages.splice(index, 1);
         state.unreadCount = state.chatsWithUnreadMessages.length;
-        console.log('🟢 REDUX: Removed from unread. New count:', state.unreadCount);
-        console.log('🟢 REDUX: New unread chats:', [...state.chatsWithUnreadMessages]);
-      } else {
-        console.log('🟢 REDUX: Chat not found in unread list, no change');
       }
       
       // Also reset unread count for the specific chat
@@ -265,12 +240,10 @@ const chatSlice = createSlice({
       state.unreadCount = action.payload;
     },
     setChatsWithUnreadMessages: (state, action) => {
-      console.log('🟡 REDUX: setChatsWithUnreadMessages called with:', action.payload);
       state.chatsWithUnreadMessages = action.payload;
       state.unreadCount = action.payload.length;
     },
     resetUnreadCount: (state) => {
-      console.log('🔵 REDUX: resetUnreadCount called');
       state.unreadCount = 0;
       state.chatsWithUnreadMessages = [];
     }
@@ -394,7 +367,6 @@ const chatSlice = createSlice({
 
       // Get Unread Count
       .addCase(getUnreadCount.fulfilled, (state, action) => {
-        console.log('🟠 REDUX: getUnreadCount.fulfilled called with:', action.payload);
         state.unreadCount = action.payload.unreadCount;
         state.chatsWithUnreadMessages = action.payload.chatsWithUnreadMessages;
       });

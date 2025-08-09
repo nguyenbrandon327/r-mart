@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useChatStore, useAuthStore } from '../../store/hooks';
 import { useSocket } from '../../lib/socket';
 import { useRouter } from 'next/navigation';
-import { UserCircleIcon, MessageSquareIcon, MessageCircleMore, ShoppingBagIcon, CheckIcon, Check } from 'lucide-react';
+import { MessageSquareIcon, MessageCircleMore, ShoppingBagIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AuthGuard from '../../components/AuthGuard';
@@ -33,8 +33,7 @@ export default function InboxPage() {
 
   // Debug logging to track chat updates
   useEffect(() => {
-    console.log('📬 INBOX: Chats updated:', chats.length, 'chats');
-    console.log('📬 INBOX: Chats with unread:', chats.filter(chat => chat.unread_count > 0).length);
+    // Debug logs removed for production
   }, [chats]);
 
   // Socket connection is now handled globally in NavigationWrapper
@@ -194,9 +193,13 @@ export default function InboxPage() {
                                 className="rounded-full object-cover"
                               />
                             ) : (
-                              <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                                <UserCircleIcon className="w-9 h-9 text-primary" />
-                              </div>
+                              <Image
+                                src="/profile-pic.png"
+                                alt="Default profile picture"
+                                width={56}
+                                height={56}
+                                className="rounded-full object-cover"
+                              />
                             )}
                           </div>
                         </div>

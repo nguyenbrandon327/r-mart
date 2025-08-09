@@ -2,6 +2,7 @@
 
 import { useDispatch } from 'react-redux';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Trash2Icon } from 'lucide-react';
 import { unsaveProduct } from '../store/slices/savedProductsSlice';
 
@@ -31,11 +32,16 @@ const SavedProductItem = ({ product }) => {
     <div className="flex flex-col md:flex-row hover:bg-gray-50 transition-colors rounded-lg">
       <Link href={`/product/${product.slug || product.id}`} className="flex flex-col md:flex-row flex-1">
         {/* Product image */}
-        <div className="md:w-40 h-40 md:h-40 flex-shrink-0">
-          <img
+        <div className="md:w-40 h-40 md:h-40 flex-shrink-0 relative">
+          <Image
             src={getCoverImage()}
             alt={product.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="160px"
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
         </div>
         

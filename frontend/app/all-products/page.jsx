@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   PackageIcon, 
   ShoppingBagIcon,
@@ -203,10 +204,13 @@ export default function AllProductsPage() {
               {isMobile ? (
                 /* Mobile: Single category per slide */
                 <div className="relative w-full h-full">
-                  <img 
+                  <Image 
                     src={slide.image} 
-                    className="w-full h-full object-cover" 
                     alt={slide.category}
+                    fill
+                    className="object-cover" 
+                    sizes="100vw"
+                    priority={index === 0}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
                     <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
@@ -225,10 +229,13 @@ export default function AllProductsPage() {
                 <div className="w-full h-full flex">
                   {/* Left Half */}
                   <div className="relative w-1/2 h-full">
-                    <img 
+                    <Image 
                       src={slide.leftHalf.image} 
-                      className="w-full h-full object-cover" 
                       alt={slide.leftHalf.category}
+                      fill
+                      className="object-cover" 
+                      sizes="50vw"
+                      priority={index === 0}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
                       <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
@@ -245,10 +252,13 @@ export default function AllProductsPage() {
                   
                   {/* Right Half */}
                   <div className="relative w-1/2 h-full">
-                    <img 
+                    <Image 
                       src={slide.rightHalf.image} 
-                      className="w-full h-full object-cover" 
                       alt={slide.rightHalf.category}
+                      fill
+                      className="object-cover" 
+                      sizes="50vw"
+                      priority={index === 0}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
                       <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
@@ -403,7 +413,7 @@ export default function AllProductsPage() {
           <span className="loading loading-spinner loading-lg text-primary"></span>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

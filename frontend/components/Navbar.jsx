@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { UserIcon, LogOutIcon, HeartIcon, MessageCircleMore, UserCircleIcon, ChevronDownIcon, PlusIcon, SearchIcon, MenuIcon, SettingsIcon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,7 +21,7 @@ function Navbar() {
   
   // Debug logging to track unread count changes
   useEffect(() => {
-    console.log('🔵 NAVBAR: Unread count changed to:', unreadCount);
+    // Debug logs removed for production
   }, [unreadCount]);
   
   const handleLogout = async () => {
@@ -58,10 +59,13 @@ function Navbar() {
             <div className="flex-none">
               <Link href="/" className="hover:opacity-80 transition-opacity">
                 <div className="flex items-center gap-2">
-                  <img 
+                  <Image 
                     src="/logo-pic.png" 
                     alt="R'mart Logo" 
-                    className="size-12 object-contain"
+                    width={48}
+                    height={48}
+                    className="object-contain"
+                    priority
                   />
                   <span
                     className="font-black font-gt-america-expanded tracking-tighter text-2xl 
@@ -163,20 +167,15 @@ function Navbar() {
                     <div className="dropdown dropdown-end">
                       <div tabIndex={0} role="button" className="btn btn-ghost btn-sm px-2 gap-1 flex items-center">
                         <div className="avatar">
-                          <div className="w-8 rounded-full">
-                            {user.profile_pic ? (
-                              <img
-                                src={user.profile_pic}
-                                alt={`${user.name}'s profile`}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                            ) : (
-                              <img
-                                src="/profile-pic.png"
-                                alt="Default profile picture"
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                            )}
+                          <div className="w-8 h-8 rounded-full relative overflow-hidden">
+                            <Image
+                              src={user.profile_pic || "/profile-pic.png"}
+                              alt={user.profile_pic ? `${user.name}'s profile` : "Default profile picture"}
+                              fill
+                              className="rounded-full object-cover"
+                              sizes="32px"
+                              loading="lazy"
+                            />
                           </div>
                         </div>
                         <ChevronDownIcon className="size-3 hidden sm:block" />
@@ -195,6 +194,16 @@ function Navbar() {
                           <Link href={`/settings`} className="justify-between" onClick={closeDropdown}>
                             <span>Settings</span>
                             <SettingsIcon className="size-4" />
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/terms" onClick={closeDropdown}>
+                            <span>Terms of Service</span>
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/privacy" onClick={closeDropdown}>
+                            <span>Privacy Policy</span>
                           </Link>
                         </li>
                         <li>

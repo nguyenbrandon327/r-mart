@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, memo, useMemo } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import ProductCard from './ProductCard';
 
@@ -25,7 +25,7 @@ const throttle = (func, delay) => {
   };
 };
 
-export default function ProductCarousel({ 
+function ProductCarousel({ 
   title, 
   icon, 
   products = [], 
@@ -84,8 +84,13 @@ export default function ProductCarousel({
     }
   };
 
+  // Memoize the decision to render
+  const shouldRender = useMemo(() => {
+    return loading || products.length > 0;
+  }, [loading, products.length]);
+
   // Don't render if no products and not loading
-  if (!loading && products.length === 0) {
+  if (!shouldRender) {
     return null;
   }
 
@@ -149,4 +154,17 @@ export default function ProductCarousel({
       )}
     </div>
   );
-} 
+}
+
+// Memoize ProductCarousel to prevent unnecessary re-renders
+export default memo(ProductCarousel, (prevProps, nextProps) => {
+  return (
+    prevProps.title === nextProps.title &&
+    prevProps.icon === nextProps.icon &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.className === nextProps.className &&
+    prevProps.sourceContext === nextProps.sourceContext &&
+    prevProps.products.length === nextProps.products.length &&
+    JSON.stringify(prevProps.products.map(p => p.id)) === JSON.stringify(nextProps.products.map(p => p.id))
+  );
+}); 

@@ -683,56 +683,63 @@ export default function ProductPage({ params }) {
 
       {/* Fullscreen Gallery Modal */}
       {galleryOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-90 z-50"
-            onClick={closeGallery}
-          />
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col justify-center items-center"
+          onClick={closeGallery}
+        >
+          {/* Close button */}
+          <button 
+            className="absolute top-6 right-6 text-white bg-black bg-opacity-60 hover:bg-opacity-80 p-3 rounded-full z-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeGallery();
+            }}
+          >
+            <XIcon size={24} />
+          </button>
           
-          {/* Content */}
-          <div className="fixed inset-0 z-50 flex flex-col justify-center items-center">
-            {/* Close button */}
-            <button 
-              className="absolute top-6 right-6 text-white bg-black bg-opacity-60 hover:bg-opacity-80 p-3 rounded-full z-50"
-              onClick={closeGallery}
-            >
-              <XIcon size={24} />
-            </button>
-            
-            {/* Main image container */}
-            <div className="relative w-full h-full flex items-center justify-center p-4 md:p-10">
-              <img 
-                src={images[activeImage]}
-                alt={`${currentProduct.name} - fullscreen view`}
-                className="max-h-full max-w-full object-contain"
-              />
-              
-              {/* Previous/Next navigation */}
-              {images.length > 1 && (
-                <>
-                  <button 
-                    className="absolute left-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2"
-                    onClick={prevImage}
-                  >
-                    <ChevronLeftIcon size={24} />
-                  </button>
-                  <button 
-                    className="absolute right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2"
-                    onClick={nextImage}
-                  >
-                    <ChevronRightIcon size={24} />
-                  </button>
-                </>
-              )}
-            </div>
-            
-            {/* Image counter */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white">
-              {activeImage + 1} / {images.length}
-            </div>
+          {/* Previous/Next navigation - positioned at overlay edges */}
+          {images.length > 1 && (
+            <>
+              <button 
+                className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 z-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+              >
+                <ChevronLeftIcon size={24} />
+              </button>
+              <button 
+                className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 z-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+              >
+                <ChevronRightIcon size={24} />
+              </button>
+            </>
+          )}
+          
+          {/* Main image container - only covers the image area */}
+          <div className="relative flex items-center justify-center max-w-full max-h-full">
+            <img 
+              src={images[activeImage]}
+              alt={`${currentProduct.name} - fullscreen view`}
+              className="max-h-[90vh] max-w-[90vw] object-contain"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on image
+            />
           </div>
-        </>
+          
+          {/* Image counter */}
+          <div 
+            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on counter
+          >
+            {activeImage + 1} / {images.length}
+          </div>
+        </div>
       )}
 
       {/* Seller Other Products Carousel */}

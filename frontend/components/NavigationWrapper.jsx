@@ -30,16 +30,12 @@ export default function NavigationWrapper({ children }) {
 
   // Debug logging for socket connection
   useEffect(() => {
-    console.log('🔌 NAVIGATION: Socket connection status:', {
-      socketExists: !!socket,
-      socketConnected: socket?.connected,
-      isAuthenticated
-    });
+    // Debug logs removed for production
   }, [socket?.connected, isAuthenticated]);
 
   // Debug logging for unread count changes
   useEffect(() => {
-    console.log('🔢 NAVIGATION: Unread count changed to:', unreadCount);
+    // Debug logs removed for production
   }, [unreadCount]);
 
   // Initialize socket connection globally
@@ -53,7 +49,6 @@ export default function NavigationWrapper({ children }) {
   // Fetch unread count when user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('🔢 NAVIGATION: User authenticated, fetching unread count');
       getUnreadCount();
     }
   }, [isAuthenticated]); // Removed getUnreadCount to prevent infinite loop
@@ -61,7 +56,6 @@ export default function NavigationWrapper({ children }) {
   // Clear selectedChat when not on a specific chat page
   useEffect(() => {
     if (!isChatPage) {
-      console.log('🔄 NAVIGATION: Not on chat page, clearing selectedChat');
       setSelectedChat(null);
     }
   }, [pathname, isChatPage, setSelectedChat]);

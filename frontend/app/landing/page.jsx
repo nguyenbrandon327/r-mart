@@ -26,9 +26,9 @@ export default function LandingPage() {
           : 'bg-transparent'
       }`}>
         <div className="max-w-7xl mx-auto">
-          <div className="navbar px-4 min-h-[4rem] justify-between">
+          <div className="navbar px-4 min-h-[4rem] relative">
             {/* LEFT SECTION - LOGO */}
-            <div className="flex items-center gap-1 flex-1">
+            <div className="flex items-center gap-1">
               <div className="flex-none">
                 <Link href="/" className="hover:opacity-80 transition-opacity">
                   <div className="flex items-center gap-2">
@@ -48,8 +48,44 @@ export default function LandingPage() {
               </div>
             </div>
 
+            {/* CENTER SECTION - Navigation Links */}
+            <div className={`items-center gap-6 absolute left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
+              scrolled ? 'md:flex opacity-100' : 'hidden opacity-0'
+            }`}>
+              <a 
+                href="#about" 
+                className="text-base-content hover:text-primary transition-colors cursor-pointer font-medium"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                About
+              </a>
+              <a 
+                href="#how-it-works" 
+                className="text-base-content hover:text-primary transition-colors cursor-pointer font-medium"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                How It Works
+              </a>
+              <a 
+                href="#faq" 
+                className="text-base-content hover:text-primary transition-colors cursor-pointer font-medium"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                FAQ
+              </a>
+            </div>
+
             {/* RIGHT SECTION */}
-            <div className="flex items-center gap-4 flex-none">
+            <div className="flex items-center gap-4 ml-auto">
               <Link href="/auth/login" className="btn btn-ghost btn-sm rounded-none">
                 Login
               </Link>
@@ -171,7 +207,7 @@ export default function LandingPage() {
       </section>
 
       {/* What's R'Mart Section */}
-      <section className="py-20 bg-base-200/50">
+      <section id="about" className="py-20 bg-base-200/50">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-black mb-6 text-base-content">
@@ -230,7 +266,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-base-100">
+      <section id="how-it-works" className="py-20 bg-base-100">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-black mb-6 text-base-content">
@@ -279,7 +315,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-base-200/50">
+      <section id="faq" className="py-20 bg-base-200/50">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-black mb-6 text-base-content">
@@ -306,7 +342,7 @@ export default function LandingPage() {
               </div>
               <div className="collapse-content">
                 <p className="text-base-content/80">
-                  All listings are public. Listing pages contain the seller's username. Profile pages are only viewable by authenticated users (aka. other UCR students). Profile pages contain the seller's name, pronouns, profile picture, description, year, major, and dorm name (which you can choose to hide).
+                All listings are public and include the seller’s username. Profile pages are only accessible to authenticated users (i.e., other UCR students). These pages display the seller’s name, profile picture, description, year, major, and dorm name (which can be hidden if preferred).
                 </p>
               </div>
             </div>

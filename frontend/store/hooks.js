@@ -201,7 +201,6 @@ export const useChatStore = () => {
     emitTyping: (chatId, isTyping) => {
       const socket = auth.socket;
       if (!socket || !socket.connected || !chatId) {
-        console.log('Cannot emit typing: socket not available or not connected');
         return;
       }
       
@@ -211,7 +210,6 @@ export const useChatStore = () => {
     joinChatRoom: (chatId) => {
       const socket = auth.socket;
       if (!socket || !socket.connected || !chatId) {
-        console.log('Cannot join chat room: socket not available or not connected');
         return;
       }
       
@@ -221,7 +219,6 @@ export const useChatStore = () => {
     leaveChatRoom: (chatId) => {
       const socket = auth.socket;
       if (!socket || !socket.connected || !chatId) {
-        console.log('Cannot leave chat room: socket not available or not connected');
         return;
       }
       
@@ -231,14 +228,11 @@ export const useChatStore = () => {
     subscribeToMessages: () => {
       const socket = auth.socket;
       if (!socket || !socket.connected) {
-        console.log('Socket not available or not connected for subscription');
         return;
       }
 
       // Only remove messagesSeen listeners to avoid conflicts with global handlers
       socket.removeAllListeners("messagesSeen");
-
-      console.log('📱 LOCAL: Setting up seen handlers for chat:', chat.selectedChat?.id || 'none');
 
       // Handle messages seen
       const messagesSeenHandler = ({ messageIds, chatId }) => {
@@ -252,11 +246,8 @@ export const useChatStore = () => {
     unsubscribeFromMessages: () => {
       const socket = auth.socket;
       if (!socket) {
-        console.log('No socket available for unsubscription');
         return;
       }
-      
-      console.log('📱 LOCAL: Unsubscribing from seen handlers');
       // Only remove the messagesSeen listener we set up locally - don't touch global handlers
       socket.removeAllListeners("messagesSeen");
     },

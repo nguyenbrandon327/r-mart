@@ -55,7 +55,7 @@ export default function AddListingPage() {
       // Auto redirect to home after 4 seconds
       setTimeout(() => {
         router.push('/');
-      }, 4000);
+      }, 3500);
     } catch (error) {
       console.error('Failed to add product:', error);
     }

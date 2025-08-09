@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 
 function SearchProductCard({ product }) {
   const getCategoryLabel = (category) => {
@@ -36,11 +37,16 @@ function SearchProductCard({ product }) {
     <Link href={`/product/${product.slug || product.id}`}>
       <div className="bg-transparent rounded-none cursor-pointer border-2 border-transparent hover:border-gray-500 transition-all duration-300 -m-1 p-1">
         {/* PRODUCT IMAGE */}
-        <figure className="relative pt-[100%] mb-0 rounded-md overflow-hidden">
-          <img
+        <figure className="relative aspect-square mb-0 rounded-md overflow-hidden">
+          <Image
             src={getCoverImage()}
             alt={product.name}
-            className="absolute top-0 left-0 w-full h-full object-cover rounded-md"
+            fill
+            className="object-cover rounded-md"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
         </figure>
 

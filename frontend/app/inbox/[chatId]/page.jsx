@@ -6,7 +6,7 @@ import { useChatStore, useAuthStore } from '../../../store/hooks';
 import { selectMessagesForChat } from '../../../store/slices/chatSlice';
 import { useSocket } from '../../../lib/socket';
 import { useRouter } from 'next/navigation';
-import { UserCircleIcon, SendIcon, ImageIcon, XIcon, ArrowLeftIcon, CheckIcon, Check } from 'lucide-react';
+import { SendIcon, ImageIcon, XIcon, ArrowLeftIcon, CheckIcon, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AuthGuard from '../../../components/AuthGuard';
@@ -121,18 +121,13 @@ export default function ChatPage({ params }) {
     if (chats.length > 0 && chatULID) {
       const foundChat = chats.find(chat => chat.ulid === chatULID);
       if (foundChat) {
-        console.log('🔄 CHAT SELECTION: Found chat data:', foundChat.ulid);
         setChatData(foundChat);
         // Only set selected chat if it's different from current
         if (!selectedChat || selectedChat.ulid !== foundChat.ulid) {
-          console.log('🔄 CHAT SELECTION: Setting selected chat to:', foundChat.ulid, 'from previous:', selectedChat?.ulid);
           setSelectedChat(foundChat);
-        } else {
-          console.log('🔄 CHAT SELECTION: Chat already selected, no change needed');
         }
       } else {
         // Chat not found, redirect to inbox
-        console.log('🔄 CHAT SELECTION: Chat not found, redirecting to inbox');
         router.push('/inbox');
       }
     }
@@ -141,7 +136,6 @@ export default function ChatPage({ params }) {
   // Load messages when chat is selected and join chat room
   useEffect(() => {
     if (selectedChat && selectedChat.ulid === chatULID) {
-      console.log('📂 CHAT LOAD: Loading messages for chat:', selectedChat.ulid);
       clearMessages();
       getMessages(selectedChat.ulid);
       
@@ -149,18 +143,15 @@ export default function ChatPage({ params }) {
       joinChatRoom(selectedChat.id);
       
       // Mark messages as seen when entering the chat
-      console.log('📂 CHAT LOAD: Marking messages as seen on chat enter');
       markMessagesAsSeen(selectedChat.ulid);
       
       // Remove this chat from unread list since user is viewing it
-      console.log('📂 CHAT LOAD: Removing chat from unread on enter');
       removeChatFromUnread(selectedChat.id);
     }
 
     // Cleanup: leave chat room when component unmounts or chat changes
     return () => {
       if (selectedChat) {
-        console.log('📂 CHAT CLEANUP: Leaving chat room:', selectedChat.id);
         leaveChatRoom(selectedChat.id);
         // Stop typing when leaving chat
         if (isTyping) {
@@ -174,17 +165,10 @@ export default function ChatPage({ params }) {
   // Auto-mark messages as seen when new messages arrive
   useEffect(() => {
     if (messages.length > 0 && selectedChat && isTabVisible) {
-      console.log('👁️ CHAT PAGE: Auto-marking messages as seen:', {
-        messagesCount: messages.length,
-        chatULID: selectedChat.ulid,
-        isTabVisible,
-        lastMessage: messages[messages.length - 1]
-      });
       // Mark messages as seen immediately if user is actively viewing the chat
       markMessagesAsSeen(selectedChat.ulid);
       // Remove from unread list when messages are seen
       removeChatFromUnread(selectedChat.id);
-      console.log('➖ CHAT PAGE: Removed chat from unread:', selectedChat.ulid);
     }
   }, [messages.length, selectedChat?.ulid, isTabVisible]);
 
@@ -198,22 +182,12 @@ export default function ChatPage({ params }) {
 
   // Handle socket subscription - now always subscribe when socket is ready
   useEffect(() => {
-    console.log('Socket/Chat subscription check:', {
-      socketExists: !!socket,
-      socketConnected: socket?.connected,
-      selectedChatId: selectedChat?.id,
-      hasCurrentUser: !!currentUser
-    });
-    
     if (socket?.connected && currentUser) {
-      console.log('Socket ready - subscribing to messages globally');
-      
       const timer = setTimeout(() => {
         subscribeToMessages();
       }, 200);
 
       return () => {
-        console.log('Cleanup: clearing subscription timer');
         clearTimeout(timer);
       };
     }
@@ -313,7 +287,7 @@ export default function ChatPage({ params }) {
       setMessageText('');
       removeImage();
     } catch (error) {
-      console.error('Failed to send message:', error);
+      // Failed to send message
     }
   };
 
@@ -425,12 +399,10 @@ export default function ChatPage({ params }) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       const isVisible = document.visibilityState === 'visible';
-      console.log('👀 TAB VISIBILITY: Changed to', isVisible ? 'visible' : 'hidden');
       setIsTabVisible(isVisible);
       
       // Mark messages as seen when user returns to the tab
       if (isVisible && selectedChat && messages.length > 0) {
-        console.log('👀 TAB VISIBILITY: Marking messages as seen on return to tab');
         markMessagesAsSeen(selectedChat.ulid);
         // Remove from unread list when messages are seen
         removeChatFromUnread(selectedChat.id);
@@ -439,7 +411,6 @@ export default function ChatPage({ params }) {
 
     // Set initial visibility state
     const initialVisibility = document.visibilityState === 'visible';
-    console.log('👀 TAB VISIBILITY: Initial state:', initialVisibility ? 'visible' : 'hidden');
     setIsTabVisible(initialVisibility);
     
     // Add event listener
@@ -531,9 +502,13 @@ export default function ChatPage({ params }) {
                             className="rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <UserCircleIcon className="w-6 h-6 text-primary" />
-                          </div>
+                          <Image
+                            src="/profile-pic.png"
+                            alt="Default profile picture"
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover"
+                          />
                         )}
                       </div>
                     </div>

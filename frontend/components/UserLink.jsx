@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSelector } from 'react-redux';
+import { PROFILE_BLUR_DATA_URL } from '../utils/imageUtils';
 
 export default function UserLink({ user, children, className = "", showProfilePic = false, profilePicSize = "w-10 h-10" }) {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -48,24 +50,24 @@ export default function UserLink({ user, children, className = "", showProfilePi
     const profilePic = forceDefault ? null : getProfilePicture(user);
     const userName = getUserName(user);
     
-    if (profilePic) {
-      return (
-        <img
-          src={profilePic}
+    // Extract dimensions from size class (e.g., "w-10 h-10" -> 40px)
+    const sizeMatch = size.match(/w-(\d+)/);
+    const dimension = sizeMatch ? parseInt(sizeMatch[1]) * 4 : 40; // Convert Tailwind size to pixels
+    
+    return (
+      <div className={`${size} relative rounded-full overflow-hidden`}>
+        <Image
+          src={profilePic || "/profile-pic.png"}
           alt={`${userName}'s profile`}
-          className={`${size} rounded-full object-cover`}
+          fill
+          className="rounded-full object-cover"
+          sizes={`${dimension}px`}
+          loading="lazy"
+          placeholder="blur"
+          blurDataURL={PROFILE_BLUR_DATA_URL}
         />
-      );
-    } else {
-      // Fallback to default profile picture
-      return (
-        <img
-          src="/profile-pic.png"
-          alt={`${userName}'s profile`}
-          className={`${size} rounded-full object-cover`}
-        />
-      );
-    }
+      </div>
+    );
   };
 
   // Get display text based on authentication status

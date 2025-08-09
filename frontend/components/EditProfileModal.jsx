@@ -493,9 +493,11 @@ function EditProfileModal() {
                     className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center border-4 border-gray-200">
-                    <UserIcon className="w-12 h-12 text-gray-600" />
-                  </div>
+                  <img
+                    src="/profile-pic.png"
+                    alt="Default profile picture"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                  />
                 )}
                 
                 {/* Camera overlay button */}

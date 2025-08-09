@@ -218,61 +218,64 @@ function EditProductModal() {
               </div>
             </div>
 
-            {/* PRODUCT PRICE INPUT */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-base font-medium">Price</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
-                  <DollarSignIcon className="size-5" />
+            {/* PRICE AND CATEGORY ROW */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* PRODUCT PRICE INPUT */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-base font-medium">Price</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                    <DollarSignIcon className="size-5" />
+                  </div>
+                  <input
+                    type="number"
+                    name="price"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="input input-bordered w-full pl-10 py-3 focus:input-primary transition-colors duration-200"
+                    value={formData.price}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
-                <input
-                  type="number"
-                  name="price"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  className="input input-bordered w-full pl-10 py-3 focus:input-primary transition-colors duration-200"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                />
               </div>
-            </div>
 
-            {/* PRODUCT CATEGORY */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-base font-medium">Category</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
-                  <TagIcon className="size-5" />
+              {/* PRODUCT CATEGORY */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-base font-medium">Category</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                    <TagIcon className="size-5" />
+                  </div>
+                  <select
+                    name="category"
+                    className="select select-bordered w-full pl-10 py-3 focus:select-primary transition-colors duration-200"
+                    value={formData.category || ""}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="" disabled>Select a category</option>
+                    <option value="clothes">Clothes</option>
+                    <option value="tech">Tech</option>
+                    <option value="textbooks">Textbooks</option>
+                    <option value="furniture">Furniture</option>
+                    <option value="kitchen">Kitchen</option>
+                    <option value="food">Food</option>
+                    <option value="vehicles">Vehicles</option>
+                    <option value="housing">Housing</option>
+                    <option value="rides">Rides</option>
+                    <option value="renting">Renting</option>
+                    <option value="merch">Merch</option>
+                    <option value="tickets">Tickets</option>
+                    <option value="other">Other</option>
+                    <option value="in-searching-for">I'm searching for</option>
+                  </select>
                 </div>
-                <select
-                  name="category"
-                  className="select select-bordered w-full pl-10 py-3 focus:select-primary transition-colors duration-200"
-                  value={formData.category || ""}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="" disabled>Select a category</option>
-                  <option value="clothes">Clothes</option>
-                  <option value="tech">Tech</option>
-                  <option value="textbooks">Textbooks</option>
-                  <option value="furniture">Furniture</option>
-                  <option value="kitchen">Kitchen</option>
-                  <option value="food">Food</option>
-                  <option value="vehicles">Vehicles</option>
-                  <option value="housing">Housing</option>
-                  <option value="rides">Rides</option>
-                  <option value="renting">Renting</option>
-                  <option value="merch">Merch</option>
-                  <option value="tickets">Tickets</option>
-                  <option value="other">Other</option>
-                  <option value="in-searching-for">I'm searching for</option>
-                </select>
               </div>
             </div>
 
@@ -302,45 +305,64 @@ function EditProductModal() {
               
               {allImages.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-3">
-                  {allImages.map((image, index) => (
-                    <div 
-                      key={image.id}
-                      className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 cursor-move transition-all duration-200 ${
-                        index === 0 ? 'border-primary' : 'border-gray-200'
-                      } ${
-                        draggedImage === index ? 'opacity-50 scale-95' : ''
-                      } ${
-                        dropTarget === index && draggedImage !== null && draggedImage !== index 
-                          ? 'border-blue-400 bg-blue-50 scale-105 shadow-lg' 
-                          : ''
-                      }`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, index)}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, index)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <img 
-                        src={getImageUrl(image)} 
-                        alt={`Preview ${index}`} 
-                        className="w-full h-full object-cover" 
-                      />
-                      <button 
-                        type="button"
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X size={14} />
-                      </button>
-                      {/* Cover badge */}
-                      {index === 0 && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs text-center py-0.5">
-                          Cover
+                  {allImages.map((image, index) => {
+                    const isLastImage = index === allImages.length - 1;
+                    const shouldShowBarAfter = dropTarget === index && draggedImage !== null && draggedImage !== index && 
+                                             isLastImage && draggedImage < index;
+                    const shouldShowBarBefore = dropTarget === index && draggedImage !== null && draggedImage !== index && 
+                                               (!isLastImage || draggedImage > index);
+                    
+                    return (
+                      <div key={`container-${image.id}`} className="flex items-center">
+                        {/* Drop indicator bar */}
+                        {shouldShowBarBefore && (
+                          <div className="w-1 h-24 bg-blue-500 rounded-full mr-3"></div>
+                        )}
+                        
+                        <div 
+                          className={`relative group w-24 h-24 rounded-md overflow-hidden border-2 cursor-move transition-all duration-200 ${
+                            index === 0 ? 'border-primary' : 'border-gray-200'
+                          } ${
+                            draggedImage === index ? 'opacity-50 scale-95' : ''
+                          } ${
+                            dropTarget === index && draggedImage !== null && draggedImage !== index 
+                              ? 'border-blue-400 bg-blue-50 scale-105 shadow-lg' 
+                              : ''
+                          }`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, index)}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <img 
+                            src={getImageUrl(image)} 
+                            alt={`Preview ${index}`} 
+                            className="w-full h-full object-cover" 
+                          />
+                          <button 
+                            type="button"
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X size={14} />
+                          </button>
+                          {/* Cover badge */}
+                          {index === 0 && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-xs text-center py-0.5">
+                              Cover
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {/* Drop indicator bar */}
+                        {shouldShowBarAfter && (
+                          <div className="w-1 h-24 bg-blue-500 rounded-full ml-3"></div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               
