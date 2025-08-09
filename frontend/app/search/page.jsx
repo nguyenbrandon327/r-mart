@@ -74,8 +74,6 @@ export default function SearchPage() {
     loading, 
     error, 
     total, 
-    limit, 
-    offset, 
     filters 
   } = useSelector((state) => state.search);
   
@@ -164,13 +162,7 @@ export default function SearchPage() {
   const currentSortOption = sortOptions.find(option => option.value === (filters.sort || 'best_match'));
   const CurrentIcon = currentSortOption?.icon || SparklesIcon;
 
-  const loadMore = () => {
-    dispatch(searchProducts({ 
-      query, 
-      ...filters,
-      offset: offset + limit 
-    }));
-  };
+
 
   const hasActiveFilters = filters.category || filters.minPrice || filters.maxPrice || (filters.sort && filters.sort !== 'best_match');
 
@@ -435,25 +427,7 @@ export default function SearchPage() {
               ))}
             </div>
 
-            {/* Load More Button */}
-            {searchResults.length < total && (
-              <div className="flex justify-center mt-8">
-                <button
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="btn btn-primary"
-                >
-                  {loading ? (
-                    <>
-                      <span className="loading loading-spinner"></span>
-                      Loading...
-                    </>
-                  ) : (
-                    `Load More (${searchResults.length} of ${total})`
-                  )}
-                </button>
-              </div>
-            )}
+
           </>
         )}
       </div>

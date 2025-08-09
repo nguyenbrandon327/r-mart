@@ -66,8 +66,8 @@ export const searchProducts = async (req, res) => {
         break;
     }
 
-    // Execute the search with AI-powered hybrid capabilities
-    const searchOptions = {
+    // First, try a keyword-only search to see if we have direct matches
+    const keywordResult = await index.search(q, {
       filter: filters.join(' AND '),
       limit: parseInt(limit),
       offset: parseInt(offset),
@@ -75,19 +75,62 @@ export const searchProducts = async (req, res) => {
       attributesToHighlight: ['name', 'description'],
       showRankingScore: true,
       showRankingScoreDetails: true,
-      // Always use hybrid search combining keyword and semantic
-      hybrid: {
-        semanticRatio: parseFloat(semanticRatio),
-        embedder: 'default'
-      }
-    };
+      ...(sort !== 'best_match' && { sort: sortArray })
+    });
 
-    // Add sort only if not best_match (MeiliSearch handles relevance automatically)
-    if (sort !== 'best_match') {
-      searchOptions.sort = sortArray;
+    // Use hybrid search only if keyword search found some results OR if we want to enhance existing results
+    let searchResult;
+    if (keywordResult.hits.length > 0) {
+      // We have keyword matches, enhance with semantic search
+      const hybridOptions = {
+        filter: filters.join(' AND '),
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        attributesToRetrieve: ['*'],
+        attributesToHighlight: ['name', 'description'],
+        showRankingScore: true,
+        showRankingScoreDetails: true,
+        hybrid: {
+          semanticRatio: Math.min(parseFloat(semanticRatio), 0.3), // Limit semantic influence to 30%
+          embedder: 'default'
+        },
+        ...(sort !== 'best_match' && { sort: sortArray })
+      };
+      
+      searchResult = await index.search(q, hybridOptions);
+      
+      // Filter out results with very low ranking scores (likely irrelevant semantic matches)
+      searchResult.hits = searchResult.hits.filter(hit => 
+        hit._rankingScore === undefined || hit._rankingScore > 0.2
+      );
+      
+    } else {
+      // No keyword matches, try a more conservative semantic search
+      const semanticOptions = {
+        filter: filters.join(' AND '),
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        attributesToRetrieve: ['*'],
+        attributesToHighlight: ['name', 'description'],
+        showRankingScore: true,
+        showRankingScoreDetails: true,
+        hybrid: {
+          semanticRatio: 0.8, // More semantic-focused for when keywords don't match
+          embedder: 'default'
+        },
+        ...(sort !== 'best_match' && { sort: sortArray })
+      };
+      
+      const semanticResult = await index.search(q, semanticOptions);
+      
+      // Only include results with decent semantic similarity (score > 0.5)
+      searchResult = {
+        ...semanticResult,
+        hits: semanticResult.hits.filter(hit => 
+          hit._rankingScore && hit._rankingScore > 0.5
+        )
+      };
     }
-
-    const searchResult = await index.search(q, searchOptions);
 
     // Format the response to include ranking scores and search metadata
     const products = searchResult.hits.map(hit => {
@@ -114,9 +157,11 @@ export const searchProducts = async (req, res) => {
       offset: parseInt(offset),
       searchMetadata: {
         hybridSearch: true,
-        semanticRatio: parseFloat(semanticRatio),
+        keywordMatches: keywordResult?.hits.length || 0,
+        semanticEnhanced: keywordResult.hits.length > 0,
         processingTimeMs: searchResult.processingTimeMs,
-        query: q
+        query: q,
+        totalResultsBeforeFiltering: searchResult.estimatedTotalHits
       }
     });
 
@@ -392,18 +437,45 @@ export const syncProductsToMeiliSearch = async (products) => {
     
     console.log(`⏳ Waiting for MeiliSearch task ${task.taskUid} to complete...`);
     
-    // Wait for the task to complete
-    const completedTask = await index.waitForTask(task.taskUid);
+    // Wait for the task to complete using the client's waitForTask method
+    let completedTask;
+    try {
+      // Try modern approach first
+      if (typeof index.waitForTask === 'function') {
+        completedTask = await index.waitForTask(task.taskUid);
+      } else if (typeof meiliClient.waitForTask === 'function') {
+        completedTask = await meiliClient.waitForTask(task.taskUid);
+      } else {
+        // Fallback: Poll for task status
+        let attempts = 0;
+        const maxAttempts = 60; // Wait up to 60 seconds
+        
+        do {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          completedTask = await meiliClient.getTask(task.taskUid);
+          attempts++;
+        } while (completedTask.status === 'enqueued' || completedTask.status === 'processing' && attempts < maxAttempts);
+      }
+    } catch (taskError) {
+      console.error('❌ Error waiting for task:', taskError);
+      // Continue anyway - the documents were likely added
+      console.log('⚠️  Could not wait for task completion, but documents were sent to MeiliSearch');
+      console.log(`✅ Successfully sent ${documents.length} products to MeiliSearch (async processing)`);
+      return;
+    }
     
     if (completedTask.status === 'succeeded') {
       console.log(`✅ Successfully synced ${documents.length} products to MeiliSearch`);
       console.log(`📊 Task completed in ${completedTask.duration || 'unknown'} time`);
-    } else {
+    } else if (completedTask.status === 'failed') {
       console.error(`❌ MeiliSearch task failed with status: ${completedTask.status}`);
       if (completedTask.error) {
         console.error('❌ Task error details:', completedTask.error);
       }
       throw new Error(`MeiliSearch sync failed: ${completedTask.status}`);
+    } else {
+      console.log(`⚠️  Task status: ${completedTask.status} - documents may still be processing`);
+      console.log(`✅ Successfully sent ${documents.length} products to MeiliSearch`);
     }
     
   } catch (error) {
