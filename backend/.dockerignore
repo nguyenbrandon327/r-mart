@@ -1,0 +1,19 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Env files
+.env
+.env.*
+
+# OS/VCS
+.DS_Store
+.git
+.gitignore
+
+# Logs
+*.log
+
+# Exclude frontend from backend image context
+frontend
+../frontend

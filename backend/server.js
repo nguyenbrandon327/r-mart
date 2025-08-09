@@ -61,30 +61,28 @@ app.use(
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev')); 
 
 app.use(async (req, res, next) => {
+  // Allow health checks and disable Arcjet when no key is provided
+  if (req.path === '/health' || !process.env.ARCJET_KEY) return next();
   try {
-    const decision = await aj.protect(req, {
-      requested: 1, 
-    });
+    const decision = await aj.protect(req, { requested: 1 });
 
     if (decision.isDenied()) {
       if (decision.reason.isRateLimit()) {
-        res.status(429).json({ error: "Too Many Requests" });
-      } else if (decision.reason.isBot()) {
-        res.status(403).json({ error: "Bot access denied" });
-      } else {
-        res.status(403).json({ error: "Forbidden" });
+        return res.status(429).json({ error: "Too Many Requests" });
       }
-      return;
+      if (decision.reason.isBot()) {
+        return res.status(403).json({ error: "Bot access denied" });
+      }
+      return res.status(403).json({ error: "Forbidden" });
     }
 
     if (decision.results.some((result) => result.reason.isBot() && result.reason.isSpoofed())) {
-      res.status(403).json({ error: "Spoofed bot detected" });
-      return;
+      return res.status(403).json({ error: "Spoofed bot detected" });
     }
 
-    next();
+    return next();
   } catch (error) {
-    next(error);
+    return next();
   }
 });
 
@@ -100,13 +98,6 @@ app.use("/api/saved-products", savedProductRoutes);
 app.use("/api/recently-seen", recentlySeenRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/search", searchRoutes);
-
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "/frontend/dist")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
-  });
-}
 
 // Test database connection
 async function testDBConnection() {

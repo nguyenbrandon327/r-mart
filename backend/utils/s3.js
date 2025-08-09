@@ -8,15 +8,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Load environment variables normally; in production on ECS use task role credentials
+dotenv.config();
 
 // Configure S3 client
+// Credentials are resolved by the default provider chain (ECS Task Role in AWS)
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  }
 });
 
 // Configure multer for S3 upload

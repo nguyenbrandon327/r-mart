@@ -412,7 +412,7 @@ export const syncProductsToMeiliSearch = async (products) => {
   try {
     const index = getProductsIndex();
     
-    console.log(`⚙️  Preparing ${products.length} products for MeiliSearch...`);
+
     
     const documents = products.map(product => ({
       id: product.id.toString(),
@@ -430,12 +430,12 @@ export const syncProductsToMeiliSearch = async (products) => {
       updated_at: new Date(product.updated_at || product.created_at).getTime() / 1000
     }));
 
-    console.log(`📤 Sending ${documents.length} documents to MeiliSearch...`);
+
     
     // Add documents in batches (MeiliSearch handles batching automatically)
     const task = await index.addDocuments(documents, { primaryKey: 'id' });
     
-    console.log(`⏳ Waiting for MeiliSearch task ${task.taskUid} to complete...`);
+
     
     // Wait for the task to complete using the client's waitForTask method
     let completedTask;
@@ -459,14 +459,12 @@ export const syncProductsToMeiliSearch = async (products) => {
     } catch (taskError) {
       console.error('❌ Error waiting for task:', taskError);
       // Continue anyway - the documents were likely added
-      console.log('⚠️  Could not wait for task completion, but documents were sent to MeiliSearch');
-      console.log(`✅ Successfully sent ${documents.length} products to MeiliSearch (async processing)`);
+
       return;
     }
     
     if (completedTask.status === 'succeeded') {
-      console.log(`✅ Successfully synced ${documents.length} products to MeiliSearch`);
-      console.log(`📊 Task completed in ${completedTask.duration || 'unknown'} time`);
+
     } else if (completedTask.status === 'failed') {
       console.error(`❌ MeiliSearch task failed with status: ${completedTask.status}`);
       if (completedTask.error) {
@@ -474,8 +472,7 @@ export const syncProductsToMeiliSearch = async (products) => {
       }
       throw new Error(`MeiliSearch sync failed: ${completedTask.status}`);
     } else {
-      console.log(`⚠️  Task status: ${completedTask.status} - documents may still be processing`);
-      console.log(`✅ Successfully sent ${documents.length} products to MeiliSearch`);
+
     }
     
   } catch (error) {

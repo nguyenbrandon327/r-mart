@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+
+# -------- Base deps layer --------
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+# Install only production dependencies
+COPY package.json ./
+RUN npm install --omit=dev
+
+# -------- Runtime image --------
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Set production env
+ENV NODE_ENV=production
+
+# Copy node_modules from deps layer
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy application source
+COPY . .
+
+# Expose the app port (matches process.env.PORT || 3000)
+EXPOSE 3000
+
+# Container healthcheck (Express /health endpoint)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD wget -qO- http://127.0.0.1:3000/health || exit 1
+
+# Start the server
+CMD ["node", "server.js"]
+
+

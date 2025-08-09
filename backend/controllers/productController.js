@@ -6,7 +6,7 @@ import { calculateDistance, getUserCoordinates } from "../utils/distanceCalculat
 import { generateUniqueSlug } from "../utils/slugUtils.js";
 import crypto from "crypto";
 
-// CRUD operations
+
 export const getProducts = async (req, res) => {
     try {
         const { excludeRecentlyViewed, sort = 'best_match' } = req.query;
@@ -370,7 +370,6 @@ export const getProductsByCategory = async (req, res) => {
     }
 };
 
-// Handle image deletion for a product
 export const deleteProductImage = async (req, res) => {
     const { id } = req.params;
     const { imageUrl } = req.body;
@@ -439,7 +438,6 @@ export const deleteProductImage = async (req, res) => {
     }
 };
 
-// Get seller's other products (excluding current product)
 export const getSellerOtherProducts = async (req, res) => {
     const { userId, excludeProductId } = req.params;
     
@@ -459,7 +457,6 @@ export const getSellerOtherProducts = async (req, res) => {
     }
 };
 
-// Mark product as sold
 export const markProductAsSold = async (req, res) => {
     const { id } = req.params;
     
@@ -513,7 +510,6 @@ export const markProductAsSold = async (req, res) => {
     }
 };
 
-// Mark product as available (unsold)
 export const markProductAsAvailable = async (req, res) => {
     const { id } = req.params;
     
@@ -567,11 +563,7 @@ export const markProductAsAvailable = async (req, res) => {
     }
 };
 
-// ────────────────────────
-// Record a product view
-// Method: POST /api/products/:slug/view
-// Public route (user may be unauthenticated)
-// ────────────────────────
+
 export const recordView = async (req, res) => {
   const { slug } = req.params;
   const userId = req.user?.id;                 // may be undefined
@@ -610,7 +602,6 @@ export const recordView = async (req, res) => {
   }
 };
 
-// 🔥  Get hot products (last-7-day view count) -----------------------------
 export const getHotProducts = async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query;
@@ -634,9 +625,7 @@ export const getHotProducts = async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to fetch hot products" });
   }
 };
-// -------------------------------------------------------------------------
 
-// Get recently posted products
 export const getRecentProducts = async (req, res) => {
     try {
         const { limit = 10 } = req.query;
@@ -656,7 +645,6 @@ export const getRecentProducts = async (req, res) => {
     }
 };
 
-// Get products filtered by distance from user's location
 export const getProductsByLocation = async (req, res) => {
     try {
         const { category, maxDistance = 10, sort = 'distance' } = req.query;
