@@ -7,7 +7,6 @@ on:
 
 env:
   ECR_REPOSITORY: r-mart-backend
-  # Set these to match your ECS setup
   ECS_CLUSTER: rmart-cluster
   ECS_SERVICE: rmart-task-service-sw4ysulk
   ECS_CONTAINER_NAME: r-mart-backend
