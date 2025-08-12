@@ -452,7 +452,7 @@ export const syncProductsToMeiliSearch = async (products) => {
         
         do {
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-          completedTask = await meiliClient.getTask(task.taskUid);
+          completedTask = await index.getTask(task.taskUid);
           attempts++;
         } while (completedTask.status === 'enqueued' || completedTask.status === 'processing' && attempts < maxAttempts);
       }

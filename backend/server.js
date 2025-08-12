@@ -25,22 +25,24 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
-// Environment validation (soft). Only warn to allow container to boot for debugging.
+// Environment validation
 const requiredEnvVars = ['JWT_SECRET', 'PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
 if (missingEnvVars.length > 0) {
-  console.warn('⚠️ Missing environment variables:', missingEnvVars.join(', '));
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
 }
 
-// Global error handlers (soft). Log but do not exit so ECS Exec remains possible.
+// Global error handlers
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  // Do not exit; keep container alive for debugging
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Promise Rejection at:', promise, 'reason:', reason);
-  // Do not exit; keep container alive for debugging
+  process.exit(1);
 });
 
 app.use(express.json());
@@ -97,7 +99,7 @@ app.use("/api/recently-seen", recentlySeenRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/search", searchRoutes);
 
-// Test database connection (non-fatal)
+// Test database connection
 async function testDBConnection() {
   try {
     await sql`SELECT 1 as test`;
@@ -105,17 +107,13 @@ async function testDBConnection() {
     return true;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
-    return false;
+    throw error;
   }
 }
 
 async function initDB() {
-  // Test database connection first; skip init when not available
-  const dbOk = await testDBConnection();
-  if (!dbOk) {
-    console.warn('⚠️ Skipping DB initialization because the database is unavailable.');
-    return;
-  }
+  // Test database connection first
+  await testDBConnection();
   
   // Initialize products
   try {
@@ -289,13 +287,7 @@ async function initDB() {
   }
 }
 
-// Always start server regardless of DB/MeiliSearch status
-(async () => {
-  try {
-    await initDB();
-  } catch (e) {
-    console.warn('⚠️ initDB encountered an error; continuing startup.', e);
-  }
+initDB().then(async () => {
   try {
     // Initialize MeiliSearch
     await initializeMeiliSearch();
@@ -315,7 +307,7 @@ async function initDB() {
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:3001'}`);
   });
-})();
+});
 
 // Graceful shutdown handling
 const gracefulShutdown = (signal) => {
