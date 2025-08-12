@@ -15,9 +15,9 @@ export const aj = arcjet({
     }),
     tokenBucket({
       mode: process.env.NODE_ENV === "production" ? "LIVE" : "DRY_RUN",
-      refillRate: 30,
+      refillRate: 60,
       interval: 5,
-      capacity: 20,
+      capacity: 50,
     }),
   ],
 });

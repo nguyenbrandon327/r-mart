@@ -74,9 +74,9 @@ function ProductCard({ product, sourceContext = null }) {
         <div className="px-0">
           {/* PRODUCT INFO */}
           <div className="flex items-start justify-between mt-1">
-            <h2 className="text-lg font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
+            <h2 className="text-base font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
           </div>
-          <p className="text-lg font-normal text-black">{formattedPrice}</p>
+          <p className="text-base font-normal text-black">{formattedPrice}</p>
           
           {/* LOCATION INFO - Only show if distance is available */}
           {product.distance !== undefined && (

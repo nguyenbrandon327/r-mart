@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: r-mart-backend:local
+    container_name: r-mart-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

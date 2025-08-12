@@ -15,10 +15,11 @@ const LoginPage = () => {
 
 	const { login, isLoading, error, isAuthenticated, clearError } = useAuthStore();
 
-	// Clear any existing errors when component mounts
-	useEffect(() => {
-		clearError();
-	}, [clearError]);
+    // Clear any existing errors when component mounts (run once)
+    useEffect(() => {
+        clearError();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
 	// Redirect if authentication state changes to true
 	useEffect(() => {

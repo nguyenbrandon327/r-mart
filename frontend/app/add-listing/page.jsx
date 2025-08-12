@@ -9,6 +9,34 @@ import Link from 'next/link';
 import AuthGuard from '../../components/AuthGuard';
 import { motion } from 'framer-motion';
 
+// Helper function to validate product name
+const isValidProductName = (name) => {
+  if (!name || typeof name !== 'string') {
+    return false;
+  }
+  
+  const trimmedName = name.trim();
+  
+  // Check if name is empty after trimming
+  if (!trimmedName) {
+    return false;
+  }
+  
+  // Check if name contains only numbers, dots, spaces, and common punctuation
+  // This regex matches strings that are essentially just numbers (including decimals, negative numbers, etc.)
+  const isJustNumbers = /^[\s\d\.\,\-\+\$\%]*$/.test(trimmedName);
+  
+  if (isJustNumbers) {
+    // Additionally check if there's at least one letter or meaningful character
+    const hasLetters = /[a-zA-Z]/.test(trimmedName);
+    const hasMeaningfulChars = /[a-zA-Z#@&_]/.test(trimmedName);
+    
+    return hasLetters || hasMeaningfulChars;
+  }
+  
+  return true;
+};
+
 export default function AddListingPage() {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -20,6 +48,7 @@ export default function AddListingPage() {
   const [dropTarget, setDropTarget] = useState(null);
   const [isDragOverUpload, setIsDragOverUpload] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [nameError, setNameError] = useState('');
   const fileInputRef = useRef(null);
 
   // Reset form data when component mounts to ensure clean slate for new product
@@ -30,6 +59,12 @@ export default function AddListingPage() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate product name before submission
+    if (!isValidProductName(formData.name)) {
+      alert("Product name cannot be just numbers. Please include letters or descriptive words.");
+      return;
+    }
     
     // Create a FormData object for submitting files
     const productFormData = new FormData();
@@ -63,6 +98,16 @@ export default function AddListingPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validate name field in real-time
+    if (name === 'name') {
+      if (value && !isValidProductName(value)) {
+        setNameError('Product name cannot be just numbers. Please include letters or descriptive words.');
+      } else {
+        setNameError('');
+      }
+    }
+    
     dispatch(setFormData({ ...formData, [name]: value }));
   };
 
@@ -358,11 +403,18 @@ export default function AddListingPage() {
                         type="text"
                         name="name"
                         placeholder="Enter product name"
-                        className="input input-bordered w-full pl-9 sm:pl-10 py-2 sm:py-3 text-sm sm:text-base focus:input-primary transition-colors duration-200"
+                        className={`input input-bordered w-full pl-9 sm:pl-10 py-2 sm:py-3 text-sm sm:text-base transition-colors duration-200 ${
+                          nameError ? 'input-error focus:input-error' : 'focus:input-primary'
+                        }`}
                         value={formData.name}
                         onChange={handleChange}
                         required
                       />
+                      {nameError && (
+                        <div className="text-xs text-error mt-1 px-1">
+                          {nameError}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -577,7 +629,7 @@ export default function AddListingPage() {
                       type="submit"
                       className="btn btn-primary w-full sm:w-auto sm:min-w-[120px] text-sm sm:text-base"
                       disabled={!formData.name || !formData.price || !formData.category || loading || 
-                                images.length === 0}
+                                images.length === 0 || nameError}
                     >
                       {loading ? (
                         <span className="loading loading-spinner loading-sm" />
