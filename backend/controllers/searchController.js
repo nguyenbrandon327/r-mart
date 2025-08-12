@@ -440,11 +440,8 @@ export const syncProductsToMeiliSearch = async (products) => {
     // Wait for the task to complete using the client's waitForTask method
     let completedTask;
     try {
-      // Try modern approach first
-      if (typeof index.waitForTask === 'function') {
-        completedTask = await index.waitForTask(task.taskUid);
-      } else if (typeof meiliClient.waitForTask === 'function') {
-        completedTask = await meiliClient.waitForTask(task.taskUid);
+      if (typeof meiliClient.tasks?.waitForTask === 'function') {
+        completedTask = await meiliClient.tasks.waitForTask(task.taskUid);
       } else {
         // Fallback: Poll for task status
         let attempts = 0;
@@ -452,7 +449,7 @@ export const syncProductsToMeiliSearch = async (products) => {
         
         do {
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-          completedTask = await index.getTask(task.taskUid);
+          completedTask = await meiliClient.tasks.getTask(task.taskUid);
           attempts++;
         } while (completedTask.status === 'enqueued' || completedTask.status === 'processing' && attempts < maxAttempts);
       }
