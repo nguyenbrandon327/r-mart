@@ -15,6 +15,9 @@ WORKDIR /app
 # Set production env
 ENV NODE_ENV=production
 
+# Install runtime tools needed for health checks
+RUN apk add --no-cache curl
+
 # Copy node_modules from deps layer
 COPY --from=deps /app/node_modules ./node_modules
 
@@ -25,7 +28,7 @@ COPY . .
 EXPOSE 3000
 
 # Container healthcheck (Express /health endpoint)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD wget -qO- http://127.0.0.1:3000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD sh -c "curl -fsS http://127.0.0.1:3000/health > /dev/null || exit 1"
 
 # Start the server
 CMD ["node", "server.js"]
