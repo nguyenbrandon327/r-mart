@@ -287,27 +287,31 @@ async function initDB() {
   }
 }
 
-initDB().then(async () => {
+// Start the HTTP server immediately so ALB health checks don't time out while DB initializes
+server.listen(PORT, () => {
+  console.log(`🚀 Server started on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:3001'}`);
+});
+
+// Initialize DB and MeiliSearch in the background without crashing the process on failure
+(async () => {
   try {
-    // Initialize MeiliSearch
+    await initDB();
+  } catch (error) {
+    console.error('❌ Database initialization error:', error);
+  }
+
+  try {
     await initializeMeiliSearch();
-    
-    // Optionally sync existing products on startup
     if (process.env.SYNC_MEILISEARCH_ON_STARTUP === 'true') {
       console.log('🔄 Syncing existing products to MeiliSearch...');
       await syncExistingProducts();
     }
   } catch (error) {
     console.error('❌ MeiliSearch initialization error:', error);
-    // Continue server startup even if MeiliSearch fails
   }
-  
-  server.listen(PORT, () => {
-    console.log(`🚀 Server started on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:3001'}`);
-  });
-});
+})();
 
 // Graceful shutdown handling
 const gracefulShutdown = (signal) => {
