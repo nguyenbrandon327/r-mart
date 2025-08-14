@@ -190,7 +190,7 @@ export default function AllProductsPage() {
       />
       
       {/* Hero Carousel */}
-      <div className="relative w-full h-72 md:h-80 lg:h-88 mb-12 rounded-lg overflow-hidden shadow-lg">
+      <div className="relative w-full h-[clamp(16rem,24vw,22rem)] mb-12 rounded-lg overflow-hidden shadow-lg">
         <div className="carousel w-full h-full">
           {currentSlides.map((slide, index) => (
             <div 
@@ -213,7 +213,7 @@ export default function AllProductsPage() {
                     priority={index === 0}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
-                    <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
+                    <h3 className="text-white text-[clamp(1.125rem,2.8vw,1.875rem)] font-black font-gt-america-expanded tracking-tight mb-4">
                       {slide.category}
                     </h3>
                     <Link 
@@ -238,7 +238,7 @@ export default function AllProductsPage() {
                       priority={index === 0}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
-                      <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
+                      <h3 className="text-white text-[clamp(1.125rem,2.8vw,1.875rem)] font-black font-gt-america-expanded tracking-tight mb-4">
                         {slide.leftHalf.category}
                       </h3>
                       <Link 
@@ -261,7 +261,7 @@ export default function AllProductsPage() {
                       priority={index === 0}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
-                      <h3 className="text-white text-xl md:text-2xl lg:text-3xl font-black font-gt-america-expanded tracking-tight mb-4">
+                      <h3 className="text-white text-[clamp(1.125rem,2.8vw,1.875rem)] font-black font-gt-america-expanded tracking-tight mb-4">
                         {slide.rightHalf.category}
                       </h3>
                       <Link 
@@ -314,8 +314,8 @@ export default function AllProductsPage() {
 
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center mb-2">
-            <ShoppingBagIcon className="size-6 mr-2" />
+          <h1 className="text-[clamp(1.25rem,2.4vw,1.75rem)] font-bold flex items-center mb-2">
+            <ShoppingBagIcon className="mr-2 w-[clamp(1.25rem,2vw,1.5rem)] h-[clamp(1.25rem,2vw,1.5rem)]" />
             All Products
           </h1>
           <p className="text-base-content/70">
@@ -327,7 +327,7 @@ export default function AllProductsPage() {
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-base-100 border border-base-300 rounded-lg hover:border-primary/50 transition-all duration-200 min-w-[180px] shadow-sm hover:shadow-md"
+              className="flex items-center gap-2 px-3 py-2 bg-base-100 border border-base-300 rounded-lg hover:border-primary/50 transition-all duration-200 min-w-[clamp(160px,25vw,220px)] shadow-sm hover:shadow-md"
             >
               {(() => {
                 const currentSortOption = sortOptions.find(option => option.value === sort);

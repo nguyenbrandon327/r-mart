@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DollarSignIcon, ImageIcon, Package2Icon, PlusCircleIcon, TagIcon, X, ArrowLeftIcon, UploadIcon, CheckCircleIcon, HomeIcon, Sparkles } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
+import Image from 'next/image';
 import { addProduct, setFormData, resetForm } from '../../store/slices/productSlice';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -281,10 +282,13 @@ export default function AddListingPage() {
           transition={{ duration: 0.8, type: "spring", bounce: 0.6 }}
           className="mb-8"
         >
-          <img 
+          <Image 
             src="/source.gif" 
             alt="Success" 
-            className="w-32 h-32 mx-auto rounded-lg"
+            width={128}
+            height={128}
+            className="mx-auto rounded-lg"
+            unoptimized
           />
         </motion.div>
 
@@ -334,16 +338,18 @@ export default function AddListingPage() {
     <AuthGuard>
       <div className="min-h-screen bg-base-100 relative flex flex-col" data-theme="light">
       {/* Logo at top left - improved mobile positioning */}
-      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10">
+      <div className="absolute top-[clamp(0.5rem,2vw,1rem)] left-[clamp(0.5rem,2vw,1rem)] z-10">
         <Link href="/" className="hover:opacity-80 transition-opacity">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <img 
+          <div className="flex items-center gap-[clamp(0.25rem,1.2vw,0.5rem)]">
+            <Image 
               src="/logo-pic.png" 
               alt="R'mart Logo" 
-              className="size-8 sm:size-12 object-contain"
+              width={48}
+              height={48}
+              className="w-[clamp(2rem,6vw,3rem)] h-[clamp(2rem,6vw,3rem)] object-contain"
             />
             <span
-              className="font-black font-gt-america-expanded tracking-tighter text-lg sm:text-2xl 
+              className="font-black font-gt-america-expanded tracking-tighter text-[clamp(1.125rem,2.5vw,1.5rem)] 
                 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
             >
               r'mart
@@ -353,47 +359,49 @@ export default function AddListingPage() {
       </div>
 
       {/* Main content - improved mobile spacing */}
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 flex-1 flex flex-col justify-center py-2 sm:py-4">
+      <div className="max-w-6xl mx-auto px-[clamp(0.5rem,2.5vw,1rem)] flex-1 flex flex-col justify-center py-[clamp(0.5rem,2.5vw,1rem)]">
         {/* Form */}
         <div className="card bg-white">
-          <div className="card-body p-2 sm:p-4">
-            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4" encType="multipart/form-data">
+          <div className="card-body p-[clamp(0.5rem,2.5vw,1rem)]">
+            <form onSubmit={handleSubmit} className="space-y-[clamp(0.75rem,2vw,1rem)]" encType="multipart/form-data">
               {/* Mobile-first responsive grid */}
-              <div className="grid gap-3 sm:gap-4 xl:grid-cols-2 xl:gap-6">
+              <div className="grid gap-[clamp(0.75rem,2.5vw,1.5rem)] xl:grid-cols-2">
                 {/* LEFT COLUMN - Hero Image - hidden on mobile, shown on xl+ */}
                 <div className="hidden xl:flex h-full">
                   <div className="relative flex-1">
-                    <img 
+                    <Image 
                       src="/addlisting.jpg" 
                       alt="Add Listing" 
-                      className="w-full h-full object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
                     />
                   </div>
                 </div>
 
                 {/* RIGHT COLUMN - Product Info, Description, and Images */}
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-[clamp(0.75rem,2vw,1rem)]">
                   {/* Title */}
                   <div className="text-center xl:text-left">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1 flex items-center justify-center xl:justify-start gap-2">
+                    <h1 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-bold text-gray-800 mb-1 flex items-center justify-center xl:justify-start gap-2">
                       <Sparkles className="size-5 sm:size-6 text-black" />
                       Add a Listing
                     </h1>
                   </div>
 
                   {/* Mobile hero image - shown only on smaller screens */}
-                  <div className="xl:hidden mb-2">
-                    <img 
+                  <div className="xl:hidden mb-2 relative h-[clamp(8rem,20vw,9rem)]">
+                    <Image 
                       src="/addlisting.jpg" 
                       alt="Add Listing" 
-                      className="w-full h-32 sm:h-36 object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
                     />
                   </div>
 
                   {/* PRODUCT NAME INPUT */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text text-sm sm:text-base font-medium">Product Name</span>
+                      <span className="label-text text-[clamp(0.875rem,1.2vw,1rem)] font-medium">Product Name</span>
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
@@ -403,7 +411,7 @@ export default function AddListingPage() {
                         type="text"
                         name="name"
                         placeholder="Enter product name"
-                        className={`input input-bordered w-full pl-9 sm:pl-10 py-2 sm:py-3 text-sm sm:text-base transition-colors duration-200 ${
+                        className={`input input-bordered w-full pl-[clamp(2.25rem,3vw,2.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.875rem,1.2vw,1rem)] transition-colors duration-200 ${
                           nameError ? 'input-error focus:input-error' : 'focus:input-primary'
                         }`}
                         value={formData.name}
@@ -411,7 +419,7 @@ export default function AddListingPage() {
                         required
                       />
                       {nameError && (
-                        <div className="text-xs text-error mt-1 px-1">
+                        <div className="text-[clamp(0.75rem,1vw,0.875rem)] text-error mt-1 px-1">
                           {nameError}
                         </div>
                       )}
@@ -423,7 +431,7 @@ export default function AddListingPage() {
                     {/* PRODUCT PRICE INPUT */}
                     <div className="form-control">
                       <label className="label">
-                        <span className="label-text text-sm sm:text-base font-medium">Price</span>
+                        <span className="label-text text-[clamp(0.875rem,1.2vw,1rem)] font-medium">Price</span>
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
@@ -435,7 +443,7 @@ export default function AddListingPage() {
                           min="0"
                           step="0.01"
                           placeholder="0.00"
-                          className="input input-bordered w-full pl-9 sm:pl-10 py-2 sm:py-3 text-sm sm:text-base focus:input-primary transition-colors duration-200"
+                          className="input input-bordered w-full pl-[clamp(2.25rem,3vw,2.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.875rem,1.2vw,1rem)] focus:input-primary transition-colors duration-200"
                           value={formData.price}
                           onChange={handleChange}
                           required
@@ -446,7 +454,7 @@ export default function AddListingPage() {
                     {/* PRODUCT CATEGORY */}
                     <div className="form-control">
                       <label className="label">
-                        <span className="label-text text-sm sm:text-base font-medium">Category</span>
+                        <span className="label-text text-[clamp(0.875rem,1.2vw,1rem)] font-medium">Category</span>
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
@@ -454,7 +462,7 @@ export default function AddListingPage() {
                         </div>
                         <select
                           name="category"
-                          className="select select-bordered w-full pl-9 sm:pl-10 py-2 sm:py-3 text-sm sm:text-base focus:select-primary transition-colors duration-200"
+                          className="select select-bordered w-full pl-[clamp(2.25rem,3vw,2.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.875rem,1.2vw,1rem)] focus:select-primary transition-colors duration-200"
                           value={formData.category || ""}
                           onChange={handleChange}
                           required
@@ -482,12 +490,12 @@ export default function AddListingPage() {
                   {/* PRODUCT DESCRIPTION */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text text-sm sm:text-base font-medium">Description</span>
+                      <span className="label-text text-[clamp(0.875rem,1.2vw,1rem)] font-medium">Description</span>
                     </label>
                     <textarea
                       name="description"
                       placeholder="Enter product description"
-                      className="textarea textarea-bordered w-full h-20 sm:h-24 text-sm sm:text-base focus:textarea-primary transition-colors duration-200"
+                      className="textarea textarea-bordered w-full h-[clamp(5rem,12vw,6rem)] text-[clamp(0.875rem,1.2vw,1rem)] focus:textarea-primary transition-colors duration-200"
                       value={formData.description}
                       onChange={handleChange}
                       required
@@ -497,12 +505,12 @@ export default function AddListingPage() {
                   {/* PRODUCT IMAGES - improved mobile layout */}
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text text-sm sm:text-base font-medium">Product Images</span>
+                      <span className="label-text text-[clamp(0.875rem,1.2vw,1rem)] font-medium">Product Images</span>
                     </label>
                     
                     {/* Drag and Drop Upload Zone - improved mobile size */}
                     <div 
-                      className={`border-2 border-dashed rounded-lg p-3 sm:p-4 text-center transition-all duration-200 cursor-pointer ${
+                      className={`border-2 border-dashed rounded-lg p-[clamp(0.75rem,2.5vw,1rem)] text-center transition-all duration-200 cursor-pointer ${
                         isDragOverUpload 
                           ? 'border-primary bg-primary/5 scale-[1.02]' 
                           : 'border-gray-300 hover:border-primary hover:bg-gray-50'
@@ -513,17 +521,17 @@ export default function AddListingPage() {
                       onDrop={handleUploadDrop}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <div className="flex flex-col items-center gap-1 sm:gap-2">
-                        <div className={`p-1.5 sm:p-2 rounded-full transition-colors ${
+                      <div className="flex flex-col items-center gap-[clamp(0.25rem,1.2vw,0.5rem)]">
+                        <div className={`p-[clamp(0.375rem,1.2vw,0.5rem)] rounded-full transition-colors ${
                           isDragOverUpload ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
                         }`}>
                           <UploadIcon className="size-4 sm:size-5" />
                         </div>
                         <div>
-                          <p className={`font-medium text-sm sm:text-base ${isDragOverUpload ? 'text-primary' : 'text-gray-700'}`}>
+                          <p className={`font-medium text-[clamp(0.875rem,1.2vw,1rem)] ${isDragOverUpload ? 'text-primary' : 'text-gray-700'}`}>
                             {isDragOverUpload ? 'Drop images here!' : 'Upload Product Images'}
                           </p>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <p className="text-[clamp(0.75rem,1vw,0.875rem)] text-gray-500 mt-1">
                             Drag and drop images, or upload from files
                           </p>
                         </div>
@@ -541,7 +549,7 @@ export default function AddListingPage() {
 
                     {/* Display images - improved mobile layout */}
                     <div className="mt-2 sm:mt-3">
-                      <div className="text-xs sm:text-sm font-medium mb-1.5">
+                      <div className="text-[clamp(0.75rem,1vw,0.875rem)] font-medium mb-1.5">
                         {images.length > 0 
                           ? `Uploaded Images (${images.length}/10) - First image will be the cover`
                           : ''
@@ -549,7 +557,7 @@ export default function AddListingPage() {
                       </div>
                       
                       {/* Responsive image grid */}
-                      <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-1.5 sm:gap-2 min-h-[50px] sm:min-h-[68px]">
+                      <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-[clamp(0.375rem,1.5vw,0.5rem)] min-h-[clamp(50px,10vw,68px)]">
                         {images.length > 0 ? (
                           images.map((image, index) => {
                             const isLastImage = index === images.length - 1;
@@ -566,7 +574,7 @@ export default function AddListingPage() {
                                 )}
                                 
                                 <div 
-                                  className={`relative group w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden border-2 cursor-move transition-all duration-200 ${
+                                  className={`relative group w-[clamp(4rem,12vw,5rem)] h-[clamp(4rem,12vw,5rem)] rounded-md overflow-hidden border-2 cursor-move transition-all duration-200 ${
                                     index === 0 ? 'border-primary' : 'border-gray-200'
                                   } ${
                                     draggedImage === index ? 'opacity-50 scale-95' : ''
@@ -582,21 +590,22 @@ export default function AddListingPage() {
                                   onDrop={(e) => handleDrop(e, index)}
                                   onDragEnd={handleDragEnd}
                                 >
-                                  <img 
+                                  <Image 
                                     src={getImageUrl(image)} 
                                     alt={`Preview ${index}`} 
-                                    className="w-full h-full object-cover" 
+                                    fill
+                                    className="object-cover" 
                                   />
                                   <button 
                                     type="button"
-                                    className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-red-500 text-white rounded-full p-0.5 sm:p-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-red-500 text-white rounded-full p-[clamp(0.125rem,0.6vw,0.25rem)] opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => removeImage(index)}
                                   >
                                     <X size={12} className="sm:size-[14px]" />
                                   </button>
                                   {/* Cover badge */}
                                   {index === 0 && (
-                                    <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-[10px] sm:text-xs text-center py-0.5">
+                                    <div className="absolute bottom-0 left-0 right-0 bg-primary text-white text-[clamp(10px,1.2vw,12px)] text-center py-0.5">
                                       Cover
                                     </div>
                                   )}
@@ -610,24 +619,24 @@ export default function AddListingPage() {
                             );
                           })
                         ) : (
-                          <div className="col-span-3 sm:col-span-1 flex items-center justify-center w-full h-16 sm:h-20 text-gray-400 text-xs sm:text-sm">
+                          <div className="col-span-3 sm:col-span-1 flex items-center justify-center w-full h-[clamp(4rem,12vw,5rem)] text-gray-400 text-[clamp(0.75rem,1vw,0.875rem)]">
                             Images will appear here after upload
                           </div>
                         )}
                       </div>
                     </div>
                     
-                    <div className="text-[10px] sm:text-xs text-gray-500 mt-2 sm:mt-3 space-y-1">
+                    <div className="text-[clamp(10px,1.2vw,12px)] text-gray-500 mt-2 sm:mt-3 space-y-1">
                       <p>• <strong>Reorder:</strong> Once uploaded, drag and drop images to change their order</p>
                       <p>• <strong>Rules:</strong> Up to 10 images maximum; Formats: JPG, PNG, WEBP; Max 5MB per image</p>
                     </div>
                   </div>
 
                   {/* FORM ACTIONS - improved mobile layout */}
-                  <div className="flex justify-center sm:justify-end gap-4 pt-2 sm:pt-3">
+                  <div className="flex justify-center sm:justify-end gap-[clamp(0.75rem,2vw,1rem)] pt-[clamp(0.5rem,1.5vw,0.75rem)]">
                     <button
                       type="submit"
-                      className="btn btn-primary w-full sm:w-auto sm:min-w-[120px] text-sm sm:text-base"
+                      className="btn btn-primary w-full sm:w-auto sm:min-w-[120px] text-[clamp(0.875rem,1.5vw,1rem)]"
                       disabled={!formData.name || !formData.price || !formData.category || loading || 
                                 images.length === 0 || nameError}
                     >

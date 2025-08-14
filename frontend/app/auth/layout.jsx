@@ -2,6 +2,7 @@
 
 import { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function AuthLayout({ children }) {
   return (
@@ -9,10 +10,12 @@ export default function AuthLayout({ children }) {
       <div className="absolute top-4 left-4 z-10">
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <div className="flex items-center gap-2">
-            <img 
+            <Image 
               src="/logo-pic.png" 
               alt="R'mart Logo" 
-              className="size-12 object-contain"
+              width={48}
+              height={48}
+              className="object-contain"
             />
             <span
               className="font-black font-gt-america-expanded tracking-tighter text-2xl 

@@ -119,8 +119,8 @@ export default function CategoryPage({ params }) {
       
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold flex items-center mb-2">
-            <CategoryIcon className="size-7 mr-2" />
+          <h1 className="text-[clamp(1.5rem,2.8vw,1.875rem)] font-bold flex items-center mb-2">
+            <CategoryIcon className="mr-2 w-[clamp(1.5rem,2.2vw,1.75rem)] h-[clamp(1.5rem,2.2vw,1.75rem)]" />
             {categoryLabel}
           </h1>
           <p className="text-base-content/70">
@@ -132,7 +132,7 @@ export default function CategoryPage({ params }) {
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-base-100 border border-base-300 rounded-lg hover:border-primary/50 transition-all duration-200 min-w-[180px] shadow-sm hover:shadow-md"
+              className="flex items-center gap-2 px-3 py-2 bg-base-100 border border-base-300 rounded-lg hover:border-primary/50 transition-all duration-200 min-w-[clamp(160px,25vw,220px)] shadow-sm hover:shadow-md"
             >
               <CurrentIcon className="size-4 text-primary" />
               <div className="flex-1 text-left">

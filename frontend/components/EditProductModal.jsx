@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DollarSignIcon, ImageIcon, Package2Icon, SaveIcon, TagIcon, X } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
+import Image from 'next/image';
 import { updateProduct, setFormData, resetForm, populateFormData } from '../store/slices/productSlice';
 
 // Helper function to validate product name
@@ -389,10 +390,11 @@ function EditProductModal() {
                           onDrop={(e) => handleDrop(e, index)}
                           onDragEnd={handleDragEnd}
                         >
-                          <img 
+                          <Image 
                             src={getImageUrl(image)} 
                             alt={`Preview ${index}`} 
-                            className="w-full h-full object-cover" 
+                            fill
+                            className="object-cover" 
                           />
                           <button 
                             type="button"

@@ -6,6 +6,7 @@ import { fetchProduct, deleteProduct, resetForm, populateFormData, fetchSellerOt
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, EditIcon, HeartIcon, MessageCircleMore, Trash2Icon, XIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import EditProductModal from "../../../components/EditProductModal";
 import TalkToSellerModal from "../../../components/TalkToSellerModal";
 import ConfirmationModal from "../../../components/ConfirmationModal";
@@ -494,10 +495,12 @@ export default function ProductPage({ params }) {
                       className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${index === activeImage ? 'border-primary' : 'border-transparent'}`}
                       onClick={() => setMainImage(index)}
                     >
-                      <img
+                      <Image
                         src={img}
                         alt={`${currentProduct.name} - image ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="80px"
                       />
                     </div>
                   ))}
@@ -510,10 +513,13 @@ export default function ProductPage({ params }) {
                   className="relative rounded-lg overflow-hidden cursor-zoom-in aspect-square bg-gray-100"
                   onClick={() => openGallery(activeImage)}
                 >
-                  <img
+                  <Image
                     src={images[activeImage]}
                     alt={currentProduct.name}
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                    priority
                   />
                   
                   {/* Navigation arrows - only show if there are multiple images */}
@@ -724,11 +730,14 @@ export default function ProductPage({ params }) {
           
           {/* Main image container - only covers the image area */}
           <div className="relative flex items-center justify-center max-w-full max-h-full">
-            <img 
+            <Image 
               src={images[activeImage]}
               alt={`${currentProduct.name} - fullscreen view`}
+              width={1200}
+              height={800}
               className="max-h-[90vh] max-w-[90vw] object-contain"
               onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on image
+              sizes="90vw"
             />
           </div>
           

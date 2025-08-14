@@ -3,7 +3,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/api/auth" : "/api/auth";
+// Always use relative URLs so the frontend domain (Vercel) can proxy to the backend via rewrites.
+// This ensures first-party cookies and avoids cross-origin TLS/CORS issues.
+const API_URL = '/api/auth';
 
 axios.defaults.withCredentials = true;
 

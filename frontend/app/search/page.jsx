@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { searchProducts, setFilters, clearFilters } from '../../store/slices/searchSlice';
@@ -64,7 +64,7 @@ const sortOptions = [
   { value: 'price_high_low', label: 'Price: High to low', icon: ArrowDownIcon, description: 'Most expensive first' }
 ];
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const query = searchParams.get('q') || '';
@@ -434,3 +434,11 @@ export default function SearchPage() {
     </div>
   );
 } 
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><span className="loading loading-spinner loading-lg"></span></div>}>
+      <SearchContent />
+    </Suspense>
+  );
+}

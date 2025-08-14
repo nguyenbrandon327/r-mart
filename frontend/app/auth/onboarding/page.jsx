@@ -4,13 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { Camera, X, ArrowLeft, ArrowRight, Search, MapPin, Home } from 'lucide-react';
 import { checkAuth } from '../../../store/slices/authSlice';
 import { CAMPUS_LOCATIONS } from '../../../constants/campusLocations';
 
-const API_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/api/users" : "/api/users";
+// Always use relative URLs so the frontend domain (Vercel) can proxy to the backend via rewrites.
+const API_URL = '/api/users';
 
 const MAJORS = [
   'Actuarial Science',
@@ -668,10 +670,11 @@ export default function Onboarding() {
                     <div className="relative">
                       {profilePicPreview ? (
                         <div className="relative w-32 h-32 mx-auto">
-                          <img
+                          <Image
                             src={profilePicPreview}
                             alt="Profile preview"
-                            className="w-full h-full rounded-full object-cover"
+                            fill
+                            className="rounded-full object-cover"
                           />
                           <button
                             type="button"

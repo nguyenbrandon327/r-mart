@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Lock, Loader, CheckCircle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import Input from "../../../components/Input";
 import { useAuthStore } from "../../../store/hooks";
 
-const ResetPasswordPage = () => {
+const ResetPasswordContent = () => {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [validationError, setValidationError] = useState("");
@@ -135,4 +135,10 @@ const ResetPasswordPage = () => {
 	);
 };
 
-export default ResetPasswordPage;
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className='flex justify-center items-center h-64'><span className='loading loading-spinner loading-lg'></span></div>}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}

@@ -139,12 +139,12 @@ function ProductCarousel({
 
           <div 
             ref={carouselRef} 
-            className="flex overflow-x-auto gap-5 pb-4 pt-2 px-2 scrollbar-optimized"
+            className="flex overflow-x-auto gap-[clamp(1rem,2.2vw,1.25rem)] pb-[clamp(0.75rem,1.5vw,1rem)] pt-[clamp(0.5rem,1vw,0.75rem)] px-[clamp(0.5rem,1vw,0.75rem)] scrollbar-optimized"
           >
             {products.map((product) => (
               <div 
                 key={product.id} 
-                className="flex-none w-[160px] sm:w-[180px] md:w-[210px] lg:w-[235px] xl:w-[245px] 2xl:w-[255px]"
+                className="flex-none w-[clamp(160px,20vw,255px)]"
               >
                 <ProductCard product={product} sourceContext={sourceContext} />
               </div>

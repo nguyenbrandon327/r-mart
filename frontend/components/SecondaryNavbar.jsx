@@ -45,9 +45,9 @@ function SecondaryNavbar() {
   
   return (
     <div className="bg-base-200 py-2 px-4 shadow-sm sticky top-16 z-30">
-      <div className="container mx-auto flex justify-center">
+      <div className="container mx-auto flex justify-center max-w-none">
         {/* Desktop view - show all categories with responsive sizing */}
-        <div className="hidden lg:flex items-center justify-center flex-wrap gap-0.5 xl:gap-1">
+        <div className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1 overflow-x-auto hide-scrollbar">
           <Link 
             href="/all-products"
             className={`flex items-center whitespace-nowrap px-2 py-1 xl:px-3 xl:py-1.5 rounded-md font-medium text-xs xl:text-sm transition-colors ${

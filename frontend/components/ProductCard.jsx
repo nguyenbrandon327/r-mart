@@ -71,16 +71,16 @@ function ProductCard({ product, sourceContext = null }) {
           )}
         </figure>
 
-        <div className="px-0">
+          <div className="px-0">
           {/* PRODUCT INFO */}
           <div className="flex items-start justify-between mt-1">
-            <h2 className="text-base font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
+            <h2 className="text-[clamp(0.95rem,1.6vw,1.125rem)] font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>
           </div>
-          <p className="text-base font-normal text-black">{formattedPrice}</p>
+            <p className="text-[clamp(0.95rem,1.6vw,1.125rem)] font-normal text-black">{formattedPrice}</p>
           
           {/* LOCATION INFO - Only show if distance is available */}
-          {product.distance !== undefined && (
-            <div className="flex items-center text-sm text-gray-600 mt-1">
+            {product.distance !== undefined && (
+            <div className="flex items-center text-[clamp(0.8rem,1.4vw,0.875rem)] text-gray-600 mt-1">
               <MapPinIcon className="w-4 h-4 mr-1" />
               <span>
                 {product.distance < 0.1 

@@ -4,7 +4,8 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/api/message" : "/api/message";
+// Always use relative URLs so the frontend domain (Vercel) can proxy to the backend via rewrites.
+const API_URL = '/api/message';
 
 axios.defaults.withCredentials = true;
 

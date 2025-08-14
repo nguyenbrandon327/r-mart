@@ -10,6 +10,7 @@ import { EditIcon, GraduationCap, BookOpen, MapPin, Calendar, Package } from 'lu
 import { Toaster } from 'react-hot-toast';
 import AuthGuard from '../../../components/AuthGuard';
 import Breadcrumb, { createBreadcrumbs } from '../../../components/Breadcrumb';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -108,16 +109,22 @@ export default function ProfilePage() {
                 {/* Profile Picture */}
                 <div className="flex justify-start mb-6">
                   {viewedUserProfile.profile_pic ? (
-                    <img
+                    <Image
                       src={viewedUserProfile.profile_pic}
                       alt={`${viewedUserProfile.name}'s profile`}
-                      className="w-32 h-32 rounded-full object-cover"
+                      width={128}
+                      height={128}
+                      className="rounded-full object-cover"
+                      sizes="128px"
                     />
                   ) : (
-                    <img
+                    <Image
                       src="/profile-pic.png"
                       alt="Default profile picture"
-                      className="w-32 h-32 rounded-full object-cover"
+                      width={128}
+                      height={128}
+                      className="rounded-full object-cover"
+                      sizes="128px"
                     />
                   )}
                 </div>

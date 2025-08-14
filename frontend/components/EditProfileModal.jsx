@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { UserIcon, ImageIcon, SaveIcon, X, CameraIcon, Trash2Icon, GraduationCapIcon, Search, MapPin, Home } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
+import Image from 'next/image';
 import { updateUserProfile, uploadProfilePic, deleteProfilePic, clearMessage, clearError, updateUserLocation } from '../store/slices/userSlice';
 import { CAMPUS_LOCATIONS } from '../constants/campusLocations';
 import toast from 'react-hot-toast';
@@ -487,16 +488,20 @@ function EditProfileModal() {
               {/* Current/Preview Image */}
               <div className="relative">
                 {getCurrentProfilePic() ? (
-                  <img
+                  <Image
                     src={getCurrentProfilePic()}
                     alt="Profile preview"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                    width={128}
+                    height={128}
+                    className="rounded-full object-cover border-4 border-gray-200"
                   />
                 ) : (
-                  <img
+                  <Image
                     src="/profile-pic.png"
                     alt="Default profile picture"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                    width={128}
+                    height={128}
+                    className="rounded-full object-cover border-4 border-gray-200"
                   />
                 )}
                 

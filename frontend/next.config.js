@@ -47,7 +47,7 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     // Optimize CSS loading
-    optimizeCss: true,
+    optimizeCss: false,
     // Optimize specific package imports
     optimizePackageImports: ['lucide-react', '@reduxjs/toolkit'],
   },
@@ -62,7 +62,9 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3000/api/:path*', // Proxy API requests to the backend
+        destination: process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:3000/api/:path*'
+          : `${process.env.NEXT_PUBLIC_API_URL || ''}/api/:path*`, // Proxy API requests to the backend
       },
     ];
   },

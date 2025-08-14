@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Users, Search, MessageCircle, MapPin, Recycle, Shield, Heart } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
@@ -32,10 +33,12 @@ export default function LandingPage() {
               <div className="flex-none">
                 <Link href="/" className="hover:opacity-80 transition-opacity">
                   <div className="flex items-center gap-2">
-                    <img 
+                    <Image 
                       src="/logo-pic.png" 
                       alt="R'mart Logo" 
-                      className="size-12 object-contain"
+                      width={48}
+                      height={48}
+                      className="object-contain"
                     />
                     <span
                       className="font-black font-gt-america-expanded tracking-tighter text-2xl 
@@ -50,7 +53,7 @@ export default function LandingPage() {
 
             {/* CENTER SECTION - Navigation Links */}
             <div className={`items-center gap-6 absolute left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
-              scrolled ? 'md:flex opacity-100' : 'hidden opacity-0'
+              scrolled ? 'hidden lg:flex opacity-100' : 'hidden opacity-0'
             }`}>
               <a 
                 href="#about" 
@@ -102,87 +105,124 @@ export default function LandingPage() {
         {/* Photo Collage - Circling around hero content */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Top row - circling around */}
-          <div className="absolute top-16 left-[30%] transform -translate-x-1/2 w-80 h-76 bg-white p-3 pb-8 shadow-lg transform -rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 2 }}>
-            <img 
-              src="/landing/1.jpg" 
-              alt="Campus life" 
-              className="w-full h-60 object-cover"
-            />
+          <div className="absolute top-16 left-[30%] transform -translate-x-1/2 bg-white p-3 pb-8 shadow-lg -rotate-12 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 2, width: 'clamp(12rem, 24vw, 20rem)', height: 'clamp(12rem, 26vw, 19rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/1.jpg" 
+                alt="Campus life" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-56 h-80 bg-white p-3 pb-8 shadow-lg transform rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/12.jpg" 
-              alt="UCR campus life" 
-              className="w-full h-64 object-cover"
-            />
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-white p-3 pb-8 shadow-lg rotate-12 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1, width: 'clamp(10rem, 20vw, 14rem)', height: 'clamp(14rem, 30vw, 20rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/12.jpg" 
+                alt="UCR campus life" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-          <div className="absolute top-20 right-1/3 transform translate-x-1/2 w-60 h-84 bg-white p-3 pb-8 shadow-lg transform -rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/4.jpg" 
-              alt="UCR students" 
-              className="w-full h-68 object-cover"
-            />
+          <div className="absolute top-20 right-1/3 transform translate-x-1/2 bg-white p-3 pb-8 shadow-lg -rotate-12 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1, width: 'clamp(11rem, 22vw, 15rem)', height: 'clamp(14rem, 32vw, 21rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/4.jpg" 
+                alt="UCR students" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
           
           {/* Left side */}
-          <div className="absolute top-3/4 md:top-1/2 left-8 transform -translate-y-1/2 w-92 h-80 bg-white p-3 pb-8 shadow-lg transform rotate-6 hover:scale-105 transition-transform duration-300" style={{ zIndex: 3 }}>
-            <img 
-              src="/landing/2.jpg" 
-              alt="Student items" 
-              className="w-full h-64 object-cover"
-            />
+          <div className="absolute bottom-32 md:bottom-12 left-16 transform -translate-y-1/2 bg-white p-3 pb-6 shadow-lg rotate-6 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 3, width: 'clamp(13rem, 24vw, 21rem)', height: 'clamp(13rem, 24vw, 18rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/2.jpg" 
+                alt="Student items" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-          <div className="absolute top-1/4 left-20 transform -translate-y-1/2 w-84 h-72 bg-white p-3 pb-8 shadow-lg transform rotate-32 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/10.jpg" 
-              alt="Campus activities" 
-              className="w-full h-56 object-cover"
-            />
+          <div className="absolute top-80 left-20 transform -translate-y-1/2 bg-white p-3 pb-8 shadow-lg -rotate-6 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1, width: 'clamp(13rem, 26vw, 21rem)', height: 'clamp(12rem, 24vw, 18rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/10.jpg" 
+                alt="Campus activities" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
           
           {/* Right side */}
-          <div className="absolute top-3/4 md:top-1/2 right-8 transform -translate-y-1/2 w-84 h-68 bg-white p-3 pb-8 shadow-lg transform -rotate-3 hover:scale-105 transition-transform duration-300" style={{ zIndex: 2 }}>
-            <img 
-              src="/landing/5.jpg" 
-              alt="Campus community" 
-              className="w-full h-52 object-cover"
-            />
+          <div className="absolute bottom-32 md:bottom-24 right-8 transform -translate-y-1/2 bg-white p-3 pb-8 shadow-lg -rotate-3 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 2, width: 'clamp(13rem, 26vw, 21rem)', height: 'clamp(11rem, 22vw, 17rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/5.jpg" 
+                alt="Campus community" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-          <div className="absolute top-1/4 right-16 transform -translate-y-1/2 w-72 h-68 bg-white p-3 pb-8 shadow-lg transform rotate-12 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/7.jpg" 
-              alt="Campus community" 
-              className="w-full h-52 object-cover"
-            />
+          <div className="absolute top-80 right-16 transform -translate-y-1/2 bg-white p-3 pb-8 shadow-lg rotate-12 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1, width: 'clamp(12rem, 24vw, 18rem)', height: 'clamp(11rem, 22vw, 17rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/7.jpg" 
+                alt="Campus community" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
           
           {/* Bottom row */}
-          <div className="absolute bottom-16 left-1/4 transform -translate-x-1/2 w-80 h-96 bg-white p-3 pb-8 shadow-lg transform -rotate-6 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/3.jpg" 
-              alt="Marketplace" 
-              className="w-full h-80 object-cover"
-            />
+          <div className="absolute bottom-16 left-[30%] transform -translate-x-1/2 bg-white p-3 pb-8 shadow-lg -rotate-6 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1, width: 'clamp(12rem, 24vw, 18rem)', height: 'clamp(14rem, 30vw, 20rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/3.jpg" 
+                alt="Marketplace" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-80 h-68 bg-white p-3 pb-8 shadow-lg transform -rotate-6 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/11.jpg" 
-              alt="Student community" 
-              className="w-full h-52 object-cover"
-            />
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white p-3 pb-8 shadow-lg rotate-6 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300 z-[4] md:z-[1]" style={{ width: 'clamp(10rem, 20vw, 14rem)', height: 'clamp(14rem, 30vw, 20rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/11.jpg" 
+                alt="Student community" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-          <div className="absolute bottom-20 right-1/4 transform translate-x-1/2 w-64 h-88 bg-white p-3 pb-8 shadow-lg transform rotate-3 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1 }}>
-            <img 
-              src="/landing/6.jpg" 
-              alt="Student life" 
-              className="w-full h-72 object-cover"
-            />
+          <div className="absolute bottom-20 right-[28%] transform translate-x-1/2 bg-white p-3 pb-8 shadow-lg rotate-3 scale-90 md:scale-100 hover:scale-105 transition-transform duration-300" style={{ zIndex: 1, width: 'clamp(11rem, 22vw, 16rem)', height: 'clamp(16rem, 34vw, 22rem)' }}>
+            <div className="relative w-full h-full">
+              <Image 
+                src="/landing/6.jpg" 
+                alt="Student life" 
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
         </div>
 
         <div className="hero-content text-center max-w-4xl relative z-10">
           <div className="max-w-4xl">
-            <h1 className="text-6xl md:text-8xl font-black font-gt-america-expanded mb-6 leading-tight">
+            <h1 className="text-6xl md:text-8xl font-black font-gt-america-expanded mb-6 leading-tight" style={{ 
+              textShadow: `
+                0 1px 2px rgba(255,255,255,0.5),
+                0 2px 4px rgba(255,255,255,0.3),
+                1px 1px 0 rgba(255,255,255,0.4),
+                -1px -1px 0 rgba(255,255,255,0.4)
+              `
+            }}>
               <span style={{ color: '#003da5' }}>Pass it </span>
               <span style={{ color: '#ffb81c' }}>on</span>
             </h1>
@@ -223,11 +263,14 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex-1 flex justify-center lg:justify-end">
-              <img 
-                src="/landing/8.jpg" 
-                alt="UCR students marketplace" 
-                className="w-full max-w-lg md:max-w-md h-80 object-cover shadow-lg border-4 border-white"
-              />
+              <div className="relative w-full max-w-lg md:max-w-md h-80">
+                <Image 
+                  src="/landing/8.jpg" 
+                  alt="UCR students marketplace" 
+                  fill
+                  className="object-cover shadow-lg border-4 border-white"
+                />
+              </div>
             </div>
           </div>
           
@@ -275,11 +318,14 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="flex-1 flex justify-center lg:justify-start">
-              <img 
-                src="/landing/9.png" 
-                alt="UCR students using marketplace" 
-                className="w-full max-w-sm aspect-square object-cover shadow-lg border-4 border-white"
-              />
+              <div className="relative w-full max-w-sm aspect-square">
+                <Image 
+                  src="/landing/9.png" 
+                  alt="UCR students using marketplace" 
+                  fill
+                  className="object-cover shadow-lg border-4 border-white"
+                />
+              </div>
             </div>
             <div className="flex-1">
               <div className="text-lg md:text-xl text-base-content/80 leading-relaxed space-y-4">
