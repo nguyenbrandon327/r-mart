@@ -394,6 +394,7 @@ function EditProductModal() {
                             src={getImageUrl(image)} 
                             alt={`Preview ${index}`} 
                             fill
+                            sizes="100px"
                             className="object-cover" 
                           />
                           <button 

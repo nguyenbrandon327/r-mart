@@ -674,6 +674,7 @@ export default function Onboarding() {
                             src={profilePicPreview}
                             alt="Profile preview"
                             fill
+                            sizes="128px"
                             className="rounded-full object-cover"
                           />
                           <button

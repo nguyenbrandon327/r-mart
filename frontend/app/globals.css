@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent horizontal scrolling */
+html, body {
+  overflow-x: hidden;
+}
+
 /* GT-America Font Face Definitions */
 @font-face {
   font-family: 'GT-America-Expanded';

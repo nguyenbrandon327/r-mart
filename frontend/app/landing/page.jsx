@@ -111,6 +111,7 @@ export default function LandingPage() {
                 src="/landing/1.jpg" 
                 alt="Campus life" 
                 fill
+                sizes="(max-width: 768px) 12rem, 20rem"
                 className="object-cover"
               />
             </div>
@@ -121,6 +122,7 @@ export default function LandingPage() {
                 src="/landing/12.jpg" 
                 alt="UCR campus life" 
                 fill
+                sizes="(max-width: 768px) 10rem, 14rem"
                 className="object-cover"
               />
             </div>
@@ -131,6 +133,7 @@ export default function LandingPage() {
                 src="/landing/4.jpg" 
                 alt="UCR students" 
                 fill
+                sizes="(max-width: 768px) 11rem, 15rem"
                 className="object-cover"
               />
             </div>
@@ -143,6 +146,7 @@ export default function LandingPage() {
                 src="/landing/2.jpg" 
                 alt="Student items" 
                 fill
+                sizes="(max-width: 768px) 13rem, 21rem"
                 className="object-cover"
               />
             </div>
@@ -153,6 +157,7 @@ export default function LandingPage() {
                 src="/landing/10.jpg" 
                 alt="Campus activities" 
                 fill
+                sizes="(max-width: 768px) 13rem, 21rem"
                 className="object-cover"
               />
             </div>
@@ -165,6 +170,7 @@ export default function LandingPage() {
                 src="/landing/5.jpg" 
                 alt="Campus community" 
                 fill
+                sizes="(max-width: 768px) 13rem, 21rem"
                 className="object-cover"
               />
             </div>
@@ -175,6 +181,7 @@ export default function LandingPage() {
                 src="/landing/7.jpg" 
                 alt="Campus community" 
                 fill
+                sizes="(max-width: 768px) 12rem, 18rem"
                 className="object-cover"
               />
             </div>
@@ -187,6 +194,7 @@ export default function LandingPage() {
                 src="/landing/3.jpg" 
                 alt="Marketplace" 
                 fill
+                sizes="(max-width: 768px) 12rem, 18rem"
                 className="object-cover"
               />
             </div>
@@ -197,6 +205,7 @@ export default function LandingPage() {
                 src="/landing/11.jpg" 
                 alt="Student community" 
                 fill
+                sizes="(max-width: 768px) 10rem, 14rem"
                 className="object-cover"
               />
             </div>
@@ -207,6 +216,7 @@ export default function LandingPage() {
                 src="/landing/6.jpg" 
                 alt="Student life" 
                 fill
+                sizes="(max-width: 768px) 11rem, 16rem"
                 className="object-cover"
               />
             </div>
@@ -268,6 +278,7 @@ export default function LandingPage() {
                   src="/landing/8.jpg" 
                   alt="UCR students marketplace" 
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover shadow-lg border-4 border-white"
                 />
               </div>
@@ -323,6 +334,7 @@ export default function LandingPage() {
                   src="/landing/9.png" 
                   alt="UCR students using marketplace" 
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover shadow-lg border-4 border-white"
                 />
               </div>

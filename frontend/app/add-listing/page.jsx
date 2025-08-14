@@ -373,6 +373,7 @@ export default function AddListingPage() {
                       src="/addlisting.jpg" 
                       alt="Add Listing" 
                       fill
+                      sizes="(max-width: 1280px) 0px, 50vw"
                       className="object-cover rounded-lg"
                     />
                   </div>
@@ -394,6 +395,7 @@ export default function AddListingPage() {
                       src="/addlisting.jpg" 
                       alt="Add Listing" 
                       fill
+                      sizes="(max-width: 1280px) 100vw, 0px"
                       className="object-cover rounded-lg"
                     />
                   </div>
@@ -594,6 +596,7 @@ export default function AddListingPage() {
                                     src={getImageUrl(image)} 
                                     alt={`Preview ${index}`} 
                                     fill
+                                    sizes="(max-width: 640px) 80px, 100px"
                                     className="object-cover" 
                                   />
                                   <button 
