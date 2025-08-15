@@ -14,6 +14,7 @@ WORKDIR /app
 
 # Set production env
 ENV NODE_ENV=production
+ENV PORT=3000
 
 # Install runtime tools needed for health checks
 RUN apk add --no-cache curl
@@ -24,11 +25,12 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source
 COPY . .
 
-# Expose the app port (matches process.env.PORT || 3000)
+# Expose the default app port
 EXPOSE 3000
 
 # Container healthcheck (Express /health endpoint)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD sh -c "curl -fsS http://127.0.0.1:3000/health > /dev/null || exit 1"
+# Use runtime PORT if provided by the task definition, defaulting to 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD sh -c "curl -fsS http://127.0.0.1:${PORT:-3000}/health > /dev/null || exit 1"
 
 # Start the server
 CMD ["node", "server.js"]
