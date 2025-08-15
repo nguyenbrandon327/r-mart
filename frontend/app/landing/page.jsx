@@ -273,13 +273,13 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex-1 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-lg md:max-w-md h-80">
+              <div className="w-full max-w-lg md:max-w-md">
                 <Image 
                   src="/landing/8.jpg" 
                   alt="UCR students marketplace" 
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover shadow-lg border-4 border-white"
+                  width={400}
+                  height={300}
+                  className="w-full h-auto shadow-lg border-4 border-white rounded-lg"
                 />
               </div>
             </div>
@@ -329,13 +329,13 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="flex-1 flex justify-center lg:justify-start">
-              <div className="relative w-full max-w-sm aspect-square">
+              <div className="w-full max-w-sm">
                 <Image 
                   src="/landing/9.png" 
                   alt="UCR students using marketplace" 
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover shadow-lg border-4 border-white"
+                  width={300}
+                  height={300}
+                  className="w-full h-auto shadow-lg border-4 border-white rounded-lg"
                 />
               </div>
             </div>
