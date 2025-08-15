@@ -51,7 +51,7 @@ function Navbar() {
   };
 
   return (
-    <div className="bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 sticky top-0 z-50">
+    <div className="bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto">
         <div className="navbar px-4 min-h-[4rem] justify-between">
           {/* LEFT SECTION - LOGO AND SEARCH */}

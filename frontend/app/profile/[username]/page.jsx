@@ -112,19 +112,19 @@ export default function ProfilePage() {
                     <Image
                       src={viewedUserProfile.profile_pic}
                       alt={`${viewedUserProfile.name}'s profile`}
-                      width={128}
-                      height={128}
-                      className="rounded-full object-cover"
-                      sizes="128px"
+                      width={160}
+                      height={160}
+                      className="w-40 h-40 rounded-full object-cover aspect-square"
+                      sizes="160px"
                     />
                   ) : (
                     <Image
                       src="/profile-pic.png"
                       alt="Default profile picture"
-                      width={128}
-                      height={128}
-                      className="rounded-full object-cover"
-                      sizes="128px"
+                      width={160}
+                      height={160}
+                      className="w-40 h-40 rounded-full object-cover aspect-square"
+                      sizes="160px"
                     />
                   )}
                 </div>

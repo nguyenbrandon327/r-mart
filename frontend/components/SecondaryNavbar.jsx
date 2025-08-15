@@ -44,7 +44,7 @@ function SecondaryNavbar() {
   const currentCategory = categories.find(cat => pathname === `/category/${cat.value}`);
   
   return (
-    <div className="bg-base-200 py-2 px-4 shadow-sm sticky top-16 z-30">
+    <div className="bg-base-200 py-2 px-4 shadow-sm fixed top-16 left-0 right-0 z-40">
       <div className="container mx-auto flex justify-center max-w-none">
         {/* Desktop view - show all categories with responsive sizing */}
         <div className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1 overflow-x-auto hide-scrollbar">

@@ -65,7 +65,15 @@ export default function NavigationWrapper({ children }) {
       {!isAuthPage && !isLandingPage && !isAddListingPage && !isTermsPage && !isPrivacyPage && (
         <>
           <Navbar />
-          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isInboxPage && !isSettingsPage && <SecondaryNavbar />}
+          {/* Spacer for primary navbar (min-h-[4rem] => h-16) */}
+          <div aria-hidden className="h-16" />
+          {!isProductDetailPage && !isSavedPage && !isProfilePage && !isInboxPage && !isSettingsPage && (
+            <>
+              <SecondaryNavbar />
+              {/* Spacer for secondary navbar (approx h-10) */}
+              <div aria-hidden className="h-10" />
+            </>
+          )}
         </>
       )}
       <main className={`flex-grow ${isAuthPage || isLandingPage || isAddListingPage || isTermsPage || isPrivacyPage || isChatPage ? "" : "container mx-auto px-4 py-6"}`}>
