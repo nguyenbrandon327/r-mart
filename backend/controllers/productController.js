@@ -563,7 +563,6 @@ export const markProductAsAvailable = async (req, res) => {
     }
 };
 
-
 export const recordView = async (req, res) => {
   const { slug } = req.params;
   const userId = req.user?.id;                 // may be undefined

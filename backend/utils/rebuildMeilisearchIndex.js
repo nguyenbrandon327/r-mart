@@ -66,13 +66,9 @@ async function rebuildMeilisearchIndex() {
     
     console.log('✅ Successfully rebuilt MeiliSearch index!');
     console.log(`📈 Total products indexed: ${products.length}`);
-    console.log('🔍 Search suggestions and search functionality should now work properly.');
-    console.log('🧠 AI-powered semantic search with OpenAI embeddings is now available.');
-    console.log('💡 Note: Embeddings will be generated automatically as products are indexed.');
     
   } catch (error) {
     console.error('❌ Failed to rebuild MeiliSearch index:', error);
-    console.error('💡 Check your .env file has: MEILISEARCH_URL, MEILISEARCH_API_KEY, and OPENAI_API_KEY');
     throw error;
   }
 }

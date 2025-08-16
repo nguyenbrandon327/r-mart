@@ -32,8 +32,8 @@ router.get("/seller/:userId/other/:excludeProductId", getSellerOtherProducts);
 // Record product view (public route with optional auth)
 router.post("/:slug/view", checkAuth, recordView);
 
-router.post("/", protectRoute, upload.array('productImages', 5), createProduct);
-router.put("/:id", protectRoute, upload.array('productImages', 5), updateProduct);
+router.post("/", protectRoute, upload.array('productImages', 10), createProduct);
+router.put("/:id", protectRoute, upload.array('productImages', 10), updateProduct);
 router.delete("/:id", protectRoute, deleteProduct);
 
 // Route to delete a single image from a product

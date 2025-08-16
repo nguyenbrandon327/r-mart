@@ -494,8 +494,6 @@ export const completeOnboardingAll = async (req, res) => {
   }
 }; 
 
-
-
 // Update user location during onboarding
 export const updateUserLocation = async (req, res) => {
   try {
