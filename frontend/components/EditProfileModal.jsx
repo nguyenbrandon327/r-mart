@@ -488,21 +488,25 @@ function EditProfileModal() {
               {/* Current/Preview Image */}
               <div className="relative">
                 {getCurrentProfilePic() ? (
-                  <Image
-                    src={getCurrentProfilePic()}
-                    alt="Profile preview"
-                    width={128}
-                    height={128}
-                    className="rounded-full object-cover border-4 border-gray-200"
-                  />
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
+                    <Image
+                      src={getCurrentProfilePic()}
+                      alt="Profile preview"
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 ) : (
-                  <Image
-                    src="/profile-pic.png"
-                    alt="Default profile picture"
-                    width={128}
-                    height={128}
-                    className="rounded-full object-cover border-4 border-gray-200"
-                  />
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
+                    <Image
+                      src="/profile-pic.png"
+                      alt="Default profile picture"
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 )}
                 
                 {/* Camera overlay button */}

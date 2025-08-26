@@ -131,6 +131,7 @@ export const useChatStore = () => {
     selectedChat: chat.selectedChat,
     isChatsLoading: chat.isChatsLoading,
     isMessagesLoading: chat.isMessagesLoading,
+    isSendingMessage: chat.isSendingMessage,
     error: chat.error,
     onlineUsers: chat.onlineUsers,
     typingUsers: chat.typingUsers,

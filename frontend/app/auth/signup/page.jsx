@@ -19,6 +19,7 @@ export default function SignUpPage() {
 	const [agreedToTerms, setAgreedToTerms] = useState(false);
 	const [termsError, setTermsError] = useState("");
 	const [nameError, setNameError] = useState("");
+	const [emailError, setEmailError] = useState("");
 	const [passwordError, setPasswordError] = useState("");
 	const [passwordMatchError, setPasswordMatchError] = useState("");
 	const [captchaToken, setCaptchaToken] = useState("");
@@ -30,7 +31,7 @@ export default function SignUpPage() {
 	// Clear any existing errors when component mounts (only once)
 	useEffect(() => {
 		clearError();
-	}, []); // Empty dependency array - only run once on mount
+	}, []); 
 
 	// Redirect if authentication state changes to true
 	useEffect(() => {
@@ -46,6 +47,7 @@ export default function SignUpPage() {
 		setTermsError("");
 		setCaptchaError("");
 		setNameError("");
+		setEmailError("");
 		setPasswordError("");
 		setPasswordMatchError("");
 
@@ -55,7 +57,11 @@ export default function SignUpPage() {
 			return;
 		}
 
-		// Validate password length
+		if (!email.toLowerCase().endsWith('@ucr.edu')) {
+			setEmailError("Please use your UCR email address (@ucr.edu).");
+			return;
+		}
+
 		if (password.length < 6) {
 			setPasswordError("Password must be at least 6 characters long.");
 			return;
@@ -83,7 +89,6 @@ export default function SignUpPage() {
 		if (result.type === 'auth/signup/fulfilled') {
 			router.push("/auth/verify-email");
 		}
-		// If rejected, the error will be set in the Redux state and displayed automatically
 	};
 
 	const onCaptchaChange = (token) => {
@@ -144,10 +149,14 @@ export default function SignUpPage() {
 						<Input
 							icon={Mail}
 							type='email'
-							placeholder='Email Address'
+							placeholder='ucr.edu Email Address'
 							value={email}
-							onChange={(e) => setEmail(e.target.value)}
+							onChange={(e) => {
+								setEmail(e.target.value);
+								setEmailError("");
+							}}
 						/>
+						{emailError && <p className='text-error font-semibold mt-2'>{emailError}</p>}
 						<Input
 							icon={Lock}
 							type='password'
@@ -181,7 +190,6 @@ export default function SignUpPage() {
 								checked={agreedToTerms}
 								onChange={(e) => {
 									setAgreedToTerms(e.target.checked);
-									// Clear terms error when user checks the box
 									if (e.target.checked) {
 										setTermsError("");
 									}

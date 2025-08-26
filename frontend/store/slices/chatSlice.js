@@ -15,6 +15,7 @@ const initialState = {
   selectedChat: null,
   isChatsLoading: false,
   isMessagesLoading: false,
+  isSendingMessage: false,
   error: null,
   onlineUsers: [],
   typingUsers: {}, // { chatId: [userId1, userId2] }
@@ -326,13 +327,16 @@ const chatSlice = createSlice({
       
       // Send Message
       .addCase(sendMessage.pending, (state) => {
+        state.isSendingMessage = true;
         state.error = null;
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
+        state.isSendingMessage = false;
         // Message will be added via socket event (newMessage -> addMessage)
         // This prevents duplicate messages in the UI
       })
       .addCase(sendMessage.rejected, (state, action) => {
+        state.isSendingMessage = false;
         state.error = action.payload;
       })
 

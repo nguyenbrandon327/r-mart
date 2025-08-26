@@ -68,6 +68,7 @@ export default function ChatPage({ params }) {
     chats,
     selectedChat,
     isMessagesLoading,
+    isSendingMessage,
     typingUsers,
     unreadCount,
     onlineUsers,
@@ -663,7 +664,8 @@ export default function ChatPage({ params }) {
                   value={messageText}
                   onChange={handleMessageChange}
                   placeholder="Type a message..."
-                  className="textarea textarea-bordered w-full resize-none min-h-[2.5rem] max-h-32"
+                  className="textarea textarea-bordered w-full resize-none min-h-[2.5rem] max-h-32 text-base"
+                  style={{ fontSize: '16px' }}
                   rows={1}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -677,10 +679,14 @@ export default function ChatPage({ params }) {
               
               <button
                 type="submit"
-                disabled={!messageText.trim() && !selectedImage}
+                disabled={(!messageText.trim() && !selectedImage) || isSendingMessage}
                 className="btn btn-primary btn-circle"
               >
-                <SendIcon className="w-5 h-5" />
+                {isSendingMessage ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <SendIcon className="w-5 h-5" />
+                )}
               </button>
             </form>
           </div>

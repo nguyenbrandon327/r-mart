@@ -13,6 +13,14 @@ export const signup = async (req, res) => {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
+        // Validate UCR email domain
+        if (!email.toLowerCase().endsWith('@ucr.edu')) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Registration is restricted to UCR email addresses (@ucr.edu)" 
+            });
+        }
+
         const userAlreadyExists = await sql`
             SELECT * FROM users WHERE email=${email}
         `;

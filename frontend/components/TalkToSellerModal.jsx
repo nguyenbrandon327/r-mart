@@ -67,7 +67,8 @@ export default function TalkToSellerModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Hi! I'm interested in this item. Is it still available?"
-              className="textarea textarea-bordered w-full h-32 resize-none focus:textarea-primary transition-colors duration-200"
+              className="textarea textarea-bordered w-full h-32 resize-none focus:textarea-primary transition-colors duration-200 text-base"
+              style={{ fontSize: '16px' }}
               disabled={isLoading}
               autoFocus
               maxLength={500}
