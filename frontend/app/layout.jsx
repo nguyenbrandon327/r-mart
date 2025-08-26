@@ -6,7 +6,7 @@ import OnboardingGuard from '../components/OnboardingGuard';
 
 export const metadata = {
   title: 'R\'Mart',
-  description: 'R-Mart Shopping Application',
+  description: 'Exclusive UCR Marketplace',
   icons: {
     icon: '/logo-icon.png',
     shortcut: '/logo-icon.png',
