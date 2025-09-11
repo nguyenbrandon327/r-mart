@@ -3,6 +3,7 @@ import http from "http";
 import express from "express";
 
 const app = express();
+app.set("trust proxy", 2);
 const server = http.createServer(app);
 
 const io = new Server(server, {

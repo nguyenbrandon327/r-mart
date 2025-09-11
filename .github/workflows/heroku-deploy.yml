@@ -1,0 +1,50 @@
+name: Deploy Backend to Heroku (Docker)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+env:
+  HEROKU_APP_NAME: r-mart-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Heroku Auth
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku auth:token >/dev/null 2>&1 || true
+          heroku container:login
+
+      - name: Build Docker image (backend)
+        run: |
+          docker build -t registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web -f backend/Dockerfile backend
+
+      - name: Push Docker image to Heroku Container Registry
+        run: |
+          docker push registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web
+
+      - name: Release app on Heroku
+        run: |
+          heroku container:release web --app ${{ env.HEROKU_APP_NAME }}
+
+      - name: Notify
+        run: echo "Deployed to Heroku app ${{ env.HEROKU_APP_NAME }}"
+
+
+

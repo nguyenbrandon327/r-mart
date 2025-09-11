@@ -1,11 +1,8 @@
-name: Build and Push Backend to ECR
+name: Build and Push Backend to ECR (manual)
 
+# Deactivated for Heroku migration. Trigger manually if needed.
 on:
-  push:
-    branches:
-      - '**'
-    paths:
-      - 'backend/**'
+  workflow_dispatch:
 
 env:
   ECR_REPOSITORY: r-mart-backend
