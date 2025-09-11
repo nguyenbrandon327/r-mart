@@ -132,6 +132,45 @@ export default function SignUpPage() {
 						Create Account
 					</h2>
 
+					{/* Terms and Privacy Agreement */}
+					<div className="flex items-center gap-3 mb-4">
+						<input
+							type="checkbox"
+							id="terms-agreement"
+							checked={agreedToTerms}
+							onChange={(e) => {
+								setAgreedToTerms(e.target.checked);
+								if (e.target.checked) {
+									setTermsError("");
+								}
+							}}
+							className="checkbox checkbox-primary flex-shrink-0"
+						/>
+						<label htmlFor="terms-agreement" className="text-sm text-base-content/70 leading-relaxed">
+							I agree to the{" "}
+							<Link 
+								href="/terms" 
+								className="text-primary hover:text-primary/80 underline font-medium"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								Terms of Service
+							</Link>
+							{" "}and{" "}
+							<Link 
+								href="/privacy" 
+								className="text-primary hover:text-primary/80 underline font-medium"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								Privacy Policy
+							</Link>
+						</label>
+					</div>
+					{termsError && <p className='text-error font-semibold mb-4'>{termsError}</p>}
+
+					<div className='divider mb-8'></div>
+
 					<form onSubmit={handleSignUp} className="mb-8">
 						<div className="flex gap-3">
 							<Input
@@ -159,7 +198,7 @@ export default function SignUpPage() {
 						<Input
 							icon={Mail}
 							type='email'
-							placeholder='ucr.edu Email Address'
+							placeholder='Email Address (ucr.edu)'
 							value={email}
 							onChange={(e) => {
 								setEmail(e.target.value);
@@ -192,43 +231,6 @@ export default function SignUpPage() {
 						{passwordMatchError && <p className='text-error font-semibold mt-2'>{passwordMatchError}</p>}
 						{error && <p className='text-error font-semibold mt-2'>{error}</p>}
 
-						{/* Terms and Privacy Agreement */}
-						<div className="flex items-center gap-3 mt-4">
-							<input
-								type="checkbox"
-								id="terms-agreement"
-								checked={agreedToTerms}
-								onChange={(e) => {
-									setAgreedToTerms(e.target.checked);
-									if (e.target.checked) {
-										setTermsError("");
-									}
-								}}
-								className="checkbox checkbox-primary flex-shrink-0"
-							/>
-							<label htmlFor="terms-agreement" className="text-sm text-base-content/70 leading-relaxed">
-								I agree to the{" "}
-								<Link 
-									href="/terms" 
-									className="text-primary hover:text-primary/80 underline font-medium"
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									Terms of Service
-								</Link>
-								{" "}and{" "}
-								<Link 
-									href="/privacy" 
-									className="text-primary hover:text-primary/80 underline font-medium"
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									Privacy Policy
-								</Link>
-							</label>
-						</div>
-						{termsError && <p className='text-error font-semibold mt-2'>{termsError}</p>}
-
 						{/* reCAPTCHA */}
 						<div className="mt-4 flex justify-center">
 							<ReCAPTCHA
@@ -238,6 +240,7 @@ export default function SignUpPage() {
 							/>
 						</div>
 						{captchaError && <p className='text-error font-semibold mt-2'>{captchaError}</p>}
+
 
 						<motion.button
 							className='mt-5 w-full py-3 px-4 btn btn-primary text-white font-bold rounded-lg'
@@ -251,9 +254,12 @@ export default function SignUpPage() {
 					</form>
 
 					<div className='divider'>or</div>
-					<GoogleLoginButton />
+					<GoogleLoginButton 
+						agreedToTerms={agreedToTerms}
+						onTermsError={() => setTermsError("Please agree to the Terms of Service and Privacy Policy to continue.")}
+					/>
 
-					<div className='text-center'>
+					<div className='text-center mt-6'>
 						<p className='text-sm text-base-content/70'>
 							Already have an account?{" "}
 							<Link href="/auth/login" className='text-secondary hover:underline'>

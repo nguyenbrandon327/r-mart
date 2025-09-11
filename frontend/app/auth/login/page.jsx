@@ -5,8 +5,11 @@ import { motion } from "framer-motion";
 import { Mail, Lock, Loader } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Input from "../../../components/Input";
 import { useAuthStore } from "../../../store";
+
+const GoogleLoginButton = dynamic(() => import("../../../components/GoogleLoginButton"), { ssr: false });
 
 const LoginPage = () => {
 	const [email, setEmail] = useState("");
@@ -87,7 +90,10 @@ const LoginPage = () => {
 						</motion.button>
 					</form>
 
-					<div className='text-center'>
+					<div className='divider'>or</div>
+					<GoogleLoginButton />
+
+					<div className='text-center mt-6'>
 						<p className='text-sm text-base-content/70'>
 							Don't have an account?{" "}
 							<Link href='/auth/signup' className='text-secondary hover:underline'>
