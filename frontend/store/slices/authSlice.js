@@ -116,6 +116,19 @@ export const resendVerificationCode = createAsyncThunk(
   }
 );
 
+// Google OAuth login/signup
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (credential, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/google`, { credential });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Google sign-in failed");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -246,6 +259,21 @@ const authSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(resendVerificationCode.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Google Login
+      .addCase(googleLogin.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

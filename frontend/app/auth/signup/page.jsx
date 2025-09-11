@@ -7,8 +7,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReCAPTCHA from "react-google-recaptcha";
+import dynamic from "next/dynamic";
 
 import { useAuthStore } from "../../../store";
+const GoogleLoginButton = dynamic(() => import("../../../components/GoogleLoginButton"), { ssr: false });
 
 export default function SignUpPage() {
 	const [firstName, setFirstName] = useState("");
@@ -26,19 +28,27 @@ export default function SignUpPage() {
 	const [captchaError, setCaptchaError] = useState("");
 	const router = useRouter();
 
-	const { signup, error, isLoading, isAuthenticated, clearError } = useAuthStore();
+	const { signup, error, isLoading, isAuthenticated, clearError, user } = useAuthStore();
 
 	// Clear any existing errors when component mounts (only once)
 	useEffect(() => {
 		clearError();
 	}, []); 
 
-	// Redirect if authentication state changes to true
+	// Redirect after authentication based on verification and onboarding status
 	useEffect(() => {
-		if (isAuthenticated) {
-			router.push("/");
+		if (!isAuthenticated || !user) return;
+		
+		if (user.isVerified === false || user.isVerified === undefined) {
+			router.push("/auth/verify-email");
+			return;
 		}
-	}, [isAuthenticated, router]);
+		if (user.isOnboarded === false || user.isOnboarded === undefined) {
+			router.push("/auth/onboarding");
+			return;
+		}
+		router.push("/");
+	}, [isAuthenticated, user, router]);
 
 	const handleSignUp = async (e) => {
 		e.preventDefault();
@@ -239,6 +249,9 @@ export default function SignUpPage() {
 							{isLoading ? <Loader className='animate-spin mx-auto' size={24} /> : "Sign Up"}
 						</motion.button>
 					</form>
+
+					<div className='divider'>or</div>
+					<GoogleLoginButton />
 
 					<div className='text-center'>
 						<p className='text-sm text-base-content/70'>

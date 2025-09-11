@@ -1,6 +1,7 @@
 import { sql } from "../config/db.js";
 import { deleteFileFromS3, getS3KeyFromUrl } from "../utils/s3.js";
 import { encryptLocationData, decryptLocationData } from "../utils/crypto.js";
+import { sendWelcomeEmail } from "../mailtrap/emails.js";
 
 // Get current user's profile
 export const getUserProfile = async (req, res) => {
@@ -399,45 +400,6 @@ export const updateOnboardingStep1 = async (req, res) => {
   }
 };
 
-// Complete onboarding (after profile pic and description are set)
-export const completeOnboarding = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    // Check if user has completed all required fields
-    const [user] = await sql`
-      SELECT year, major FROM users WHERE id = ${userId}
-    `;
-    
-    if (!user || !user.year || !user.major) {
-      return res.status(400).json({
-        success: false,
-        message: "Please complete all onboarding steps"
-      });
-    }
-    
-    // Mark onboarding as complete
-    const [updatedUser] = await sql`
-      UPDATE users 
-      SET isOnboarded = true
-      WHERE id = ${userId}
-      RETURNING id, name, email, username, profile_pic, description, year, major, isOnboarded, created_at, isVerified
-    `;
-    
-    res.status(200).json({
-      success: true,
-      message: "Onboarding completed successfully",
-      user: updatedUser
-    });
-  } catch (error) {
-    console.error("Error completing onboarding:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error completing onboarding",
-      error: error.message
-    });
-  }
-};
 
 // Complete all onboarding in one step
 export const completeOnboardingAll = async (req, res) => {
@@ -478,6 +440,12 @@ export const completeOnboardingAll = async (req, res) => {
         message: "User not found"
       });
     }
+
+    try {
+      await sendWelcomeEmail(updatedUser.email, updatedUser.name);
+    } catch (e) {
+      console.error("Failed to send welcome email on onboarding (all):", e);
+    }
     
     res.status(200).json({
       success: true,
@@ -492,7 +460,7 @@ export const completeOnboardingAll = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};
 
 // Update user location during onboarding
 export const updateUserLocation = async (req, res) => {
@@ -617,7 +585,7 @@ export const updateUserLocation = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};
 
 // Check username availability
 export const checkUsernameAvailability = async (req, res) => {

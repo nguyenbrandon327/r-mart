@@ -1,9 +1,10 @@
 import { sql } from "../config/db.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
 
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
-import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
+import { sendVerificationEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
     const { email, password, name} = req.body;
@@ -106,8 +107,6 @@ export const verifyEmail = async (req, res) => {
                 verificationTokenExpiresAt=NULL 
             WHERE id=${user.id}
         `;
-
-        await sendWelcomeEmail(user.email, user.name);
         
         res.status(200).json({
             success: true,
@@ -361,5 +360,101 @@ export const checkAuth = async (req, res) => {
             success: false,
             message: "Unable to verify authentication. Please try again."
         });
+    }
+};
+
+// Google OAuth: Verify ID token and sign in/up user
+export const googleAuth = async (req, res) => {
+    try {
+        const { credential } = req.body; // Google ID token from client
+
+        if (!process.env.GOOGLE_CLIENT_ID) {
+            return res.status(500).json({ success: false, message: "Google OAuth not configured" });
+        }
+
+        if (!credential) {
+            return res.status(400).json({ success: false, message: "Missing Google credential" });
+        }
+
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID });
+        const payload = ticket.getPayload();
+
+        const googleId = payload?.sub;
+        const email = payload?.email?.toLowerCase();
+        const emailVerified = payload?.email_verified;
+        const name = payload?.name || "Google User";
+        const picture = payload?.picture || null;
+
+        if (!email || !emailVerified) {
+            return res.status(400).json({ success: false, message: "Google email not verified" });
+        }
+
+        // Restrict to UCR domain like regular signup
+        if (!email.endsWith("@ucr.edu")) {
+            return res.status(400).json({ success: false, message: "Registration is restricted to UCR email addresses (@ucr.edu)" });
+        }
+
+        // Find existing user by email
+        const existingUsers = await sql`SELECT * FROM users WHERE email=${email}`;
+
+        let userRecord;
+        if (existingUsers && existingUsers.length > 0) {
+            // Update googleId if missing and mark verified
+            userRecord = existingUsers[0];
+            try {
+                await sql`
+                    UPDATE users
+                    SET googleId=${googleId}, isVerified=true, lastLogin=NOW()
+                    WHERE id=${userRecord.id}
+                `;
+            } catch (e) {
+                // Ignore unique constraint issues on googleId, continue
+            }
+        } else {
+            // Create a new user. Password column is NOT NULL, so store a random hash
+            const randomPassword = crypto.randomBytes(32).toString("hex");
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+            const insertResult = await sql`
+                INSERT INTO users (name, email, password, profile_pic, isVerified, googleId)
+                VALUES (${name}, ${email}, ${hashedPassword}, ${picture}, ${true}, ${googleId})
+                RETURNING id
+            `;
+
+            const insertedId = insertResult[0]?.id;
+            if (!insertedId) {
+                return res.status(400).json({ success: false, message: "Unable to create user from Google account" });
+            }
+
+            const [createdUser] = await sql`SELECT * FROM users WHERE id=${insertedId}`;
+            userRecord = createdUser;
+        }
+
+        // Issue JWT cookie
+        generateTokenAndSetCookie(res, userRecord.id);
+
+        // Reload user to ensure latest fields
+        const [freshUser] = await sql`SELECT * FROM users WHERE id=${userRecord.id}`;
+
+        return res.status(200).json({
+            success: true,
+            message: "Logged in with Google successfully",
+            user: {
+                id: freshUser.id,
+                name: freshUser.name,
+                email: freshUser.email,
+                username: freshUser.username,
+                profile_pic: freshUser.profile_pic,
+                description: freshUser.description,
+                isVerified: freshUser.isverified,
+                isOnboarded: freshUser.isonboarded || false,
+                lastLogin: freshUser.lastlogin,
+                created_at: freshUser.created_at
+            }
+        });
+    } catch (error) {
+        console.error('Google auth error:', error?.message, error?.stack);
+        return res.status(400).json({ success: false, message: "Google authentication failed" });
     }
 };

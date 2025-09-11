@@ -264,6 +264,15 @@ async function initDB() {
     console.error('❌ Error applying users table username field migration:', error);
   }
 
+  // Add googleId field to users table (migration)
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS googleId VARCHAR(255)`;
+
+
+  } catch (error) {
+    console.error('❌ Error applying users table googleId field migration:', error);
+  }
+
   // Add performance indexes (migration)
   try {
     // Core product indexes for better query performance

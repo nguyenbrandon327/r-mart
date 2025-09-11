@@ -8,7 +8,6 @@ import {
   deleteProfilePic,
   getUserByUsername,
   updateOnboardingStep1,
-  completeOnboarding,
   completeOnboardingAll,
   updateUserLocation,
   geocodeAddress,
@@ -35,7 +34,6 @@ router.delete("/profile-pic", protectRoute, deleteProfilePic);
 
 // Onboarding routes
 router.put("/onboarding/step1", protectRoute, updateOnboardingStep1);
-router.put("/onboarding/complete", protectRoute, completeOnboarding);
 router.put("/onboarding", protectRoute, completeOnboardingAll);
 
 // Location routes

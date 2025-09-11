@@ -114,7 +114,6 @@ This key is used to encrypt sensitive user location data (custom addresses and c
 | POST | `/api/users/profile-pic` | Upload profile picture | Protected |
 | DELETE | `/api/users/profile-pic` | Delete profile picture | Protected |
 | PUT | `/api/users/onboarding/step1` | Update onboarding step 1 | Protected |
-| PUT | `/api/users/onboarding/complete` | Complete onboarding | Protected |
 | PUT | `/api/users/onboarding` | Complete all onboarding steps | Protected |
 | PUT | `/api/users/location` | Update user location (on/off campus) | Protected |
 | POST | `/api/users/geocode` | Geocode an address to coordinates | Protected |

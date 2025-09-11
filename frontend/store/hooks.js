@@ -115,6 +115,15 @@ export const useAuthStore = () => {
       }
     },
 
+    loginWithGoogle: async (credential) => {
+      try {
+        const { googleLogin: googleLoginAction } = await import('./slices/authSlice');
+        await dispatch(googleLoginAction(credential)).unwrap();
+      } catch (error) {
+        throw error;
+      }
+    },
+
     clearError: () => dispatch(clearError()),
     clearMessage: () => dispatch(clearMessage())
   };

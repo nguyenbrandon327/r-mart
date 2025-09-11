@@ -1,5 +1,5 @@
 import express from "express";
-import { login, logout, signup, verifyEmail, forgotPassword, resetPassword, checkAuth, resendVerificationCode } from "../controllers/authController.js";
+import { login, logout, signup, verifyEmail, forgotPassword, resetPassword, checkAuth, resendVerificationCode, googleAuth } from "../controllers/authController.js";
 import { protectRoute } from "../utils/protectRoute.js";
 
 const router = express.Router();
@@ -12,5 +12,6 @@ router.post("/resend-verification-code", protectRoute, resendVerificationCode);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 router.get("/check-auth", protectRoute, checkAuth);
+router.post("/google", googleAuth);
 
 export default router;
