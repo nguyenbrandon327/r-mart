@@ -31,6 +31,12 @@ jobs:
           heroku auth:token >/dev/null 2>&1 || true
           heroku container:login
 
+      - name: Set Heroku stack to container
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku stack:set container --app ${{ env.HEROKU_APP_NAME }} || true
+
       - name: Build Docker image (backend)
         run: |
           docker build -t registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web -f backend/Dockerfile backend
@@ -42,6 +48,12 @@ jobs:
       - name: Release app on Heroku
         run: |
           heroku container:release web --app ${{ env.HEROKU_APP_NAME }}
+
+      - name: Ensure web dyno is scaled
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku ps:scale web=1 --app ${{ env.HEROKU_APP_NAME }} || true
 
       - name: Notify
         run: echo "Deployed to Heroku app ${{ env.HEROKU_APP_NAME }}"

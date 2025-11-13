@@ -50,14 +50,14 @@ export const createBreadcrumbs = {
   // Home > Category
   category: (categoryName) => [
     { label: 'Home', href: '/' },
-    { label: 'All Listings', href: '/all-products' },
+    { label: 'All Listings', href: '/all-listings' },
     { label: categoryName }
   ],
 
-  // All Products > Category > Product
+  // All Listings > Category > Product
   product: (categoryName, productName, categorySlug) => [
     { label: 'Home', href: '/' },
-    { label: 'All Listings', href: '/all-products' },
+    { label: 'All Listings', href: '/all-listings' },
     { label: categoryName, href: `/category/${categorySlug}` },
     { label: productName }
   ],

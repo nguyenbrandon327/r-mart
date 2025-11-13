@@ -365,7 +365,7 @@ export default function LandingPage() {
               Join R'Mart Now
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link href="/all-products" className="btn btn-outline btn-lg text-lg px-8">
+            <Link href="/all-listings" className="btn btn-outline btn-lg text-lg px-8">
               See What's Available
             </Link>
           </div>

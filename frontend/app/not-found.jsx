@@ -23,7 +23,7 @@ export default function NotFound() {
         <div className="space-y-4">
           {/* Primary CTA - Browse Products */}
           <Link 
-            href="/all-products"
+            href="/all-listings"
             className="block w-full px-6 py-3 bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-base hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             style={{ borderRadius: '0px' }}
           >

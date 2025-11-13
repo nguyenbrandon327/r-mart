@@ -71,7 +71,7 @@ function ProductCard({ product, sourceContext = null }) {
           )}
         </figure>
 
-          <div className="px-0">
+          <div className="px-0 hidden sm:block">
           {/* PRODUCT INFO */}
           <div className="flex items-start justify-between mt-1">
             <h2 className="text-[clamp(0.95rem,1.6vw,1.125rem)] font-semibold text-black truncate overflow-hidden whitespace-nowrap w-full">{product.name}</h2>

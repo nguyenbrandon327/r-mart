@@ -22,41 +22,54 @@ export default function HomePage() {
   const [recentProductsLoading, setRecentProductsLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch all product data in parallel
+    const fetchAllProducts = async () => {
+      // Always fetch hot and recent products
+      setHotProductsLoading(true);
+      setRecentProductsLoading(true);
+
+      const apiCalls = [
+        axios.get('/api/products/hot?limit=10', { withCredentials: true }),
+        axios.get('/api/products/recent?limit=10', { withCredentials: true })
+      ];
+
+      try {
+        const results = await Promise.allSettled(apiCalls);
+        
+        // Handle hot products result
+        if (results[0].status === 'fulfilled') {
+          setHotProducts(results[0].value.data.data ?? []);
+        } else {
+          console.error('Failed to fetch hot products:', results[0].reason);
+          setHotProducts([]);
+        }
+        
+        // Handle recent products result
+        if (results[1].status === 'fulfilled') {
+          setRecentProducts(results[1].value.data.data ?? []);
+        } else {
+          console.error('Failed to fetch recent products:', results[1].reason);
+          setRecentProducts([]);
+        }
+      } catch (error) {
+        console.error('Unexpected error fetching products:', error);
+        setHotProducts([]);
+        setRecentProducts([]);
+      } finally {
+        setHotProductsLoading(false);
+        setRecentProductsLoading(false);
+      }
+    };
+
+    fetchAllProducts();
+  }, []);
+
+  useEffect(() => {
     // Only fetch recently viewed products for authenticated users when auth check is complete
     if (!isCheckingAuth && isAuthenticated) {
       dispatch(fetchRecentlyViewedProducts(10));
     }
   }, [dispatch, isAuthenticated, isCheckingAuth]);
-
-  useEffect(() => {
-    // Fetch hot products
-    setHotProductsLoading(true);
-    axios
-      .get('/api/products/hot?limit=10', { withCredentials: true })
-      .then(res => {
-        setHotProducts(res.data.data ?? []);
-        setHotProductsLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setHotProductsLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    // Fetch recently posted products
-    setRecentProductsLoading(true);
-    axios
-      .get('/api/products/recent?limit=10', { withCredentials: true })
-      .then(res => {
-        setRecentProducts(res.data.data ?? []);
-        setRecentProductsLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setRecentProductsLoading(false);
-      });
-  }, []);
 
   return (
     <div>
@@ -79,7 +92,7 @@ export default function HomePage() {
           <div className="w-full max-w-7xl mx-auto px-[clamp(0.75rem,2.5vw,2rem)]">
             <div className="text-center sm:text-left text-white max-w-full sm:max-w-xs md:max-w-md lg:max-w-2xl mx-auto sm:mx-0">
               <h2 className="text-[clamp(1.25rem,4.2vw,2.25rem)] font-extrabold mb-3 sm:mb-4 leading-tight" 
-                  dangerouslySetInnerHTML={{__html: "Looking to declutter <br/>before Fall quarter?"}}></h2>
+                  dangerouslySetInnerHTML={{__html: "Looking to declutter <br/>this Fall quarter?"}}></h2>
               <div className="flex flex-row gap-2 sm:gap-3 items-center justify-center sm:justify-start">
                 <Link 
                   href={isAuthenticated ? "/add-listing" : "/auth/login"}
@@ -103,7 +116,7 @@ export default function HomePage() {
           <div className="w-full max-w-7xl mx-auto px-[clamp(0.75rem,2.5vw,2rem)]">
             <div className="flex justify-center sm:justify-end">
               <Link 
-                href="/all-products"
+                href="/all-listings"
                 className="px-[clamp(1.5rem,3.5vw,2.5rem)] py-[clamp(0.75rem,2vw,1.25rem)] bg-gradient-to-r from-[#FFB81C] to-[#FFD700] text-white font-black font-gt-america-expanded tracking-tighter text-[clamp(1rem,2.8vw,1.25rem)] hover:from-[#E6A600] hover:to-[#FFCC00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                 style={{ borderRadius: '0px' }}
               >

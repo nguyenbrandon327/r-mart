@@ -42,7 +42,7 @@ const getCategorySlug = (categoryName) => {
   return categoryMap[categoryName] || categoryName.toLowerCase();
 };
 
-export default function AllProductsPage() {
+export default function AllListingsPage() {
   const dispatch = useDispatch();
   const { products, loading, error, sort } = useSelector((state) => state.products);
   const { isAuthenticated, isCheckingAuth } = useSelector((state) => state.auth);
@@ -185,7 +185,7 @@ export default function AllProductsPage() {
     <div>
       {/* Breadcrumb */}
       <Breadcrumb 
-        items={createBreadcrumbs.custom([{ label: 'All Products' }])}
+        items={createBreadcrumbs.custom([{ label: 'All Listings' }])}
         className="mb-6"
       />
       
@@ -316,7 +316,7 @@ export default function AllProductsPage() {
         <div>
           <h1 className="text-[clamp(1.25rem,2.4vw,1.75rem)] font-bold flex items-center mb-2">
             <ShoppingBagIcon className="mr-2 w-[clamp(1.25rem,2vw,1.5rem)] h-[clamp(1.25rem,2vw,1.5rem)]" />
-            All Products
+            All Listings
           </h1>
           <p className="text-base-content/70">
             Browse all available products in our marketplace
@@ -413,7 +413,7 @@ export default function AllProductsPage() {
           <span className="loading loading-spinner loading-lg text-primary"></span>
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-3">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -422,3 +422,5 @@ export default function AllProductsPage() {
     </div>
   );
 }
+
+
