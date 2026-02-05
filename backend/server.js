@@ -17,6 +17,7 @@ import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
+import chatbotRoutes from "./routes/chatbotRoutes.js";
 import { initializeMeiliSearch } from "./config/meilisearch.js";
 import { syncExistingProducts } from "./utils/syncMeilisearch.js";
 
@@ -98,6 +99,7 @@ app.use("/api/saved-products", savedProductRoutes);
 app.use("/api/recently-seen", recentlySeenRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // Test database connection
 async function testDBConnection() {
