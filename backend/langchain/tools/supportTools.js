@@ -8,86 +8,186 @@ import { z } from "zod";
 
 /**
  * Platform policies and terms (embedded for RAG)
- * In the future, these could be stored in pgvector for semantic search
+ * Sourced directly from the live Terms of Service and Privacy Policy pages.
+ * In the future, these could be stored in pgvector for semantic search.
  */
 const PLATFORM_POLICIES = {
   terms_of_service: {
     title: "Terms of Service",
+    lastUpdated: "August 1, 2025",
+    contact: "brandon@ucrmart.com",
     sections: [
       {
+        id: "overview",
+        title: "Overview",
+        content: "These Terms of Service apply to your access to and use of the R'Mart website (ucrmart.com), mobile applications, and any other online products and services operated by R'Mart. By using the Services you agree to these Terms. They include a mandatory arbitration agreement requiring you to resolve disputes on an individual basis. To contact us about these Terms, email brandon@ucrmart.com."
+      },
+      {
+        id: "privacy",
+        title: "Section 1 – Privacy",
+        content: "Please review the Privacy Policy to understand how R'Mart collects, uses, and shares information about you. By using the Services, you acknowledge you have received the Privacy Policy."
+      },
+      {
         id: "eligibility",
-        title: "Eligibility",
-        content: "Users must be enrolled students at University of California, Riverside with a valid @ucr.edu email address. You must be at least 18 years old to use this platform."
+        title: "Section 2 – Eligibility",
+        content: "You must be at least 16 years old to use the Services. Users under 18 (or the age of legal majority) may only use the Services under supervision of a parent or legal guardian who agrees to be bound by these Terms. The Services are exclusively for current students of the University of California, Riverside (UCR). By using the Services, you represent that you are a current UCR student and will stop using the Services when you are no longer enrolled. R'Mart may suspend or terminate accounts that do not meet these requirements."
       },
       {
-        id: "account",
-        title: "Account Responsibilities",
-        content: "You are responsible for maintaining the security of your account. Do not share your login credentials. You are liable for all activities under your account. Report unauthorized access immediately."
+        id: "accounts",
+        title: "Section 3 – User Accounts and Security",
+        content: "You may need to register for an account to access certain features. You must provide accurate information and keep it up to date. You are responsible for safeguarding your login credentials and for any activity under your account. Notify R'Mart immediately at brandon@ucrmart.com if you suspect unauthorized access."
       },
       {
-        id: "listings",
-        title: "Listing Guidelines",
-        content: "All listings must be for legal items. Prohibited items include: weapons, drugs, alcohol, counterfeit goods, stolen property, and hazardous materials. Listings must accurately represent the item being sold."
+        id: "services_listings",
+        title: "Section 4A – Listing Items, Buying, and Selling",
+        content: "The Services allow you to post items for sale or giveaway by uploading photos and descriptions. Posting is free. R'Mart does not provide or facilitate any payment feature and does not act as a payment processor or intermediary. Users must arrange any exchange of money entirely outside the Services. Because R'Mart is not a party to any transaction, we cannot assist with refunds, returns, or payment disputes. We may remove any listing at any time for any reason."
       },
       {
-        id: "transactions",
-        title: "Transactions",
-        content: "All transactions should occur in person in safe, public locations on or near campus. The platform does not handle payments directly. We are not responsible for transaction disputes between buyers and sellers."
+        id: "services_content",
+        title: "Section 4B – User Content",
+        content: "You retain ownership of content you post but grant R'Mart a worldwide, irrevocable, non-exclusive, royalty-free, sublicensable license to use, modify, display, and distribute that content in connection with the Services. You must have all necessary rights to grant this license, and your content must not violate these Terms or any law. R'Mart may remove any content at any time."
       },
       {
-        id: "conduct",
-        title: "User Conduct",
-        content: "Users must treat each other with respect. Harassment, discrimination, and threatening behavior are prohibited. Attempts to scam, defraud, or deceive other users will result in immediate account termination."
+        id: "prohibited_conduct",
+        title: "Section 5 – Prohibited Conduct",
+        content: "You agree not to: use the Services for any purpose other than listing and exchanging goods among UCR students; engage in harassing, threatening, or misleading conduct; post items that violate any applicable law or R'Mart guidelines (e.g., prohibited or restricted items); use automated means (bots, scrapers) without permission; create more than one account or transfer your account without consent; infringe anyone's intellectual-property or privacy rights; bypass or interfere with the security or operation of the Services."
       },
       {
-        id: "content",
-        title: "Content Policy",
-        content: "Users retain ownership of their content but grant us license to display it. Do not post copyrighted material without permission. We may remove content that violates our policies."
+        id: "ownership",
+        title: "Section 6 – Ownership; Limited License",
+        content: "The Services and all related content are owned by R'Mart or its licensors. R'Mart grants you a limited, non-transferable, revocable license to access and use the Services in accordance with these Terms."
       },
       {
-        id: "termination",
-        title: "Account Termination",
-        content: "We reserve the right to suspend or terminate accounts that violate our terms. Users may delete their accounts at any time through account settings."
+        id: "suspension_termination",
+        title: "Section 7 – Suspension; Termination",
+        content: "R'Mart may suspend or terminate your access to the Services at any time for any reason. Upon termination, the license granted in Section 6 ends and you must stop using the Services."
+      },
+      {
+        id: "trademarks",
+        title: "Section 8 – Trademarks",
+        content: "R'Mart, the R'Mart logo, and any related names, logos, or slogans are trademarks of R'Mart. You may not use them without prior written permission. All other trademarks remain the property of their respective owners."
+      },
+      {
+        id: "feedback",
+        title: "Section 9 – Feedback",
+        content: "Any suggestions, ideas, or other feedback you submit may be used by R'Mart for any purpose without compensation to you."
+      },
+      {
+        id: "copyright",
+        title: "Section 10 – Copyright & Intellectual-Property Complaints",
+        content: "If you believe content on the Services infringes your copyright or other IP rights, email brandon@ucrmart.com with the information required by 17 U.S.C. § 512(c)(3)."
+      },
+      {
+        id: "indemnification",
+        title: "Section 11 – Indemnification",
+        content: "To the fullest extent permitted by law, you agree to indemnify and hold harmless R'Mart, its affiliates, and their officers, directors, employees, and agents from any claims arising from your use of the Services, your content, or your violation of these Terms."
+      },
+      {
+        id: "disclaimers",
+        title: "Section 12 – Disclaimers",
+        content: "The Services are provided 'as is' and 'as available.' R'Mart makes no warranties, express or implied, regarding the Services, including their accuracy, reliability, or availability. You assume all risk for your use of the Services."
+      },
+      {
+        id: "liability",
+        title: "Section 13 – Limitation of Liability",
+        content: "To the fullest extent permitted by law, R'Mart and its affiliates will not be liable for indirect, consequential, incidental, or special damages, or lost profits. Our total liability for any claim related to the Services is limited to $100 or the amount you paid us in the past 12 months, whichever is greater."
+      },
+      {
+        id: "assumption_of_risk",
+        title: "Section 14 – Assumption of Risk",
+        content: "YOU ARE SOLELY RESPONSIBLE FOR TAKING APPROPRIATE PRECAUTIONS WHEN INTERACTING WITH OTHER USERS, ESPECIALLY IN PERSON. R'MART DOES NOT VET USERS AND IS NOT RESPONSIBLE FOR THEIR CONDUCT."
+      },
+      {
+        id: "release",
+        title: "Section 15 – Release",
+        content: "To the fullest extent permitted by law, you release R'Mart and its affiliates from any claims or damages arising from disputes between you and other users."
+      },
+      {
+        id: "data_transfer",
+        title: "Section 16 – Transfer and Processing of Data",
+        content: "By using the Services, you consent to the processing and transfer of your information in and to the United States and other countries."
+      },
+      {
+        id: "arbitration",
+        title: "Section 17 – Dispute Resolution; Binding Arbitration",
+        content: "Except for certain small-claims disputes or equitable relief, you and R'Mart agree to resolve any dispute through binding arbitration on an individual basis. You must first email brandon@ucrmart.com with a written Notice of your claim. If the claim cannot be resolved within 30 days, either party may commence arbitration with JAMS in Riverside County, California (or via video/phone if damages are under $10,000). The Federal Arbitration Act governs this agreement. You may opt out of arbitration by emailing brandon@ucrmart.com within 30 days of first agreeing to these Terms."
+      },
+      {
+        id: "governing_law",
+        title: "Section 18 – Governing Law and Venue",
+        content: "These Terms and any non-arbitrable dispute will be governed by California law, with venue in the state or federal courts located in Riverside County, California."
+      },
+      {
+        id: "modifications",
+        title: "Section 19 – Modifying or Terminating the Services",
+        content: "R'Mart may change, suspend, or discontinue any part of the Services at any time. You may stop using the Services at any time."
+      },
+      {
+        id: "miscellaneous",
+        title: "Section 20 – Miscellaneous",
+        content: "If any provision of these Terms is unenforceable, that provision will be severed and the rest will remain in effect. R'Mart's failure to enforce any provision is not a waiver. These Terms are the entire agreement between you and R'Mart regarding the Services."
       }
     ]
   },
   privacy_policy: {
     title: "Privacy Policy",
+    lastUpdated: "August 1, 2025",
+    contact: "brandon@ucrmart.com",
     sections: [
       {
-        id: "collection",
-        title: "Information We Collect",
-        content: "We collect: email address, name, profile information you provide, listing data, messages between users, and usage analytics. We use cookies for session management."
+        id: "overview",
+        title: "Overview",
+        content: "This Privacy Policy explains how information about you is collected, used, and shared by R'Mart. It applies when you use the R'Mart website (ucrmart.com) or any of our online services. R'Mart may update this Policy from time to time; continued use of the Service indicates acceptance of any changes."
+      },
+      {
+        id: "collection_provided",
+        title: "Section I-A – Information You Provide to Us",
+        content: "R'Mart collects information you provide directly when you register or update your account, post items for sale, communicate with other users, or request support. This includes: your name, email address, R'Mart account password (encrypted), UCR Residence Hall Name or postal address (encrypted), photos and descriptions of items you post, all messages exchanged through the Service (encrypted), and any other information you choose to provide."
+      },
+      {
+        id: "collection_automatic",
+        title: "Section I-B – Information Collected Automatically",
+        content: "When you use the R'Mart Service we automatically collect: log information (browser type, access times, pages viewed, IP address, referring page), device information (hardware model, OS version, unique device identifiers, mobile network data), location information if you grant permission or inferred from your IP address, and cookie and similar-technology data. We may use cookies, web beacons, and other technologies to recognize you, improve the Service, understand usage, and determine whether an email has been opened."
       },
       {
         id: "usage",
-        title: "How We Use Your Data",
-        content: "Your data is used to: provide marketplace services, enable communication between users, improve the platform, send relevant notifications, and ensure platform safety."
+        title: "Section II – How We Use Your Information",
+        content: "R'Mart uses your information to: verify login credentials and personalize your experience; connect you with other users; maintain a trusted and safe environment (fraud detection, security, dispute resolution); operate, protect, improve, and optimize the Service; analyze usage trends and conduct research; communicate about products, services, offers, promotions, rewards, or events; send service-related messages, technical notices, security alerts, and support responses; comply with legal obligations and enforce agreements; and carry out any other purpose disclosed at the time of collection. R'Mart is based in the United States, and by using the Service you consent to the processing and transfer of information in and to the U.S. and other countries."
       },
       {
         id: "sharing",
-        title: "Data Sharing",
-        content: "We do not sell your personal data. We may share data with: service providers who help operate the platform, law enforcement when legally required, and other users as necessary for transactions."
+        title: "Section III – When We Share Your Information",
+        content: "R'Mart may share information: publicly, when you post on the Service (e.g., item listings); to comply with law, regulation, legal process, or governmental request; to enforce agreements or protect the rights, property, or safety of R'Mart or others; in connection with a merger, asset sale, financing, or acquisition; and with your consent or at your direction (including social-sharing features). R'Mart may also share aggregated or de-identified data that cannot reasonably identify you. R'Mart does not sell your personal data."
       },
       {
         id: "security",
-        title: "Data Security",
-        content: "We use industry-standard security measures including encryption, secure servers, and regular security audits. However, no system is 100% secure."
+        title: "Section III – Security",
+        content: "R'Mart uses reasonable measures to protect your information from loss, theft, misuse, and unauthorized access, disclosure, alteration, or destruction. Whenever possible, R'Mart shares aggregated or anonymized data with third parties. When identifiable data must be shared, equivalent privacy protections are required."
       },
       {
-        id: "retention",
-        title: "Data Retention",
-        content: "We retain your data while your account is active. Upon account deletion, personal data is removed within 30 days. Some data may be retained for legal compliance."
+        id: "choices_account",
+        title: "Section IV-A – Account Information Choices",
+        content: "You can update, correct, or delete certain profile information at any time by logging into your account. R'Mart may retain information as required by law or for legitimate business purposes. User-generated content such as reviews may remain publicly visible (without personal identifiers) after account deletion."
       },
       {
-        id: "rights",
-        title: "Your Rights",
-        content: "You have the right to: access your data, correct inaccuracies, delete your account, and opt out of non-essential communications."
+        id: "choices_cookies",
+        title: "Section IV-B – Cookie Choices",
+        content: "Most browsers accept cookies by default. You can set your browser to remove or reject cookies, but some features of the R'Mart Service may not function properly without them."
+      },
+      {
+        id: "state_disclosures",
+        title: "Section V – State-Specific Disclosures",
+        content: "R'Mart retains information while your account is active, and longer where required for trust-and-safety matters, legal compliance, or other legitimate purposes. To request access, correction, or deletion of your personal information—or to exercise any other rights under applicable state law—email brandon@ucrmart.com. R'Mart will verify your request using information that matches its records. You may appoint an authorized agent; R'Mart may require proof of authorization and still request you to verify your identity."
+      },
+      {
+        id: "california_rights",
+        title: "Section V-A – California Residents (CCPA/CPRA)",
+        content: "The California Consumer Privacy Act (CCPA), as amended by the California Privacy Rights Act (CPRA), grants California residents the right to: know the categories and specific pieces of personal information collected, the sources, purposes, disclosure practices, and whether R'Mart sells or shares your data; delete personal information (with certain exceptions); correct inaccurate personal information; limit the use or disclosure of sensitive personal information; and be free from discrimination for exercising your privacy rights. Contact brandon@ucrmart.com to exercise these rights."
       },
       {
         id: "contact",
-        title: "Contact Us",
-        content: "For privacy concerns or data requests, contact us through the support channel or email the platform administrators."
+        title: "Questions & Feedback",
+        content: "For any privacy questions, data requests, or concerns about R'Mart's information practices, contact brandon@ucrmart.com."
       }
     ]
   },

@@ -92,7 +92,22 @@ export async function processSupportMessage({ input, chatHistory = [], userConte
     let policyContext = "No specific policy context.";
     
     // Check if the message might be policy-related
-    const policyKeywords = ["policy", "terms", "privacy", "data", "account", "delete", "rules"];
+    const policyKeywords = [
+      // General policy terms
+      "policy", "terms", "privacy", "rules", "legal", "law", "agreement",
+      // Account & eligibility
+      "account", "delete", "eligibility", "eligible", "sign up", "register", "ucr", "student",
+      // Data & privacy specifics
+      "data", "information", "collect", "share", "sell", "cookies", "personal", "california", "ccpa", "cpra",
+      // Conduct & listings
+      "prohibited", "banned", "allowed", "post", "listing", "sell", "buy",
+      // Payments & transactions
+      "payment", "refund", "dispute", "transaction", "money",
+      // Legal & liability
+      "arbitration", "lawsuit", "liability", "indemnif", "disclaimer", "warranty",
+      // Account actions
+      "suspend", "terminate", "ban", "copyright", "trademark", "contact", "email"
+    ];
     const isPolicyRelated = policyKeywords.some((kw) => input.toLowerCase().includes(kw));
     
     if (isPolicyRelated) {
