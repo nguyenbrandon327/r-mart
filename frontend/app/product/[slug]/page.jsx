@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { use, useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProduct, deleteProduct, resetForm, populateFormData, fetchSellerOtherProducts, markProductAsSold, markProductAsAvailable } from "../../../store/slices/productSlice";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -75,7 +75,7 @@ function SaveButton({ productId }) {
 }
 
 export default function ProductPage({ params }) {
-  const { slug } = params;
+  const { slug } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();

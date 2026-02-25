@@ -40,3 +40,6 @@ build/
 .next/
 
 .vercel
+
+#Vertex AI JSON
+backend/pacific-ethos-486502-g4-97a30ecf845b.json
