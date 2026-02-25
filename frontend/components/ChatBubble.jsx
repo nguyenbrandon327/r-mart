@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { SendIcon, Loader2, Trash2, Sparkles, User, Bot } from 'lucide-react';
+import { SendIcon, Loader2, Trash2, Sparkles, User, Bot, ImagePlus, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
-// API base URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function ChatBubble() {
@@ -14,8 +13,11 @@ export default function ChatBubble() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [currentAgent, setCurrentAgent] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const pathname = usePathname();
   const [chatSize, setChatSize] = useState({ width: 384, height: 500 });
   const [chatPos, setChatPos] = useState({ right: 24, bottom: 96 });
@@ -108,50 +110,71 @@ export default function ChatBubble() {
     document.body.style.userSelect = 'none';
   }
 
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be under 5 MB");
+      return;
+    }
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function clearSelectedImage() {
+    setSelectedImage(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function handleSendMessage(e) {
     e.preventDefault();
-    if (!messageText.trim() || isLoading) return;
+    if ((!messageText.trim() && !selectedImage) || isLoading) return;
 
     const userMessage = messageText.trim();
-    setMessageText("");
+    const hasImage = !!selectedImage;
+    const previewUrl = imagePreview;
 
-    // Add user message to UI immediately
+    setMessageText("");
+    const imgFile = selectedImage;
+    clearSelectedImage();
+
     setMessages((prev) => [...prev, {
       role: 'user',
-      content: userMessage,
+      content: userMessage || "(image uploaded)",
       timestamp: Date.now(),
+      imagePreview: previewUrl,
     }]);
 
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/chatbot/message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for auth
-        body: JSON.stringify({
-          message: userMessage,
-          sessionId: sessionId,
-          currentPage: pathname,
-        }),
-      });
+      let fetchOpts;
 
+      if (hasImage) {
+        const formData = new FormData();
+        formData.append("image", imgFile);
+        if (userMessage) formData.append("message", userMessage);
+        if (sessionId) formData.append("sessionId", sessionId);
+        formData.append("currentPage", pathname);
+        fetchOpts = { method: "POST", credentials: "include", body: formData };
+      } else {
+        fetchOpts = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ message: userMessage, sessionId, currentPage: pathname }),
+        };
+      }
+
+      const response = await fetch(`${API_URL}/api/chatbot/message`, fetchOpts);
       const data = await response.json();
 
       if (response.ok) {
-        // Store session ID for continuity
-        if (data.sessionId) {
-          setSessionId(data.sessionId);
-        }
+        if (data.sessionId) setSessionId(data.sessionId);
+        if (data.agent) setCurrentAgent(data.agent);
 
-        // Track which agent responded
-        if (data.agent) {
-          setCurrentAgent(data.agent);
-        }
-
-        // Add assistant response
         setMessages((prev) => [...prev, {
           role: 'assistant',
           content: data.message,
@@ -159,7 +182,6 @@ export default function ChatBubble() {
           agent: data.agent,
         }]);
       } else {
-        // Handle error response
         setMessages((prev) => [...prev, {
           role: 'assistant',
           content: data.message || "Sorry, I couldn't process your request. Please try again.",
@@ -340,8 +362,16 @@ export default function ChatBubble() {
                           : 'bg-base-100 text-base-content border border-base-content/10 rounded-bl-md shadow-sm'
                       }
                     `}
-                    dangerouslySetInnerHTML={{ __html: formatMessage(msg.content) }}
-                  />
+                  >
+                    {msg.imagePreview && (
+                      <img
+                        src={msg.imagePreview}
+                        alt="Uploaded"
+                        className="rounded-lg mb-2 max-h-40 object-cover"
+                      />
+                    )}
+                    <span dangerouslySetInnerHTML={{ __html: formatMessage(msg.content) }} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -368,12 +398,40 @@ export default function ChatBubble() {
 
           {/* Message Input */}
           <div className="p-3 border-t border-base-content/10 bg-base-100">
+            {imagePreview && (
+              <div className="relative inline-block mb-2">
+                <img src={imagePreview} alt="Preview" className="h-16 rounded-lg object-cover border border-base-content/10" />
+                <button
+                  type="button"
+                  onClick={clearSelectedImage}
+                  className="absolute -top-1.5 -right-1.5 bg-error text-white rounded-full p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-ghost btn-sm px-2"
+                disabled={isLoading}
+                title="Upload image for visual search"
+              >
+                <ImagePlus className="w-5 h-5" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Ask me anything..."
+                placeholder="Ask me anything or upload an image..."
                 rows={1}
                 disabled={isLoading}
                 className="
@@ -393,7 +451,7 @@ export default function ChatBubble() {
               <button
                 type="submit"
                 className="btn btn-primary btn-sm"
-                disabled={!messageText.trim() || isLoading}
+                disabled={(!messageText.trim() && !selectedImage) || isLoading}
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -403,7 +461,7 @@ export default function ChatBubble() {
               </button>
             </form>
             <p className="text-xs text-base-content/40 mt-2 text-center">
-              Press Enter to send • Shift+Enter for new line
+              Enter to send • Shift+Enter for new line • Upload image for visual search
             </p>
           </div>
         </div>
@@ -421,7 +479,7 @@ export default function ChatBubble() {
           transition-all duration-300
           z-50
           ${chatbotOpen 
-            ? 'bg-base-300 text-base-content rotate-0' 
+            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white rotate-0' 
             : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 hover:scale-105'
           }
         `}

@@ -8,7 +8,7 @@
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { agentLLM } from "../config/llm.js";
 import { BUYER_SYSTEM_PROMPT, BUYER_HUMAN_PROMPT } from "../prompts/buyerPrompt.js";
-import { buyerTools } from "../tools/buyerTools.js";
+import { buyerTools, searchByImageEmbedding } from "../tools/buyerTools.js";
 import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 
 /**
@@ -82,13 +82,43 @@ async function executeTool(toolName, toolInput) {
  * @param {string} params.input - User's message
  * @param {Array} params.chatHistory - Previous chat messages
  * @param {Object} params.userContext - User context (username, location, search history)
+ * @param {number[]|null} params.imageEmbedding - Optional image embedding from Vertex AI
  * @returns {Promise<Object>} Agent response
  */
-export async function processBuyerMessage({ input, chatHistory = [], userContext = {} }) {
+export async function processBuyerMessage({ input, chatHistory = [], userContext = {}, imageEmbedding = null }) {
   try {
     const intermediateSteps = [];
+
+    // If an image embedding is provided, run similarity search up-front
+    let imageSearchContext = "No image was uploaded.";
+    if (imageEmbedding) {
+      try {
+        const similarProducts = await searchByImageEmbedding(imageEmbedding, 5);
+        if (similarProducts.length > 0) {
+          const productLines = similarProducts.map((r, i) => {
+            const sim = (parseFloat(1 - r.similarity) || parseFloat(r.similarity)).toFixed(3);
+            const image = r.images?.[0] || null;
+            const slug = r.slug || null;
+            let line = `${i + 1}. **${r.name}** — $${parseFloat(r.price).toFixed(2)} (${r.category}) [similarity: ${sim}] by @${r.seller_username}`;
+            if (slug) line += ` | slug: ${slug}`;
+            if (image) line += ` | image: ${image}`;
+            return line;
+          });
+          imageSearchContext = `The user uploaded an image. Visually similar products found:\n${productLines.join("\n")}\n\nIMPORTANT: Format each product using the slug and image fields above, exactly like a normal product search result: [**Name**](/product/SLUG) — $price (by @seller) with ![Name](IMAGE_URL) on the next line.`;
+          intermediateSteps.push({
+            action: "imageSearch",
+            input: { embeddingLength: imageEmbedding.length },
+            output: { count: similarProducts.length, products: similarProducts.map(r => r.name) },
+          });
+        } else {
+          imageSearchContext = "The user uploaded an image, but no visually similar products were found in our database. Suggest a text search instead.";
+        }
+      } catch (err) {
+        console.error("Image search pre-query failed:", err);
+        imageSearchContext = "The user uploaded an image, but the visual search encountered an error. Fall back to text-based search.";
+      }
+    }
     
-    // Format the prompt
     const formattedPrompt = await buyerPrompt.formatMessages({
       input,
       chat_history: formatChatHistory(chatHistory),
@@ -96,19 +126,17 @@ export async function processBuyerMessage({ input, chatHistory = [], userContext
       username: userContext.username || "Guest",
       location: userContext.location || "UCR Campus",
       searchHistory: userContext.searchHistory?.join(", ") || "None",
+      imageSearchContext,
     });
 
-    // Initial LLM call
     let response = await buyerLLMWithTools.invoke(formattedPrompt);
     
-    // Agent loop - process tool calls if any
     let iterations = 0;
     const maxIterations = 5;
     
     while (response.tool_calls && response.tool_calls.length > 0 && iterations < maxIterations) {
       iterations++;
       
-      // Execute all tool calls
       const toolMessages = [];
       for (const toolCall of response.tool_calls) {
         const toolResult = await executeTool(toolCall.name, toolCall.args);
@@ -125,7 +153,6 @@ export async function processBuyerMessage({ input, chatHistory = [], userContext
         }));
       }
       
-      // Continue conversation with tool results
       const messagesWithTools = [
         ...formattedPrompt,
         response,

@@ -275,11 +275,21 @@ async function initDB() {
     console.error('❌ Error applying users table googleId field migration:', error);
   }
 
-  // Enable pgvector extension and add embedding column to products
+  // Enable pgvector extension, add embedding column, and create image_embeddings table
   try {
     await sql`CREATE EXTENSION IF NOT EXISTS vector`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding vector(768)`;
-    console.log('✅ pgvector extension and embedding column ready');
+    await sql`
+      CREATE TABLE IF NOT EXISTS image_embeddings (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        image_url TEXT,
+        embedding vector(1408) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles')
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_image_embeddings_product ON image_embeddings(product_id)`;
+    console.log('✅ pgvector extension, embedding column, and image_embeddings table ready');
   } catch (error) {
     console.error('❌ Error setting up pgvector:', error);
   }

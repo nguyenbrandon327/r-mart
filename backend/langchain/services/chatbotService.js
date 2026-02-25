@@ -86,40 +86,43 @@ function addToHistory(session, role, content) {
  * @param {string} params.sessionId - Session identifier
  * @param {string} params.message - User's message
  * @param {Object} params.userContext - User context (user info, current page, etc.)
+ * @param {number[]|null} params.imageEmbedding - Optional 1408-dim image embedding
+ * @param {boolean} params.hasImage - Whether an image was uploaded
  * @returns {Promise<Object>} Chatbot response
  */
-export async function processMessage({ sessionId, message, userContext = {} }) {
+export async function processMessage({ sessionId, message, userContext = {}, imageEmbedding = null, hasImage = false }) {
   try {
-    // Get or create session
     const session = getSession(sessionId);
     
-    // Update user context
     session.userContext = {
       ...session.userContext,
       ...userContext,
     };
 
-    // Add user message to history
     addToHistory(session, "user", message);
 
-    // Route to appropriate agent
-    const agentType = await smartRoute({
-      input: message,
-      isLoggedIn: !!userContext.userId,
-      currentPage: userContext.currentPage || "unknown",
-    });
+    // If the user uploaded an image, force route to buyer agent for visual search
+    let agentType;
+    if (hasImage && imageEmbedding) {
+      agentType = AGENT_TYPES.BUYER_ASSISTANT;
+      console.log("[Router] Image detected – routing to BUYER_ASSISTANT for visual search");
+    } else {
+      agentType = await smartRoute({
+        input: message,
+        isLoggedIn: !!userContext.userId,
+        currentPage: userContext.currentPage || "unknown",
+      });
+    }
 
-    // Track which agent handled this
     session.lastAgent = agentType;
 
-    // Process with the appropriate agent
     let response;
     
     switch (agentType) {
       case AGENT_TYPES.SELLER_COPILOT:
         response = await processSellerMessage({
           input: message,
-          chatHistory: session.history.slice(-10), // Last 10 messages
+          chatHistory: session.history.slice(-10),
           userContext: session.userContext,
         });
         break;
@@ -129,6 +132,7 @@ export async function processMessage({ sessionId, message, userContext = {} }) {
           input: message,
           chatHistory: session.history.slice(-10),
           userContext: session.userContext,
+          imageEmbedding,
         });
         break;
 
@@ -142,7 +146,6 @@ export async function processMessage({ sessionId, message, userContext = {} }) {
         break;
     }
 
-    // Add assistant response to history
     addToHistory(session, "assistant", response.output);
 
     return {
@@ -151,7 +154,6 @@ export async function processMessage({ sessionId, message, userContext = {} }) {
       agent: agentType,
       sessionId,
       timestamp: Date.now(),
-      // Include intermediate steps for debugging (in development)
       ...(process.env.NODE_ENV === "development" && {
         debug: {
           intermediateSteps: response.intermediateSteps,

@@ -41,6 +41,8 @@ Examples:
 - "I'm looking for a desk" → BUYER_ASSISTANT
 - "Show me laptops under $500" → BUYER_ASSISTANT
 - "Find items similar to this image" → BUYER_ASSISTANT
+- "I uploaded a photo, find similar products" → BUYER_ASSISTANT
+- "What is this item worth?" (with image) → BUYER_ASSISTANT
 - "Is this seller trustworthy?" → SUPPORT_SECURITY
 - "What's your privacy policy?" → SUPPORT_SECURITY
 - "How do I use this app?" → SUPPORT_SECURITY

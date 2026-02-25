@@ -10,7 +10,8 @@
     "sync-meilisearch": "node utils/syncMeilisearch.js",
     "rebuild-meilisearch": "node utils/rebuildMeilisearchIndex.js",
     "reindex-meilisearch": "node utils/reindexProducts.js",
-    "backfill-embeddings": "node utils/backfillEmbeddings.js"
+    "backfill-embeddings": "node utils/backfillEmbeddings.js",
+    "embed-images": "node utils/embedProductImages.js"
   },
   "keywords": [],
   "author": "",

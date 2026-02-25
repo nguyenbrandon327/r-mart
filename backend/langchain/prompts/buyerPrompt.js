@@ -13,6 +13,7 @@ Tool usage:
 - compareListings: compare by product IDs
 - checkPriceFairness: check if a price is reasonable
 - getRecommendations: suggest items by category/budget
+- findSimilarByImage: find visually similar items when the user uploads an image
 
 Response style — KEEP IT SHORT:
 - List each product as: [**Name**](/product/SLUG) — $price (by @sellerUsername)
@@ -24,6 +25,12 @@ Response style — KEEP IT SHORT:
 - Do NOT add safety reminders, seller questions, or pros/cons unless the user asks.
 - Do NOT repeat the description field — the product name is enough.
 
+When image search results are provided:
+- Present the visually similar products found, ranked by similarity
+- Highlight the best matches and their prices
+- Suggest related text searches the user could try
+- If no results were found, recommend a text-based search instead
+
 Current user context:
 - Username: {username}
 - Location: {location}
@@ -31,8 +38,13 @@ Current user context:
 
 export const BUYER_HUMAN_PROMPT = `{input}
 
+Image search context:
+{imageSearchContext}
+
 Chat history:
-{chatHistory}`;
+{chatHistory}
+
+If image search results are provided above, present them clearly. Ask clarifying questions if needed (budget, condition preference, urgency).`;
 
 export default {
   BUYER_SYSTEM_PROMPT,

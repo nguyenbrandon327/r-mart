@@ -33,6 +33,7 @@ export function createLLM(options = {}) {
     model: modelName,
     temperature,
     maxTokens,
+    maxRetries: 0,
   });
 }
 
