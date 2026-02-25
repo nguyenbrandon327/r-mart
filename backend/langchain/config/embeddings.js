@@ -1,48 +1,43 @@
 /**
  * Embeddings Configuration
- * Configuration for text and image embeddings
- * Using Google Generative AI Embeddings
- * 
- * Future: Will integrate with pgvector for semantic search
- * Future: Will integrate with Vertex AI for image embeddings
+ * Text embeddings via Google Generative AI
+ * Image embeddings via Vertex AI multimodalembedding@001
  */
 
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { TaskType } from "@google/generative-ai";
+import { GoogleAuth } from "google-auth-library";
+import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-/**
- * Create Google Generative AI text embeddings instance
- * Used for semantic search on listings, policies, and chat history
- * 
- * Model: text-embedding-004 (Google's latest embedding model)
- * Dimensions: 768 (default)
- */
 export const textEmbeddings = new GoogleGenerativeAIEmbeddings({
   apiKey: process.env.GOOGLE_API_KEY,
   model: "text-embedding-004",
   taskType: TaskType.RETRIEVAL_DOCUMENT,
 });
 
-/**
- * Placeholder for image embeddings configuration
- * Will be implemented with Vertex AI Multimodal Embeddings
- */
 export const imageEmbeddingsConfig = {
-  provider: "vertex-ai", // or "google-cloud-vision"
+  provider: "vertex-ai",
   modelName: "multimodalembedding@001",
-  dimensions: 1408, // Vertex AI multimodal embedding dimension
-  // Note: Requires Google Cloud credentials to be configured
-  enabled: false, // Enable when Google Cloud is configured
+  dimensions: 1408,
+  enabled: !!(process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.GCP_PROJECT_ID && process.env.GCP_REGION),
 };
 
-/**
- * Generate text embedding for a given text
- * @param {string} text - Text to embed
- * @returns {Promise<number[]>} Embedding vector
- */
+let _authClient = null;
+
+async function getAuthClient() {
+  if (!_authClient) {
+    const auth = new GoogleAuth({
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+    _authClient = await auth.getClient();
+  }
+  return _authClient;
+}
+
 export async function generateTextEmbedding(text) {
   try {
     const embedding = await textEmbeddings.embedQuery(text);
@@ -53,11 +48,6 @@ export async function generateTextEmbedding(text) {
   }
 }
 
-/**
- * Generate embeddings for multiple texts (batch)
- * @param {string[]} texts - Array of texts to embed
- * @returns {Promise<number[][]>} Array of embedding vectors
- */
 export async function generateTextEmbeddings(texts) {
   try {
     const embeddings = await textEmbeddings.embedDocuments(texts);
@@ -69,15 +59,57 @@ export async function generateTextEmbeddings(texts) {
 }
 
 /**
- * Placeholder for image embedding generation
- * Will be implemented with Vertex AI
- * @param {string} imageUrl - URL of the image to embed
- * @returns {Promise<number[]>} Image embedding vector
+ * Generate an image embedding via Vertex AI multimodalembedding@001.
+ * @param {Object} opts
+ * @param {Buffer} [opts.imageBuffer] - Raw image bytes (preferred)
+ * @param {string} [opts.imageBase64] - Base64-encoded image string
+ * @param {string} [opts.imageUrl] - HTTP(S) URL; will be fetched and converted to base64
+ * @returns {Promise<number[]>} 1408-dimensional embedding vector
  */
-export async function generateImageEmbedding(imageUrl) {
-  // TODO: Implement with Vertex AI Multimodal Embeddings
-  // This will be enabled once Google Cloud is configured
-  throw new Error("Image embeddings not yet implemented. Requires Vertex AI configuration.");
+export async function generateImageEmbedding({ imageBuffer, imageBase64, imageUrl } = {}) {
+  if (!imageEmbeddingsConfig.enabled) {
+    throw new Error(
+      "Image embeddings not configured. Set GOOGLE_APPLICATION_CREDENTIALS, GCP_PROJECT_ID, and GCP_REGION."
+    );
+  }
+
+  let base64Data;
+
+  if (imageBuffer) {
+    base64Data = imageBuffer.toString("base64");
+  } else if (imageBase64) {
+    base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  } else if (imageUrl) {
+    const resp = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    base64Data = Buffer.from(resp.data).toString("base64");
+  } else {
+    throw new Error("Provide imageBuffer, imageBase64, or imageUrl");
+  }
+
+  const project = process.env.GCP_PROJECT_ID;
+  const region = process.env.GCP_REGION;
+  const endpoint = `https://${region}-aiplatform.googleapis.com/v1/projects/${project}/locations/${region}/publishers/google/models/multimodalembedding@001:predict`;
+
+  const client = await getAuthClient();
+  const { token } = await client.getAccessToken();
+
+  const { data } = await axios.post(
+    endpoint,
+    { instances: [{ image: { bytesBase64Encoded: base64Data } }] },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const embedding = data?.predictions?.[0]?.imageEmbedding;
+  if (!embedding || !Array.isArray(embedding)) {
+    throw new Error("Unexpected Vertex AI response: no imageEmbedding returned");
+  }
+
+  return embedding;
 }
 
 export default {
