@@ -6,6 +6,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { sql } from "../../config/db.js";
+import { generateImageEmbedding, imageEmbeddingsConfig } from "../config/embeddings.js";
 
 /**
  * Search products by keywords and filters
@@ -400,12 +401,119 @@ export const getRecommendations = tool(
   }
 );
 
+/**
+ * Store an image embedding for a product in pgvector.
+ * Called from the chatbot pipeline or the backfill script.
+ */
+export async function storeImageEmbedding({ productId, imageUrl, embedding }) {
+  const vecStr = `[${embedding.join(",")}]`;
+  await sql`
+    INSERT INTO image_embeddings (product_id, image_url, embedding)
+    VALUES (${productId}, ${imageUrl}, ${vecStr}::vector)
+    ON CONFLICT DO NOTHING
+  `;
+}
+
+/**
+ * Search image_embeddings by cosine similarity and return matching products.
+ * Only returns results above a minimum similarity threshold (default 0.40)
+ * and deduplicates by product_id (keeps best-matching image per product).
+ */
+export async function searchByImageEmbedding(embedding, limit = 10, minSimilarity = 0.40) {
+  const vecStr = `[${embedding.join(",")}]`;
+  const results = await sql`
+    SELECT DISTINCT ON (ie.product_id)
+      ie.id            AS embedding_id,
+      ie.product_id,
+      ie.image_url     AS matched_image_url,
+      1 - (ie.embedding <=> ${vecStr}::vector) AS similarity,
+      p.name, p.price, p.category, p.description, p.images,
+      u.name AS seller_name, u.username AS seller_username
+    FROM image_embeddings ie
+    JOIN products p ON ie.product_id = p.id
+    JOIN users u    ON p.user_id = u.id
+    WHERE p.is_sold = false
+      AND 1 - (ie.embedding <=> ${vecStr}::vector) >= ${minSimilarity}
+    ORDER BY ie.product_id, ie.embedding <=> ${vecStr}::vector
+  `;
+  results.sort((a, b) => parseFloat(b.similarity) - parseFloat(a.similarity));
+  return results.slice(0, limit);
+}
+
+/**
+ * LangChain tool: find visually similar products from an already-computed embedding.
+ * The embedding is passed in as a JSON array string by the chatbot pipeline
+ * (not by the LLM itself); the LLM simply invokes this tool with limit/category.
+ */
+export const findSimilarByImage = tool(
+  async ({ embeddingJson, category, limit = 5 }) => {
+    try {
+      if (!imageEmbeddingsConfig.enabled) {
+        return JSON.stringify({
+          error: "Image search is not configured on this server.",
+        });
+      }
+
+      let embedding;
+      try {
+        embedding = JSON.parse(embeddingJson);
+      } catch {
+        return JSON.stringify({ error: "Invalid embedding JSON" });
+      }
+
+      const rows = await searchByImageEmbedding(embedding, limit);
+
+      if (rows.length === 0) {
+        return JSON.stringify({
+          found: false,
+          message: "No visually similar products found. The image embedding index may be empty.",
+          suggestions: [
+            "Try a text search instead",
+            "Upload a different image",
+          ],
+        });
+      }
+
+      const filtered = category
+        ? rows.filter((r) => r.category === category)
+        : rows;
+
+      const products = (filtered.length > 0 ? filtered : rows).map((r) => ({
+        id: r.product_id,
+        name: r.name,
+        price: parseFloat(r.price),
+        category: r.category,
+        description: r.description?.substring(0, 150) + (r.description?.length > 150 ? "..." : ""),
+        similarity: parseFloat(r.similarity).toFixed(3),
+        seller: r.seller_name,
+        sellerUsername: r.seller_username,
+        matchedImageUrl: r.matched_image_url,
+      }));
+
+      return JSON.stringify({ found: true, count: products.length, products });
+    } catch (error) {
+      console.error("Error in findSimilarByImage:", error);
+      return JSON.stringify({ error: "Image similarity search failed", details: error.message });
+    }
+  },
+  {
+    name: "findSimilarByImage",
+    description: "Find products visually similar to an uploaded image. Uses pre-computed image embeddings and pgvector cosine similarity.",
+    schema: z.object({
+      embeddingJson: z.string().describe("JSON-stringified 1408-dim embedding array (injected by system)"),
+      category: z.string().optional().describe("Optional category filter"),
+      limit: z.number().optional().describe("Max results (default 5)"),
+    }),
+  }
+);
+
 // Export all buyer tools
 export const buyerTools = [
   searchProducts,
   compareListings,
   checkPriceFairness,
   getRecommendations,
+  findSimilarByImage,
 ];
 
 export default buyerTools;
