@@ -86,7 +86,8 @@ export function quickRoute(input) {
   const buyerKeywords = [
     "buy", "looking for", "find", "search", "where can i get",
     "show me", "compare", "recommend", "under $", "budget",
-    "similar to", "like this"
+    "similar to", "like this",
+    "image", "photo", "picture", "uploaded"
   ];
 
   // Support/Security keywords
