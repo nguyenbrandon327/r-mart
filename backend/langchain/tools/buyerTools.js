@@ -1,55 +1,109 @@
 /**
  * Buyer Assistant Tools
- * Tools for searching products, comparing listings, and helping buyers
+ * Tools for searching products, comparing listings, and helping buyers.
+ * Uses pgvector semantic search with ILIKE keyword fallback.
  */
 
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { sql } from "../../config/db.js";
+import { embedQuery } from "../config/embeddings.js";
+
+const VALID_CATEGORIES = [
+  "clothes", "tech", "textbooks", "furniture", "kitchen",
+  "food", "vehicles", "housing", "rides", "renting",
+  "merch", "tickets", "other", "in-searching-for",
+];
 
 /**
- * Search products by keywords and filters
+ * Semantic + keyword hybrid search for products.
+ *
+ * Strategy:
+ *  1. Embed the query and run a cosine-similarity search against products that
+ *     have an embedding (pgvector).
+ *  2. Fall back to ILIKE keyword search for products that haven't been embedded
+ *     yet (or if embedding generation fails).
+ *  3. Merge, deduplicate, and return the combined results.
  */
 export const searchProducts = tool(
-  async ({ query, category, minPrice, maxPrice, sortBy = "relevance", limit = 10 }) => {
+  async ({ query, category, minPrice, maxPrice, sortBy = "relevance", limit = 10, page = 1 }) => {
     try {
-      let orderClause;
-      switch (sortBy) {
-        case "price_low":
-          orderClause = sql`ORDER BY p.price ASC`;
-          break;
-        case "price_high":
-          orderClause = sql`ORDER BY p.price DESC`;
-          break;
-        case "newest":
-          orderClause = sql`ORDER BY p.created_at DESC`;
-          break;
-        default:
-          orderClause = sql`ORDER BY p.created_at DESC`;
+      const offset = (page - 1) * limit;
+      const results = [];
+
+      // --- 1. Semantic (vector) search ---
+      try {
+        const queryVector = await embedQuery(query);
+        const pgVector = `[${queryVector.join(",")}]`;
+
+        const vectorResults = await sql`
+          SELECT
+            p.id, p.name, p.price, p.category, p.description, p.images,
+            p.created_at, p.slug,
+            u.name  AS seller_name,
+            u.username AS seller_username,
+            1 - (p.embedding <=> ${pgVector}::vector) AS similarity
+          FROM products p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.is_sold = false
+            AND p.embedding IS NOT NULL
+            ${category ? sql`AND p.category = ${category}` : sql``}
+            ${minPrice != null ? sql`AND p.price >= ${minPrice}` : sql``}
+            ${maxPrice != null ? sql`AND p.price <= ${maxPrice}` : sql``}
+          ORDER BY p.embedding <=> ${pgVector}::vector
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+
+        for (const r of vectorResults) {
+          if (parseFloat(r.similarity) > 0.3) {
+            results.push({ ...r, _source: "semantic" });
+          }
+        }
+      } catch (vecErr) {
+        console.error("Vector search failed, falling back to keyword:", vecErr.message);
       }
 
-      // Build the query dynamically
-      const results = await sql`
-        SELECT 
-          p.id, 
-          p.name, 
-          p.price, 
-          p.category, 
-          p.description,
-          p.images,
-          p.created_at,
-          u.name as seller_name,
-          u.username as seller_username
-        FROM products p
-        JOIN users u ON p.user_id = u.id
-        WHERE p.is_sold = false
-          AND (p.name ILIKE ${'%' + query + '%'} OR p.description ILIKE ${'%' + query + '%'})
-          ${category ? sql`AND p.category = ${category}` : sql``}
-          ${minPrice ? sql`AND p.price >= ${minPrice}` : sql``}
-          ${maxPrice ? sql`AND p.price <= ${maxPrice}` : sql``}
-        ${orderClause}
-        LIMIT ${limit}
-      `;
+      // --- 2. Keyword (ILIKE) fallback for unembedded rows or if vector search returned few results ---
+      if (results.length < limit) {
+        const existingIds = results.map(r => r.id);
+        const keywordLimit = limit - results.length;
+
+        const keywordResults = await sql`
+          SELECT
+            p.id, p.name, p.price, p.category, p.description, p.images,
+            p.created_at, p.slug,
+            u.name  AS seller_name,
+            u.username AS seller_username
+          FROM products p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.is_sold = false
+            AND (p.name ILIKE ${'%' + query + '%'} OR p.description ILIKE ${'%' + query + '%'})
+            ${existingIds.length > 0 ? sql`AND p.id != ALL(${existingIds})` : sql``}
+            ${category ? sql`AND p.category = ${category}` : sql``}
+            ${minPrice != null ? sql`AND p.price >= ${minPrice}` : sql``}
+            ${maxPrice != null ? sql`AND p.price <= ${maxPrice}` : sql``}
+          ORDER BY p.created_at DESC
+          LIMIT ${keywordLimit} OFFSET ${results.length === 0 ? offset : 0}
+        `;
+
+        for (const r of keywordResults) {
+          results.push({ ...r, _source: "keyword" });
+        }
+      }
+
+      // --- 3. Sort combined results ---
+      switch (sortBy) {
+        case "price_low":
+          results.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+          break;
+        case "price_high":
+          results.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+          break;
+        case "newest":
+          results.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          break;
+        // "relevance" keeps semantic results first, then keyword results
+      }
 
       if (results.length === 0) {
         return JSON.stringify({
@@ -64,30 +118,30 @@ export const searchProducts = tool(
         });
       }
 
-      const formattedResults = results.map(item => ({
+      const formatted = results.map(item => ({
         id: item.id,
         name: item.name,
         price: parseFloat(item.price),
         category: item.category,
+        slug: item.slug,
         description: item.description?.substring(0, 150) + (item.description?.length > 150 ? "..." : ""),
-        hasImages: item.images && item.images.length > 0,
-        imageCount: item.images?.length || 0,
+        image: item.images?.[0] || null,
         seller: item.seller_name,
         sellerUsername: item.seller_username,
-        postedAt: item.created_at
       }));
 
       const prices = results.map(r => parseFloat(r.price));
-      
+
       return JSON.stringify({
         found: true,
-        count: results.length,
+        count: formatted.length,
+        page,
         priceRange: {
           min: Math.min(...prices),
           max: Math.max(...prices),
-          average: (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2)
+          average: +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2),
         },
-        products: formattedResults
+        products: formatted,
       });
     } catch (error) {
       console.error("Error searching products:", error);
@@ -96,15 +150,125 @@ export const searchProducts = tool(
   },
   {
     name: "searchProducts",
-    description: "Search for products in the marketplace by keywords and filters",
+    description:
+      "Search for products in the marketplace using semantic (meaning-based) search. " +
+      "Understands synonyms and intent — e.g. 'couch' finds 'sofa', 'apartment' finds 'housing'. " +
+      "Supports filters for category, price range, sorting, and pagination.",
     schema: z.object({
-      query: z.string().describe("Search keywords"),
-      category: z.string().optional().describe("Filter by category"),
+      query: z.string().describe("Natural language search query describing what the user is looking for"),
+      category: z.enum(VALID_CATEGORIES).optional().describe("Filter by category slug"),
       minPrice: z.number().optional().describe("Minimum price filter"),
       maxPrice: z.number().optional().describe("Maximum price filter"),
-      sortBy: z.enum(["relevance", "price_low", "price_high", "newest"]).optional().describe("Sort order"),
-      limit: z.number().optional().describe("Maximum results to return (default: 10)")
-    })
+      sortBy: z.enum(["relevance", "price_low", "price_high", "newest"]).optional()
+        .describe("Sort order (default: relevance)"),
+      limit: z.number().min(1).max(25).optional().describe("Results per page (default 10, max 25)"),
+      page: z.number().min(1).optional().describe("Page number for pagination (default 1)"),
+    }),
+  }
+);
+
+/**
+ * Browse all listings in a category without requiring a keyword.
+ */
+export const browseByCategory = tool(
+  async ({ category, minPrice, maxPrice, sortBy = "newest", limit = 10, page = 1 }) => {
+    try {
+      const offset = (page - 1) * limit;
+
+      let orderClause;
+      switch (sortBy) {
+        case "price_low":
+          orderClause = sql`ORDER BY p.price ASC`;
+          break;
+        case "price_high":
+          orderClause = sql`ORDER BY p.price DESC`;
+          break;
+        case "newest":
+        default:
+          orderClause = sql`ORDER BY p.created_at DESC`;
+          break;
+      }
+
+      const results = await sql`
+        SELECT
+          p.id, p.name, p.price, p.category, p.description, p.images,
+          p.created_at, p.slug,
+          u.name AS seller_name,
+          u.username AS seller_username
+        FROM products p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.is_sold = false
+          AND p.category = ${category}
+          ${minPrice != null ? sql`AND p.price >= ${minPrice}` : sql``}
+          ${maxPrice != null ? sql`AND p.price <= ${maxPrice}` : sql``}
+        ${orderClause}
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+      const [{ total }] = await sql`
+        SELECT COUNT(*)::int AS total
+        FROM products
+        WHERE is_sold = false
+          AND category = ${category}
+          ${minPrice != null ? sql`AND price >= ${minPrice}` : sql``}
+          ${maxPrice != null ? sql`AND price <= ${maxPrice}` : sql``}
+      `;
+
+      if (results.length === 0) {
+        return JSON.stringify({
+          found: false,
+          category,
+          message: `No available listings found in the "${category}" category.`,
+        });
+      }
+
+      const formatted = results.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: parseFloat(item.price),
+        category: item.category,
+        slug: item.slug,
+        description: item.description?.substring(0, 150) + (item.description?.length > 150 ? "..." : ""),
+        image: item.images?.[0] || null,
+        seller: item.seller_name,
+        sellerUsername: item.seller_username,
+      }));
+
+      const prices = results.map(r => parseFloat(r.price));
+
+      return JSON.stringify({
+        found: true,
+        count: formatted.length,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        priceRange: {
+          min: Math.min(...prices),
+          max: Math.max(...prices),
+          average: +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2),
+        },
+        products: formatted,
+      });
+    } catch (error) {
+      console.error("Error browsing category:", error);
+      return JSON.stringify({ error: "Failed to browse category", details: error.message });
+    }
+  },
+  {
+    name: "browseByCategory",
+    description:
+      "Browse all available listings in a specific category without needing a keyword. " +
+      "Use this when users say things like 'show me all housing', 'list tickets', 'what furniture is available'. " +
+      "Supports price filters, sorting, and pagination.",
+    schema: z.object({
+      category: z.enum(VALID_CATEGORIES).describe("Category to browse"),
+      minPrice: z.number().optional().describe("Minimum price filter"),
+      maxPrice: z.number().optional().describe("Maximum price filter"),
+      sortBy: z.enum(["newest", "price_low", "price_high"]).optional()
+        .describe("Sort order (default: newest)"),
+      limit: z.number().min(1).max(25).optional().describe("Results per page (default 10, max 25)"),
+      page: z.number().min(1).optional().describe("Page number for pagination (default 1)"),
+    }),
   }
 );
 
@@ -117,22 +281,16 @@ export const compareListings = tool(
       if (productIds.length < 2) {
         return JSON.stringify({ error: "Need at least 2 products to compare" });
       }
-
       if (productIds.length > 5) {
         return JSON.stringify({ error: "Can compare maximum 5 products at once" });
       }
 
       const results = await sql`
-        SELECT 
-          p.id, 
-          p.name, 
-          p.price, 
-          p.category, 
-          p.description,
-          p.images,
-          p.created_at,
-          u.name as seller_name,
-          u.username as seller_username
+        SELECT
+          p.id, p.name, p.price, p.category, p.description,
+          p.images, p.created_at, p.slug,
+          u.name AS seller_name,
+          u.username AS seller_username
         FROM products p
         JOIN users u ON p.user_id = u.id
         WHERE p.id = ANY(${productIds})
@@ -140,9 +298,7 @@ export const compareListings = tool(
       `;
 
       if (results.length === 0) {
-        return JSON.stringify({
-          error: "No products found with the given IDs"
-        });
+        return JSON.stringify({ error: "No products found with the given IDs" });
       }
 
       const comparison = results.map(item => ({
@@ -150,49 +306,45 @@ export const compareListings = tool(
         name: item.name,
         price: parseFloat(item.price),
         category: item.category,
+        slug: item.slug,
         description: item.description,
         hasImages: item.images && item.images.length > 0,
         imageCount: item.images?.length || 0,
         seller: item.seller_name,
         sellerUsername: item.seller_username,
-        daysListed: Math.floor((Date.now() - new Date(item.created_at)) / (1000 * 60 * 60 * 24))
+        daysListed: Math.floor((Date.now() - new Date(item.created_at)) / (1000 * 60 * 60 * 24)),
       }));
 
-      // Find the best value (lowest price)
       const sortedByPrice = [...comparison].sort((a, b) => a.price - b.price);
-      const bestValue = sortedByPrice[0];
-
-      // Find most detailed listing
       const sortedByDescription = [...comparison].sort(
         (a, b) => (b.description?.length || 0) - (a.description?.length || 0)
       );
-      const mostDetailed = sortedByDescription[0];
 
       return JSON.stringify({
         products: comparison,
         analysis: {
           bestValue: {
-            id: bestValue.id,
-            name: bestValue.name,
-            price: bestValue.price,
-            reason: "Lowest price"
+            id: sortedByPrice[0].id,
+            name: sortedByPrice[0].name,
+            price: sortedByPrice[0].price,
+            reason: "Lowest price",
           },
           mostDetailed: {
-            id: mostDetailed.id,
-            name: mostDetailed.name,
-            reason: "Most detailed description"
+            id: sortedByDescription[0].id,
+            name: sortedByDescription[0].name,
+            reason: "Most detailed description",
           },
           priceRange: {
             lowest: sortedByPrice[0].price,
-            highest: sortedByPrice[sortedByPrice.length - 1].price,
-            difference: sortedByPrice[sortedByPrice.length - 1].price - sortedByPrice[0].price
-          }
+            highest: sortedByPrice.at(-1).price,
+            difference: sortedByPrice.at(-1).price - sortedByPrice[0].price,
+          },
         },
         tips: [
           "Consider asking sellers about the item's history",
           "Check if any include accessories or extras",
-          "Factor in meetup convenience"
-        ]
+          "Factor in meetup convenience",
+        ],
       });
     } catch (error) {
       console.error("Error comparing listings:", error);
@@ -203,24 +355,22 @@ export const compareListings = tool(
     name: "compareListings",
     description: "Compare multiple product listings side by side to help make a decision",
     schema: z.object({
-      productIds: z.array(z.number()).describe("Array of product IDs to compare (2-5 products)")
-    })
+      productIds: z.array(z.number()).describe("Array of product IDs to compare (2-5 products)"),
+    }),
   }
 );
 
 /**
- * Check if a price is fair based on market data
+ * Check if a price is fair based on similar listings in the marketplace
  */
 export const checkPriceFairness = tool(
   async ({ productId, productName, price, category }) => {
     try {
-      // If we have a product ID, get its details
       let targetProduct = null;
       if (productId) {
         const [product] = await sql`
           SELECT name, price, category, description
-          FROM products
-          WHERE id = ${productId}
+          FROM products WHERE id = ${productId}
         `;
         if (product) {
           targetProduct = product;
@@ -230,51 +380,69 @@ export const checkPriceFairness = tool(
         }
       }
 
-      // Search for similar products
-      const similarProducts = await sql`
-        SELECT price, name
-        FROM products
-        WHERE is_sold = false
-          AND category = ${category}
-          AND name ILIKE ${'%' + productName.split(' ')[0] + '%'}
-          ${productId ? sql`AND id != ${productId}` : sql``}
-        LIMIT 15
-      `;
+      if (!productName || !category) {
+        return JSON.stringify({
+          analyzed: false,
+          message: "Need either a productId or both productName and category to analyze price.",
+        });
+      }
+
+      // Use semantic search to find truly similar products
+      let similarProducts = [];
+      try {
+        const queryVector = await embedQuery(`${productName} ${category}`);
+        const pgVector = `[${queryVector.join(",")}]`;
+
+        similarProducts = await sql`
+          SELECT price, name,
+            1 - (embedding <=> ${pgVector}::vector) AS similarity
+          FROM products
+          WHERE is_sold = false
+            AND embedding IS NOT NULL
+            ${productId ? sql`AND id != ${productId}` : sql``}
+          ORDER BY embedding <=> ${pgVector}::vector
+          LIMIT 15
+        `;
+
+        // Keep only reasonably similar products
+        similarProducts = similarProducts.filter(p => parseFloat(p.similarity) > 0.4);
+      } catch {
+        // Fallback to keyword match
+        similarProducts = await sql`
+          SELECT price, name
+          FROM products
+          WHERE is_sold = false
+            AND category = ${category}
+            AND name ILIKE ${'%' + productName.split(' ')[0] + '%'}
+            ${productId ? sql`AND id != ${productId}` : sql``}
+          LIMIT 15
+        `;
+      }
 
       if (similarProducts.length < 3) {
         return JSON.stringify({
           analyzed: false,
           message: "Not enough similar listings to determine fair price",
-          suggestion: "This might be a unique item - research online for comparable prices"
+          suggestion: "This might be a unique item - research online for comparable prices",
         });
       }
 
       const prices = similarProducts.map(p => parseFloat(p.price));
       const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-
-      // Calculate percentile
       const sortedPrices = [...prices].sort((a, b) => a - b);
       const percentile = (sortedPrices.filter(p => p <= price).length / sortedPrices.length) * 100;
 
       let verdict;
-      let emoji;
       if (price < avgPrice * 0.7) {
         verdict = "Below Market - Great Deal!";
-        emoji = "🔥";
       } else if (price < avgPrice * 0.9) {
         verdict = "Below Average - Good Value";
-        emoji = "✅";
       } else if (price <= avgPrice * 1.1) {
         verdict = "Fair Price - Market Rate";
-        emoji = "👍";
       } else if (price <= avgPrice * 1.3) {
         verdict = "Above Average - Consider Negotiating";
-        emoji = "⚠️";
       } else {
         verdict = "Above Market - Try to Negotiate Down";
-        emoji = "❌";
       }
 
       return JSON.stringify({
@@ -283,15 +451,16 @@ export const checkPriceFairness = tool(
         askedPrice: price,
         marketData: {
           average: Math.round(avgPrice),
-          min: minPrice,
-          max: maxPrice,
-          sampleSize: similarProducts.length
+          min: Math.min(...prices),
+          max: Math.max(...prices),
+          sampleSize: similarProducts.length,
         },
         percentile: Math.round(percentile),
-        verdict: `${emoji} ${verdict}`,
-        suggestion: price > avgPrice 
-          ? `Consider offering $${Math.round(avgPrice)} (market average)`
-          : "This is a good price - act fast before someone else gets it!"
+        verdict,
+        suggestion:
+          price > avgPrice
+            ? `Consider offering $${Math.round(avgPrice)} (market average)`
+            : "This is a good price - act fast before someone else gets it!",
       });
     } catch (error) {
       console.error("Error checking price:", error);
@@ -305,58 +474,53 @@ export const checkPriceFairness = tool(
       productId: z.number().optional().describe("Product ID to analyze"),
       productName: z.string().optional().describe("Product name (if no ID provided)"),
       price: z.number().optional().describe("Price to check (if no ID provided)"),
-      category: z.string().optional().describe("Product category (if no ID provided)")
-    })
+      category: z.enum(VALID_CATEGORIES).optional().describe("Product category (if no ID provided)"),
+    }),
   }
 );
 
 /**
- * Get product recommendations based on a category or search
+ * Get product recommendations based on category and/or budget
  */
 export const getRecommendations = tool(
   async ({ category, budget, sortPreference = "value" }) => {
     try {
       let results;
-      
+
       if (category && budget) {
         results = await sql`
-          SELECT 
-            p.id, p.name, p.price, p.category, p.description, p.created_at,
-            u.name as seller_name
+          SELECT p.id, p.name, p.price, p.category, p.description, p.created_at, p.slug,
+                 u.name AS seller_name
           FROM products p
           JOIN users u ON p.user_id = u.id
           WHERE p.is_sold = false
             AND p.category = ${category}
             AND p.price <= ${budget}
-          ORDER BY 
+          ORDER BY
             CASE WHEN ${sortPreference} = 'price' THEN p.price END ASC,
             CASE WHEN ${sortPreference} = 'newest' THEN p.created_at END DESC,
             p.created_at DESC
-          LIMIT 8
+          LIMIT 10
         `;
       } else if (category) {
         results = await sql`
-          SELECT 
-            p.id, p.name, p.price, p.category, p.description, p.created_at,
-            u.name as seller_name
+          SELECT p.id, p.name, p.price, p.category, p.description, p.created_at, p.slug,
+                 u.name AS seller_name
           FROM products p
           JOIN users u ON p.user_id = u.id
-          WHERE p.is_sold = false
-            AND p.category = ${category}
+          WHERE p.is_sold = false AND p.category = ${category}
           ORDER BY p.created_at DESC
-          LIMIT 8
+          LIMIT 10
         `;
       } else {
-        // Get trending/recent items across categories
         results = await sql`
-          SELECT 
-            p.id, p.name, p.price, p.category, p.description, p.created_at,
-            u.name as seller_name
+          SELECT p.id, p.name, p.price, p.category, p.description, p.created_at, p.slug,
+                 u.name AS seller_name
           FROM products p
           JOIN users u ON p.user_id = u.id
           WHERE p.is_sold = false
           ORDER BY p.created_at DESC
-          LIMIT 8
+          LIMIT 10
         `;
       }
 
@@ -365,9 +529,10 @@ export const getRecommendations = tool(
         name: item.name,
         price: parseFloat(item.price),
         category: item.category,
+        slug: item.slug,
         preview: item.description?.substring(0, 100) + "...",
         seller: item.seller_name,
-        isRecent: (Date.now() - new Date(item.created_at)) < (24 * 60 * 60 * 1000) // < 24 hours
+        isRecent: (Date.now() - new Date(item.created_at)) < 24 * 60 * 60 * 1000,
       }));
 
       return JSON.stringify({
@@ -375,14 +540,16 @@ export const getRecommendations = tool(
         count: recommendations.length,
         criteria: { category, budget, sortPreference },
         recommendations,
-        tips: budget ? [
-          `All items are within your $${budget} budget`,
-          "Save items you like to compare later",
-          "Message sellers to negotiate"
-        ] : [
-          "Set a budget to narrow down options",
-          "Browse by category for more focused results"
-        ]
+        tips: budget
+          ? [
+              `All items are within your $${budget} budget`,
+              "Save items you like to compare later",
+              "Message sellers to negotiate",
+            ]
+          : [
+              "Set a budget to narrow down options",
+              "Browse by category for more focused results",
+            ],
       });
     } catch (error) {
       console.error("Error getting recommendations:", error);
@@ -393,20 +560,20 @@ export const getRecommendations = tool(
     name: "getRecommendations",
     description: "Get product recommendations based on category and budget preferences",
     schema: z.object({
-      category: z.string().optional().describe("Category to get recommendations for"),
+      category: z.enum(VALID_CATEGORIES).optional().describe("Category to get recommendations for"),
       budget: z.number().optional().describe("Maximum budget"),
-      sortPreference: z.enum(["value", "price", "newest"]).optional().describe("How to sort recommendations")
-    })
+      sortPreference: z.enum(["value", "price", "newest"]).optional()
+        .describe("How to sort recommendations"),
+    }),
   }
 );
 
-// Export all buyer tools
 export const buyerTools = [
   searchProducts,
+  browseByCategory,
   compareListings,
   checkPriceFairness,
   getRecommendations,
 ];
 
 export default buyerTools;
-

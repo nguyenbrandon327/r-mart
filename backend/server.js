@@ -275,6 +275,15 @@ async function initDB() {
     console.error('❌ Error applying users table googleId field migration:', error);
   }
 
+  // Enable pgvector extension and add embedding column to products
+  try {
+    await sql`CREATE EXTENSION IF NOT EXISTS vector`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding vector(768)`;
+    console.log('✅ pgvector extension and embedding column ready');
+  } catch (error) {
+    console.error('❌ Error setting up pgvector:', error);
+  }
+
   // Add performance indexes (migration)
   try {
     // Core product indexes for better query performance
@@ -291,6 +300,9 @@ async function initDB() {
     // User-related indexes
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON users(email)`;
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_recently_seen_user_viewed ON recently_seen_products(user_id, viewed_at)`;
+
+    // pgvector HNSW index for fast cosine-similarity search
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_embedding ON products USING hnsw (embedding vector_cosine_ops)`;
 
     console.log('✅ Performance indexes created successfully');
   } catch (error) {

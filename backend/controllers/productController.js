@@ -4,7 +4,23 @@ import { recordProductView } from "./recentlySeenController.js";
 import { indexProduct, updateProductIndex, deleteProductIndex } from "./searchController.js";
 import { calculateDistance, getUserCoordinates } from "../utils/distanceCalculator.js";
 import { generateUniqueSlug } from "../utils/slugUtils.js";
+import { buildProductEmbeddingText, embedDocument } from "../langchain/config/embeddings.js";
 import crypto from "crypto";
+
+/**
+ * Generate and store a vector embedding for a product (fire-and-forget).
+ * Failures are logged but never block the request.
+ */
+async function upsertProductEmbedding(product) {
+  try {
+    const text = buildProductEmbeddingText(product);
+    const vector = await embedDocument(text);
+    const pgVector = `[${vector.join(",")}]`;
+    await sql`UPDATE products SET embedding = ${pgVector}::vector WHERE id = ${product.id}`;
+  } catch (err) {
+    console.error(`⚠️ Failed to generate embedding for product ${product.id}:`, err.message);
+  }
+}
 
 
 export const getProducts = async (req, res) => {
@@ -109,6 +125,9 @@ export const createProduct = async (req, res) => {
         } catch (esError) {
             // Failed to index product in MeiliSearch - continue even if indexing fails
         }
+
+        // Generate pgvector embedding (non-blocking)
+        upsertProductEmbedding(newProduct[0]);
 
         res.status(201).json({ success:true, data: newProduct[0] });
     } catch (error) {
@@ -253,6 +272,9 @@ export const updateProduct = async (req, res) => {
       } catch (esError) {
         // Failed to update product in MeiliSearch - continue even if indexing fails
       }
+
+      // Re-generate pgvector embedding (non-blocking)
+      upsertProductEmbedding(updateProduct[0]);
   
       res.status(200).json({ success: true, data: updateProduct[0] });
     } catch (error) {
