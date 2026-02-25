@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import multer from "multer";
 import {
   sendMessage,
   getHistory,
@@ -20,16 +21,28 @@ import { checkAuth } from "../utils/checkAuth.js";
 
 const router = express.Router();
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"), false);
+    }
+  },
+});
+
 // ============================================
 // Main Chatbot Endpoints
 // ============================================
 
 /**
  * POST /api/chatbot/message
- * Send a message to the chatbot
- * Auth: Optional (enhances context if logged in)
+ * Send a message (with optional image) to the chatbot.
+ * Accepts multipart/form-data (image + fields) or application/json (text-only).
  */
-router.post("/message", checkAuth, sendMessage);
+router.post("/message", checkAuth, upload.single("image"), sendMessage);
 
 /**
  * GET /api/chatbot/history

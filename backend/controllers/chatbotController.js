@@ -13,6 +13,7 @@ import {
 import { quickPriceEstimate } from "../langchain/agents/sellerAgent.js";
 import { quickSearch, quickPriceCheck } from "../langchain/agents/buyerAgent.js";
 import { quickScamCheck, quickHelp } from "../langchain/agents/supportAgent.js";
+import { generateImageEmbedding, imageEmbeddingsConfig } from "../langchain/config/embeddings.js";
 import crypto from "crypto";
 
 /**
@@ -41,19 +42,23 @@ function getSessionId(req) {
 
 /**
  * POST /api/chatbot/message
- * Send a message to the chatbot
+ * Send a message (with optional image) to the chatbot.
+ * Accepts multipart/form-data or application/json.
  */
 export async function sendMessage(req, res) {
   try {
-    const { message, currentPage } = req.body;
+    const message = req.body?.message;
+    const currentPage = req.body?.currentPage;
 
-    if (!message || typeof message !== "string") {
+    const hasImage = !!req.file;
+
+    if ((!message || typeof message !== "string") && !hasImage) {
       return res.status(400).json({ 
-        error: "Message is required and must be a string" 
+        error: "A text message or image is required" 
       });
     }
 
-    if (message.length > 2000) {
+    if (message && message.length > 2000) {
       return res.status(400).json({ 
         error: "Message too long. Maximum 2000 characters." 
       });
@@ -61,7 +66,6 @@ export async function sendMessage(req, res) {
 
     const sessionId = getSessionId(req);
 
-    // Build user context
     const userContext = {
       userId: req.user?.id || null,
       username: req.user?.name || "Guest",
@@ -70,17 +74,30 @@ export async function sendMessage(req, res) {
       isLoggedIn: !!req.user,
     };
 
-    // Process the message
+    // If an image was uploaded, generate its embedding before routing
+    let imageEmbedding = null;
+    if (hasImage && imageEmbeddingsConfig.enabled) {
+      try {
+        imageEmbedding = await generateImageEmbedding({
+          imageBuffer: req.file.buffer,
+        });
+      } catch (err) {
+        console.error("Image embedding generation failed:", err);
+        // Continue without embedding; the agent can still respond to text
+      }
+    }
+
     const response = await processMessage({
       sessionId,
-      message,
+      message: message || "Find products similar to this image",
       userContext,
+      imageEmbedding,
+      hasImage,
     });
 
-    // Return the response with session ID for tracking
     res.json({
       ...response,
-      sessionId, // Include so client can track session
+      sessionId,
     });
   } catch (error) {
     console.error("Error in sendMessage:", error);
