@@ -82,12 +82,76 @@ async function executeTool(toolName, toolInput) {
  * @param {string} params.input - User's message
  * @param {Array} params.chatHistory - Previous chat messages
  * @param {Object} params.userContext - User context (username, location, etc.)
+ * @param {number[]|null} params.imageEmbedding - Optional image embedding (for image-based pricing/search)
+ * @param {Object|null} params.imageSearch - Optional precomputed image-search payload (e.g. Vision-label search results)
  * @returns {Promise<Object>} Agent response
  */
-export async function processSellerMessage({ input, chatHistory = [], userContext = {} }) {
+export async function processSellerMessage({
+  input,
+  chatHistory = [],
+  userContext = {},
+  imageEmbedding = null,//no point for right now
+  imageSearch = null,
+}) {
   try {
     const intermediateSteps = [];
-    
+
+    let sellerImageContext = "No image was uploaded.";
+    const precomputedProducts = imageSearch?.products;
+    const visionLabels = Array.isArray(imageSearch?.labels)
+      ? imageSearch.labels.map((l) => l.description).filter(Boolean)
+      : [];
+
+    // If we have products from Vision-based search, present them as similar items.
+    if (Array.isArray(precomputedProducts) && precomputedProducts.length > 0) {
+      const lines = precomputedProducts.slice(0, 5).map((p, i) => {
+        const price = Number.isFinite(p.price) ? p.price : parseFloat(p.price);
+        const category = p.category ?? "other";
+        return `${i + 1}. ${p.name} — $${Number.isFinite(price) ? price.toFixed(2) : "0.00"} (${category})`;
+      });
+
+      const labelsLine =
+        visionLabels.length > 0
+          ? `\n\nVision thinks this image looks like (labels/logos): ${visionLabels.join(", ")}.`
+          : "";
+
+      sellerImageContext =
+        "The user uploaded an image. These are similar items currently listed in the marketplace:\n" +
+        lines.join("\n") +
+        labelsLine +
+        "\n\nUse these as reference points when suggesting categories, titles, and prices.";
+
+      intermediateSteps.push({
+        action: "imageSearch",
+        input: { source: imageSearch?.source || "precomputed" },
+        output: { count: precomputedProducts.length },
+      });
+    } else if (visionLabels.length > 0) {
+      // We have labels/logos but no similar products; still surface them so the agent
+      // can infer category/brand from the image.
+      sellerImageContext =
+        "The user uploaded an image. No similar items were found in the marketplace, " +
+        "but Vision extracted the following labels/logos: " +
+        visionLabels.join(", ") +
+        ". Use these hints to infer the item type, brand, and category, then ask follow-up questions as needed.";
+
+      intermediateSteps.push({
+        action: "imageLabels",
+        input: { labels: visionLabels },
+        output: { count: visionLabels.length },
+      });
+    } else if (imageEmbedding) {
+      // Embedding is available but seller tools aient got nothing to do with this johnson yet
+      sellerImageContext =
+        "The user uploaded an image and an image embedding is available for visual similarity search. " +
+        "You can call tools that search similar listings or estimate price using the item details.";
+      intermediateSteps.push({
+        action: "imageEmbeddingAvailable",
+        input: { embeddingLength: imageEmbedding.length },
+        output: {},
+      });
+    }
+
     // Format the prompt
     const formattedPrompt = await sellerPrompt.formatMessages({
       input,
@@ -95,6 +159,7 @@ export async function processSellerMessage({ input, chatHistory = [], userContex
       chatHistory: formatChatHistoryString(chatHistory),
       username: userContext.username || "Guest",
       location: userContext.location || "UCR Campus",
+      sellerImageContext,
     });
 
     // Initial LLM call

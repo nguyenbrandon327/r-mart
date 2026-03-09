@@ -46,6 +46,8 @@ Examples:
 - "Is this seller trustworthy?" → SUPPORT_SECURITY
 - "What's your privacy policy?" → SUPPORT_SECURITY
 - "How do I use this app?" → SUPPORT_SECURITY
+- "I uploaded a photo, help me sell it" → SELLER_COPILOT
+- "Help me create a listing for this image" → SELLER_COPILOT
 - "Hello!" → SUPPORT_SECURITY`;
 
 export const ROUTER_HUMAN_PROMPT = `User message: {input}
