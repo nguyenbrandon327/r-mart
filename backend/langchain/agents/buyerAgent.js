@@ -83,27 +83,71 @@ async function executeTool(toolName, toolInput) {
  * @param {Array} params.chatHistory - Previous chat messages
  * @param {Object} params.userContext - User context (username, location, search history)
  * @param {number[]|null} params.imageEmbedding - Optional image embedding from Vertex AI
+ * @param {Object|null} params.imageSearch - Optional precomputed image-search payload (e.g. Vision-label search)
  * @returns {Promise<Object>} Agent response
  */
-export async function processBuyerMessage({ input, chatHistory = [], userContext = {}, imageEmbedding = null }) {
+export async function processBuyerMessage({
+  input,
+  chatHistory = [],
+  userContext = {},
+  imageEmbedding = null,
+  imageSearch = null,
+}) {
   try {
     const intermediateSteps = [];
 
-    // If an image embedding is provided, run similarity search up-front
+
+    //this for formatting both the vision and embedding results the same way
+    const formatLine = (p, i) => {
+      const name = p?.name ?? "Item";
+      const price = Number.isFinite(p?.price) ? p.price : parseFloat(p?.price);
+      const category = p?.category ?? "other";
+      const sellerUsername = p?.sellerUsername ?? p?.seller_username ?? "seller";
+      const slug = p?.slug ?? null;
+      const image = p?.image ?? p?.matchedImageUrl ?? p?.matched_image_url ?? null;
+      const similarity = p?.similarity != null ? String(p.similarity) : null;
+
+      let line = `${i + 1}. **${name}** — $${Number.isFinite(price) ? price.toFixed(2) : "0.00"} (${category})`;
+      if (similarity) line += ` [similarity: ${similarity}]`;
+      line += ` by @${sellerUsername}`;
+      if (slug) line += ` | slug: ${slug}`;
+      if (image) line += ` | image: ${image}`;
+      return line;
+    };
+
+    // If an image search is provided (through vision), use it up-front.
     let imageSearchContext = "No image was uploaded.";
-    if (imageEmbedding) {
+    const precomputedProducts = imageSearch?.products;
+
+    if (Array.isArray(precomputedProducts) && precomputedProducts.length > 0) {
+      console.log("using vision labels");
+      const productLines = precomputedProducts.slice(0, 5).map((p, i) => formatLine(p, i));
+      imageSearchContext =
+        `The user uploaded an image. Similar products found (source: ${imageSearch?.source || "precomputed"}):\n` +
+        `${productLines.join("\n")}\n\n` +
+        "IMPORTANT: Format each product using the slug and image fields above, exactly like a normal product search result: " +
+        "[**Name**](/product/SLUG) — $price (by @seller) with ![Name](IMAGE_URL) on the next line.";
+
+      intermediateSteps.push({
+        action: "imageSearch",
+        input: { source: imageSearch?.source || "precomputed" },
+        output: { count: precomputedProducts.length },
+      });
+    } else if (imageEmbedding) {
       try {
         const similarProducts = await searchByImageEmbedding(imageEmbedding, 5);
         if (similarProducts.length > 0) {
-          const productLines = similarProducts.map((r, i) => {
-            const sim = (parseFloat(1 - r.similarity) || parseFloat(r.similarity)).toFixed(3);
-            const image = r.images?.[0] || null;
-            const slug = r.slug || null;
-            let line = `${i + 1}. **${r.name}** — $${parseFloat(r.price).toFixed(2)} (${r.category}) [similarity: ${sim}] by @${r.seller_username}`;
-            if (slug) line += ` | slug: ${slug}`;
-            if (image) line += ` | image: ${image}`;
-            return line;
-          });
+          const mapped = similarProducts.map((r) => ({
+            name: r.name,
+            price: parseFloat(r.price),
+            category: r.category,
+            slug: r.slug,
+            sellerUsername: r.seller_username,
+            similarity: parseFloat(r.similarity).toFixed(3),
+            image: r.matched_image_url || r.images?.[0] || null,
+          }));
+
+          const productLines = mapped.map((p, i) => formatLine(p, i));
           imageSearchContext = `The user uploaded an image. Visually similar products found:\n${productLines.join("\n")}\n\nIMPORTANT: Format each product using the slug and image fields above, exactly like a normal product search result: [**Name**](/product/SLUG) — $price (by @seller) with ![Name](IMAGE_URL) on the next line.`;
           intermediateSteps.push({
             action: "imageSearch",
