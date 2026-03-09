@@ -64,7 +64,7 @@ export async function detectImageLabels({ imageBuffer, maxResults } = {}) {
   // try {
   //   const { data } = await axios.post(
   //     "https://vision.googleapis.com/v1/images:annotate",
-  //     {
+  //     { 
   //       requests: [
   //         {
   //           image: { content: base64 },
@@ -94,7 +94,9 @@ export async function detectImageLabels({ imageBuffer, maxResults } = {}) {
       requests: [
         {
           image: { content: base64 },
-          features: [{ type: "LABEL_DETECTION", maxResults: max }],
+          features: [{ type: "LABEL_DETECTION", maxResults: max },
+            {type: "LOGO_DETECTION", maxResults: max},
+          ],
         },
       ],
     },
@@ -113,11 +115,27 @@ export async function detectImageLabels({ imageBuffer, maxResults } = {}) {
     throw new Error(`Vision API error: ${resp.error.message}`);
   }
 
-  const labels = (resp?.labelAnnotations || []).map((a) => ({
-    description: a.description,
-    score: typeof a.score === "number" ? a.score : 0,
-    topicality: typeof a.topicality === "number" ? a.topicality : 0,
-  }));
+  // const labels = (resp?.labelAnnotations || []).map((a) => ({
+  //   description: a.description,
+  //   score: typeof a.score === "number" ? a.score : 0,
+  //   topicality: typeof a.topicality === "number" ? a.topicality : 0,
+  // }));
+
+
+  const labelItems = resp?.labelAnnotations || [];
+  const logoItems = resp?.logoAnnotations || [];
+  const labels = [
+    ...labelItems.map(a => ({
+      description: a.description,
+      score: typeof a.score === "number" ? a.score : 0,
+      topicality: typeof a.topicality === "number" ? a.topicality : 0,
+    })),
+    ...logoItems.map(a => ({
+      description: a.description,
+      score: typeof a.score === "number" ? a.score : 0,
+      topicality: typeof a.topicality === "number" ? a.topicality : 0,
+    })),
+  ];
 
   // The API typically returns already sorted, but keep it deterministic.
   labels.sort((a, b) => b.score - a.score);

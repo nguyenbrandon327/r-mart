@@ -113,7 +113,7 @@ export async function sendMessage(req, res) {
             const raw = await searchProducts.invoke({ query: combinedQuery, limit: 5 });
             const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
             const products = parsed?.found ? parsed?.products : null;
-
+            console.log("[Image Handling] Vision Attempt Labels: ", combinedQuery);
             if (Array.isArray(products) && products.length >= minProducts) {
               imageSearch = {
                 source: "vision-labels",
@@ -121,14 +121,27 @@ export async function sendMessage(req, res) {
                 labels: strongLabels,
                 products,
               };
-            }
-          }
+            } /*else {
+              console.log("[Image Handling]  products", products)
+              console.log("[Image Handling]  labelQuery", labelQuery)
+              console.log("[Image Handling]  text", text)
+              console.log("[Image Handling]  combinedQuery", combinedQuery)
+              console.log("[Image Handling]  strongLabels", strongLabels)
+            }*/
+          } /*else {
+            console.log("[Image Handling]  strongLabels", strongLabels)
+            console.log("[Image Handling]  topScore", topScore)
+            console.log("[Image Handling]  labelQuery", labelQuery)
+            console.log("[Image Handling]  text", text)
+            console.log("[Image Handling]  combinedQuery", combinedQuery)
+          }*/
         } catch (err) {
           console.error("Vision label search failed:", err);
         }
       }
       //fall back on vertex ai if vision labels fails, this the original code type sh
       if (!imageSearch && imageEmbeddingsConfig.enabled) {
+        console.log("[Image Handling]  using embeddings")
         try {
           imageEmbedding = await generateImageEmbedding({ imageBuffer });
         } catch (err) {

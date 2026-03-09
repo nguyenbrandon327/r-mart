@@ -120,7 +120,7 @@ export async function processBuyerMessage({
     const precomputedProducts = imageSearch?.products;
 
     if (Array.isArray(precomputedProducts) && precomputedProducts.length > 0) {
-      console.log("using vision labels");
+      console.log("[Image Handling]   using vision labels");
       const productLines = precomputedProducts.slice(0, 5).map((p, i) => formatLine(p, i));
       imageSearchContext =
         `The user uploaded an image. Similar products found (source: ${imageSearch?.source || "precomputed"}):\n` +
