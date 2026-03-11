@@ -36,6 +36,10 @@ Current user context:
 
 export const SELLER_HUMAN_PROMPT = `User request: {input}
 
+Image / listing context (if an image was uploaded, this may include similar items and price hints. You also don't see the raw image so don't say you don't have the image, just say you have limited information if the information is not enough. Additionally, use the similar products and labels to help):
+{sellerImageContext}
+
+
 Chat history:
 {chatHistory}
 

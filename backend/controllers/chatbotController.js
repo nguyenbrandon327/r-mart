@@ -14,6 +14,8 @@ import { quickPriceEstimate } from "../langchain/agents/sellerAgent.js";
 import { quickSearch, quickPriceCheck } from "../langchain/agents/buyerAgent.js";
 import { quickScamCheck, quickHelp } from "../langchain/agents/supportAgent.js";
 import { generateImageEmbedding, imageEmbeddingsConfig } from "../langchain/config/embeddings.js";
+import { searchProducts } from "../langchain/tools/buyerTools.js";
+import { detectImageLabels, visionLabelsConfig } from "../langchain/services/visionLabelService.js";
 import crypto from "crypto";
 
 /**
@@ -74,16 +76,78 @@ export async function sendMessage(req, res) {
       isLoggedIn: !!req.user,
     };
 
-    // If an image was uploaded, generate its embedding before routing
+    // If an image was uploaded, try a fast Vision-label search first,
+    // then fall back to Vertex image embeddings if needed.
     let imageEmbedding = null;
-    if (hasImage && imageEmbeddingsConfig.enabled) {
-      try {
-        imageEmbedding = await generateImageEmbedding({
-          imageBuffer: req.file.buffer,
-        });
-      } catch (err) {
-        console.error("Image embedding generation failed:", err);
-        // Continue without embedding; the agent can still respond to text
+    let imageSearch = null; // { source, query, labels, products }
+
+    if (hasImage) {
+      const imageBuffer = req.file.buffer;
+
+      if (visionLabelsConfig.enabled) {
+        try {
+          const labels = await detectImageLabels({ imageBuffer });
+
+          const minTopScore = Number.parseFloat(process.env.VISION_MIN_TOP_LABEL_SCORE || "0.5");
+          const minLabelScore = Number.parseFloat(process.env.VISION_MIN_LABEL_SCORE || "0.4");
+          const minLabels = Number.parseInt(process.env.VISION_MIN_LABELS || "2", 10);
+
+          //this is to prioritize quickness over accuracy so keeping it lower is probably best since thats what we're using vision for
+          const maxLabelsForQuery = Number.parseInt(process.env.VISION_MAX_LABELS_FOR_QUERY || "5", 10);
+
+          //probably increase this john when more listings are available
+          const minProducts = Number.parseInt(process.env.VISION_MIN_PRODUCTS || "1", 10);
+
+          const topScore = labels[0]?.score ?? 0;
+          const strongLabels = labels
+            .filter((l) => (l.score ?? 0) >= minLabelScore && !!l.description)
+            .slice(0, maxLabelsForQuery);
+
+          const confidentEnough = topScore >= minTopScore && strongLabels.length >= minLabels;
+
+          if (confidentEnough) {
+            const labelQuery = strongLabels.map((l) => l.description).join(" ");
+            const text = typeof message === "string" ? message.trim() : "";
+            const combinedQuery = (text ? `${text} ${labelQuery}` : labelQuery).slice(0, 300);
+
+            const raw = await searchProducts.invoke({ query: combinedQuery, limit: 5 });
+            const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+            const products = parsed?.found ? parsed?.products : null;
+            console.log("[Image Handling] Vision Attempt Labels: ", combinedQuery);
+            if (Array.isArray(products) && products.length >= minProducts) {
+              imageSearch = {
+                source: "vision-labels",
+                query: combinedQuery,
+                labels: strongLabels,
+                products,
+              };
+            } /*else {
+              console.log("[Image Handling]  products", products)
+              console.log("[Image Handling]  labelQuery", labelQuery)
+              console.log("[Image Handling]  text", text)
+              console.log("[Image Handling]  combinedQuery", combinedQuery)
+              console.log("[Image Handling]  strongLabels", strongLabels)
+            }*/
+          } /*else {
+            console.log("[Image Handling]  strongLabels", strongLabels)
+            console.log("[Image Handling]  topScore", topScore)
+            console.log("[Image Handling]  labelQuery", labelQuery)
+            console.log("[Image Handling]  text", text)
+            console.log("[Image Handling]  combinedQuery", combinedQuery)
+          }*/
+        } catch (err) {
+          console.error("Vision label search failed:", err);
+        }
+      }
+      //fall back on vertex ai if vision labels fails, this the original code type sh
+      if (!imageSearch && imageEmbeddingsConfig.enabled) {
+        console.log("[Image Handling]  using embeddings")
+        try {
+          imageEmbedding = await generateImageEmbedding({ imageBuffer });
+        } catch (err) {
+          console.error("Image embedding generation failed:", err);
+          // Continue without embedding; the agent can still respond to text
+        }
       }
     }
 
@@ -92,6 +156,7 @@ export async function sendMessage(req, res) {
       message: message || "Find products similar to this image",
       userContext,
       imageEmbedding,
+      imageSearch,
       hasImage,
     });
 

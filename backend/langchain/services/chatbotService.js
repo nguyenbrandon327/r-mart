@@ -87,10 +87,18 @@ function addToHistory(session, role, content) {
  * @param {string} params.message - User's message
  * @param {Object} params.userContext - User context (user info, current page, etc.)
  * @param {number[]|null} params.imageEmbedding - Optional 1408-dim image embedding
+ * @param {Object|null} params.imageSearch - Optional precomputed image-search payload (e.g. Vision-label search)
  * @param {boolean} params.hasImage - Whether an image was uploaded
  * @returns {Promise<Object>} Chatbot response
  */
-export async function processMessage({ sessionId, message, userContext = {}, imageEmbedding = null, hasImage = false }) {
+export async function processMessage({
+  sessionId,
+  message,
+  userContext = {},
+  imageEmbedding = null,
+  imageSearch = null,
+  hasImage = false,
+}) {
   try {
     const session = getSession(sessionId);
     
@@ -101,11 +109,27 @@ export async function processMessage({ sessionId, message, userContext = {}, ima
 
     addToHistory(session, "user", message);
 
-    // If the user uploaded an image, force route to buyer agent for visual search
+    // If the user uploaded an image, prefer buyer/seller image-aware agents
     let agentType;
-    if (hasImage && imageEmbedding) {
-      agentType = AGENT_TYPES.BUYER_ASSISTANT;
-      console.log("[Router] Image detected – routing to BUYER_ASSISTANT for visual search");
+    //if vision already used to get image labels
+    const hasPrecomputedImageSearch =
+      !!imageSearch && Array.isArray(imageSearch.products) && imageSearch.products.length > 0;
+
+    if (hasImage && (imageEmbedding || hasPrecomputedImageSearch)) {
+      // Let the router decide first; if it explicitly chooses SELLER_COPILOT,
+      // honor that, otherwise default to BUYER_ASSISTANT for visual search.
+      const routed = await smartRoute({
+        input: message,
+        isLoggedIn: !!userContext.userId,
+        currentPage: userContext.currentPage || "unknown",
+      });
+      if (routed === AGENT_TYPES.SELLER_COPILOT) {
+        agentType = AGENT_TYPES.SELLER_COPILOT;
+        console.log("[Router] Image detected – routing to SELLER_COPILOT with image context");
+      } else {
+        agentType = AGENT_TYPES.BUYER_ASSISTANT;
+        console.log("[Router] Image detected – routing to BUYER_ASSISTANT for visual search");
+      }
     } else {
       agentType = await smartRoute({
         input: message,
@@ -124,6 +148,8 @@ export async function processMessage({ sessionId, message, userContext = {}, ima
           input: message,
           chatHistory: session.history.slice(-10),
           userContext: session.userContext,
+          imageEmbedding,
+          imageSearch,
         });
         break;
 
@@ -133,6 +159,7 @@ export async function processMessage({ sessionId, message, userContext = {}, ima
           chatHistory: session.history.slice(-10),
           userContext: session.userContext,
           imageEmbedding,
+          imageSearch,
         });
         break;
 

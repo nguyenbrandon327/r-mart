@@ -43,3 +43,6 @@ build/
 
 #Vertex AI JSON
 backend/pacific-ethos-486502-g4-97a30ecf845b.json
+
+#Vision AI JSON
+backend/rmart-489303-a0f7b9d31292.json
