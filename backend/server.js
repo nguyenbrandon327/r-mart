@@ -17,6 +17,7 @@ import savedProductRoutes from "./routes/savedProductRoutes.js";
 import recentlySeenRoutes from "./routes/recentlySeenRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import searchRoutes from "./routes/searchRoutes.js";
+import chatbotRoutes from "./routes/chatbotRoutes.js";
 import { initializeMeiliSearch } from "./config/meilisearch.js";
 import { syncExistingProducts } from "./utils/syncMeilisearch.js";
 
@@ -98,6 +99,7 @@ app.use("/api/saved-products", savedProductRoutes);
 app.use("/api/recently-seen", recentlySeenRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // Test database connection
 async function testDBConnection() {
@@ -273,6 +275,25 @@ async function initDB() {
     console.error('❌ Error applying users table googleId field migration:', error);
   }
 
+  // Enable pgvector extension, add embedding column, and create image_embeddings table
+  try {
+    await sql`CREATE EXTENSION IF NOT EXISTS vector`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding vector(768)`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS image_embeddings (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        image_url TEXT,
+        embedding vector(1408) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles')
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_image_embeddings_product ON image_embeddings(product_id)`;
+    console.log('✅ pgvector extension, embedding column, and image_embeddings table ready');
+  } catch (error) {
+    console.error('❌ Error setting up pgvector:', error);
+  }
+
   // Add performance indexes (migration)
   try {
     // Core product indexes for better query performance
@@ -289,6 +310,9 @@ async function initDB() {
     // User-related indexes
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON users(email)`;
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_recently_seen_user_viewed ON recently_seen_products(user_id, viewed_at)`;
+
+    // pgvector HNSW index for fast cosine-similarity search
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_embedding ON products USING hnsw (embedding vector_cosine_ops)`;
 
     console.log('✅ Performance indexes created successfully');
   } catch (error) {

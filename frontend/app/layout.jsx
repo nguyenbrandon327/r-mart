@@ -3,6 +3,7 @@ import { Providers } from '../store/provider';
 import { Toaster } from 'react-hot-toast';
 import NavigationWrapper from '../components/NavigationWrapper';
 import OnboardingGuard from '../components/OnboardingGuard';
+import ChatBubble from '../components/ChatBubble';
 
 export const metadata = {
   title: 'R\'Mart',
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
           <OnboardingGuard>
             <NavigationWrapper>
               {children}
+              <ChatBubble />
             </NavigationWrapper>
           </OnboardingGuard>
           <Toaster />
