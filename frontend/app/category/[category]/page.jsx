@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductsByCategory, fetchProductsByLocation, resetForm, setSort } from '../../../store/slices/productSlice';
 import ProductCard from '../../../components/ProductCard';
@@ -71,7 +71,7 @@ const sortOptions = [
 ];
 
 export default function CategoryPage({ params }) {
-  const { category } = params;
+  const { category } = use(params);
   const dispatch = useDispatch();
   const { products, loading, error, sort } = useSelector((state) => state.products);
   const { isAuthenticated } = useSelector((state) => state.auth);

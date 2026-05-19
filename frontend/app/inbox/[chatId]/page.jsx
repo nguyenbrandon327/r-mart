@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, memo } from 'react';
+import { useEffect, useRef, useState, useCallback, memo, use } from 'react';
 import { useSelector } from 'react-redux';
 import { useChatStore, useAuthStore } from '../../../store/hooks';
 import { selectMessagesForChat } from '../../../store/slices/chatSlice';
@@ -62,7 +62,7 @@ const MessageContent = memo(({ message, isCurrentUser, onImageClick }) => {
 MessageContent.displayName = 'MessageContent';
 
 export default function ChatPage({ params }) {
-  const { chatId: chatULID } = params;
+  const { chatId: chatULID } = use(params);
   const router = useRouter();
   const {
     chats,
